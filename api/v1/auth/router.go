@@ -9,10 +9,10 @@ func Routers(g *gin.RouterGroup) {
 
 func AuthRouter(g *gin.RouterGroup) {
 	g.GET("/roles", GetRoleList)
-	// g.GET("/roles/:id", GetRoleByID)
-	// g.PUT("/roles/:id", UpdateRole)
-	// g.POST("/roles", NewRole)
-	// g.DELETE("/roles/:id", DeleteRole)
+	g.POST("/roles", NewRole)
+	g.PUT("/roles/:id", UpdateRole)
+	g.GET("/roles/:id", GetRoleByID)
+	g.DELETE("/roles/:id", DeleteRole)
 
 	// g.PUT("/users/:id", UpdateUser)
 	// g.GET("/users", GetUserList)

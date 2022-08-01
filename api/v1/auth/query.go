@@ -23,7 +23,7 @@ type AuthQuery interface {
 	// GetUserCount(UserFilter) (int, error)
 	// GetUserList(UserFilter) (*[]UserResponse, error)
 	// //Role Management
-	GetRoleByID(id int64) (*Role, error)
+	GetRoleByID(id int64) (*RoleResponse, error)
 	GetRoleCount(filter RoleFilter) (int, error)
 	GetRoleList(filter RoleFilter) (*[]RoleResponse, error)
 	// // //API Management
@@ -123,13 +123,10 @@ func (r *authQuery) GetUserByEmail(email string) (*User, error) {
 // 	return &users, nil
 // }
 
-func (r *authQuery) GetRoleByID(id int64) (*Role, error) {
-	var role Role
-	err := r.conn.Get(&role, "SELECT * FROM s_roles WHERE id = ? AND status > 0", id)
-	if err != nil {
-		return nil, err
-	}
-	return &role, nil
+func (r *authQuery) GetRoleByID(id int64) (*RoleResponse, error) {
+	var role RoleResponse
+	err := r.conn.Get(&role, "SELECT id, name, organization_id, is_admin, is_default, priority, status FROM s_roles WHERE id = ? AND status > 0", id)
+	return &role, err
 }
 
 func (r *authQuery) GetRoleCount(filter RoleFilter) (int, error) {
@@ -160,7 +157,7 @@ func (r *authQuery) GetRoleList(filter RoleFilter) (*[]RoleResponse, error) {
 	args = append(args, filter.PageSize)
 	var roles []RoleResponse
 	err := r.conn.Select(&roles, `
-		SELECT id, name, priority, is_admin, is_default, status
+		SELECT id, name, priority, organization_id, is_admin, is_default, status
 		FROM s_roles
 		WHERE `+strings.Join(where, " AND ")+`
 		LIMIT ?, ?

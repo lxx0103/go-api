@@ -26,10 +26,11 @@ type AuthRepository interface {
 	// // GetAuthList(filter AuthFilter) ([]Auth, error)
 
 	//  Role Management
+	GetRoleByID(int64) (*RoleResponse, error)
+	CheckRoleConfict(int64, string) (bool, error)
 	CreateRole(info Role) (int64, error)
-	// UpdateRole(int64, RoleNew) (int64, error)
-	// GetRoleByID(int64) (*Role, error)
-	// DeleteRole(int64, string) error
+	UpdateRole(int64, Role) error
+	DeleteRole(int64, string) error
 	// // API Management
 	// CreateAPI(APINew) (int64, error)
 	// UpdateAPI(int64, APINew) (int64, error)
@@ -119,6 +120,23 @@ func (r *authRepository) CreateUser(newUser User) (int64, error) {
 // 	return nil
 // }
 
+func (r *authRepository) GetRoleByID(id int64) (*RoleResponse, error) {
+	var res RoleResponse
+	row := r.tx.QueryRow(`SELECT id, organization_id, priority, name, is_admin, is_default, status FROM s_roles WHERE id = ? AND status > 0 LIMIT 1`, id)
+	err := row.Scan(&res.ID, &res.OrganizationID, &res.Priority, &res.Name, &res.IsAdmin, &res.IsDefault, &res.Status)
+	return &res, err
+}
+
+func (r *authRepository) CheckRoleConfict(roleID int64, name string) (bool, error) {
+	var existed int
+	row := r.tx.QueryRow("SELECT count(1) FROM s_roles WHERE id != ? AND name = ?", roleID, name)
+	err := row.Scan(&existed)
+	if err != nil {
+		return true, err
+	}
+	return existed != 0, nil
+}
+
 func (r *authRepository) CreateRole(info Role) (int64, error) {
 	result, err := r.tx.Exec(`
 		INSERT INTO s_roles
@@ -146,36 +164,30 @@ func (r *authRepository) CreateRole(info Role) (int64, error) {
 	return id, nil
 }
 
-// func (r *authRepository) UpdateRole(id int64, info RoleNew) (int64, error) {
-// 	result, err := r.tx.Exec(`
-// 		Update roles SET
-// 		name = ?,
-// 		priority = ?,
-// 		status = ?,
-// 		updated = ?,
-// 		updated_by = ?
-// 		WHERE id = ?
-// 	`, info.Name, info.Priority, info.Status, time.Now(), info.User, id)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	affected, err := result.RowsAffected()
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	return affected, nil
-// }
+func (r *authRepository) UpdateRole(id int64, info Role) error {
+	_, err := r.tx.Exec(`
+		Update s_roles SET
+		name = ?,
+		priority = ?,
+		is_admin = ?,
+		status = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE id = ?
+	`, info.Name, info.Priority, info.IsAdmin, info.Status, time.Now(), info.UpdatedBy, id)
+	return err
+}
 
-// func (r *authRepository) GetRoleByID(id int64) (*Role, error) {
-// 	var res Role
-// 	row := r.tx.QueryRow(`SELECT id, priority, name, status, created, created_by, updated, updated_by FROM roles WHERE id = ? AND status > 0 LIMIT 1`, id)
-// 	err := row.Scan(&res.ID, &res.Priority, &res.Name, &res.Status, &res.Created, &res.CreatedBy, &res.Updated, &res.UpdatedBy)
-// 	if err != nil {
-// 		msg := "角色不存在:" + err.Error()
-// 		return nil, errors.New(msg)
-// 	}
-// 	return &res, nil
-// }
+func (r *authRepository) DeleteRole(id int64, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update s_roles SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE id = ?
+	`, time.Now(), byUser, id)
+	return err
+}
 
 // func (r *authRepository) CreateAPI(info APINew) (int64, error) {
 // 	result, err := r.tx.Exec(`
@@ -355,17 +367,6 @@ func (r *authRepository) CreateRole(info Role) (int64, error) {
 // 	}
 // 	sql = sql[:len(sql)-1]
 // 	_, err = r.tx.Exec(sql)
-// 	return err
-// }
-
-// func (r *authRepository) DeleteRole(id int64, byUser string) error {
-// 	_, err := r.tx.Exec(`
-// 		Update roles SET
-// 		status = -1,
-// 		updated = ?,
-// 		updated_by = ?
-// 		WHERE id = ?
-// 	`, time.Now(), byUser, id)
 // 	return err
 // }
 

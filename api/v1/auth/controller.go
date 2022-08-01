@@ -91,7 +91,7 @@ func Signin(c *gin.Context) {
 // }
 
 // @Summary 角色列表
-// @Id 18
+// @Id 003
 // @Tags 角色管理
 // @version 1.0
 // @Accept application/json
@@ -120,91 +120,119 @@ func GetRoleList(c *gin.Context) {
 	response.ResponseList(c, filter.PageID, filter.PageSize, count, list)
 }
 
-// // @Summary 新建角色
-// // @Id 19
-// // @Tags 角色管理
-// // @version 1.0
-// // @Accept application/json
-// // @Produce application/json
-// // @Param role_info body RoleNew true "角色信息"
-// // @Success 200 object response.SuccessRes{data=Role} 成功
-// // @Failure 400 object response.ErrorRes 内部错误
-// // @Router /roles [POST]
-// func NewRole(c *gin.Context) {
-// 	var role RoleNew
-// 	if err := c.ShouldBindJSON(&role); err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	claims := c.MustGet("claims").(*service.CustomClaims)
-// 	role.User = claims.Username
-// 	authService := NewAuthService()
-// 	new, err := authService.NewRole(role)
-// 	if err != nil {
-// 		response.ResponseError(c, "DatabaseError", err)
-// 		return
-// 	}
-// 	response.Response(c, new)
-// }
+// @Summary 新建角色
+// @Id 004
+// @Tags 角色管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param role_info body RoleNew true "角色信息"
+// @Success 200 object response.SuccessRes{data=RoleResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /roles [POST]
+func NewRole(c *gin.Context) {
+	var info RoleNew
+	if err := c.ShouldBindJSON(&info); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	info.User = claims.Email
+	info.OrganizationID = claims.OrganizationID
+	authService := NewAuthService()
+	new, err := authService.NewRole(info)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
 
-// // @Summary 根据ID获取角色
-// // @Id 20
-// // @Tags 角色管理
-// // @version 1.0
-// // @Accept application/json
-// // @Produce application/json
-// // @Param id path int true "角色ID"
-// // @Success 200 object response.SuccessRes{data=Role} 成功
-// // @Failure 400 object response.ErrorRes 内部错误
-// // @Router /roles/:id [GET]
-// func GetRoleByID(c *gin.Context) {
-// 	var uri RoleID
-// 	if err := c.ShouldBindUri(&uri); err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	authService := NewAuthService()
-// 	role, err := authService.GetRoleByID(uri.ID)
-// 	if err != nil {
-// 		response.ResponseError(c, "DatabaseError", err)
-// 		return
-// 	}
-// 	response.Response(c, role)
+// @Summary 根据ID更新角色
+// @Id 005
+// @Tags 角色管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "角色ID"
+// @Param role_info body RoleNew true "角色信息"
+// @Success 200 object response.SuccessRes{data=Role} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /roles/:id [PUT]
+func UpdateRole(c *gin.Context) {
+	var uri RoleID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	var info RoleNew
+	if err := c.ShouldBindJSON(&info); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	info.User = claims.Email
+	info.OrganizationID = claims.OrganizationID
+	authService := NewAuthService()
+	new, err := authService.UpdateRole(uri.ID, info)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
 
-// }
+// @Summary 根据ID获取角色
+// @Id 006
+// @Tags 角色管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "角色ID"
+// @Success 200 object response.SuccessRes{data=RoleResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /roles/:id [GET]
+func GetRoleByID(c *gin.Context) {
+	var uri RoleID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	authService := NewAuthService()
+	role, err := authService.GetRoleByID(uri.ID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, role)
 
-// // @Summary 根据ID更新角色
-// // @Id 21
-// // @Tags 角色管理
-// // @version 1.0
-// // @Accept application/json
-// // @Produce application/json
-// // @Param id path int true "角色ID"
-// // @Param role_info body RoleNew true "角色信息"
-// // @Success 200 object response.SuccessRes{data=Role} 成功
-// // @Failure 400 object response.ErrorRes 内部错误
-// // @Router /roles/:id [PUT]
-// func UpdateRole(c *gin.Context) {
-// 	var uri RoleID
-// 	if err := c.ShouldBindUri(&uri); err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	var role RoleNew
-// 	if err := c.ShouldBindJSON(&role); err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	claims := c.MustGet("claims").(*service.CustomClaims)
-// 	role.User = claims.Username
-// 	authService := NewAuthService()
-// 	new, err := authService.UpdateRole(uri.ID, role)
-// 	if err != nil {
-// 		response.ResponseError(c, "DatabaseError", err)
-// 		return
-// 	}
-// 	response.Response(c, new)
-// }
+}
+
+// @Summary 根据ID删除角色
+// @Id 007
+// @Tags 角色管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "角色ID"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /roles/:id [DELETE]
+func DeleteRole(c *gin.Context) {
+	var uri MenuID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	authService := NewAuthService()
+	err := authService.DeleteRole(uri.ID, claims.OrganizationID, claims.Email)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, "OK")
+}
 
 // // @Summary 根据ID更新用户
 // // @Id 23
@@ -717,32 +745,6 @@ func GetRoleList(c *gin.Context) {
 // 		}
 // 	}
 // 	response.Response(c, res)
-// }
-
-// // @Summary 根据ID删除角色
-// // @Id 52
-// // @Tags 菜单管理
-// // @version 1.0
-// // @Accept application/json
-// // @Produce application/json
-// // @Param id path int true "菜单ID"
-// // @Success 200 object response.SuccessRes{data=string} 成功
-// // @Failure 400 object response.ErrorRes 内部错误
-// // @Router /roles/:id [DELETE]
-// func DeleteRole(c *gin.Context) {
-// 	var uri MenuID
-// 	if err := c.ShouldBindUri(&uri); err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	claims := c.MustGet("claims").(*service.CustomClaims)
-// 	authService := NewAuthService()
-// 	err := authService.DeleteRole(uri.ID, claims.Username)
-// 	if err != nil {
-// 		response.ResponseError(c, "DatabaseError", err)
-// 		return
-// 	}
-// 	response.Response(c, "OK")
 // }
 
 // // @Summary 用户列表

@@ -24,11 +24,11 @@ type AuthService interface {
 	// GetUserList(UserFilter, int64) (int, *[]UserResponse, error)
 	// UpdatePassword(PasswordUpdate) error
 	// Role Management
-	GetRoleByID(int64) (*Role, error)
+	GetRoleByID(int64) (*RoleResponse, error)
 	GetRoleList(RoleFilter) (int, *[]RoleResponse, error)
-	// NewRole(RoleNew) (*Role, error)
-	// UpdateRole(int64, RoleNew) (*Role, error)
-	// DeleteRole(int64, string) error
+	NewRole(RoleNew) (*RoleResponse, error)
+	UpdateRole(int64, RoleNew) (*RoleResponse, error)
+	DeleteRole(int64, int64, string) error
 	// // //API Management
 	// GetAPIByID(int64) (*API, error)
 	// NewAPI(APINew) (*API, error)
@@ -265,7 +265,7 @@ func checkPasswordHash(password, hash string) bool {
 // 	return user, err
 // }
 
-func (s *authService) GetRoleByID(id int64) (*Role, error) {
+func (s *authService) GetRoleByID(id int64) (*RoleResponse, error) {
 	db := database.RDB()
 	query := NewAuthQuery(db)
 	role, err := query.GetRoleByID(id)
@@ -276,22 +276,40 @@ func (s *authService) GetRoleByID(id int64) (*Role, error) {
 	return role, nil
 }
 
-// func (s *authService) NewRole(info RoleNew) (*Role, error) {
-// 	db := database.InitMySQL()
-// 	tx, err := db.Begin()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	defer tx.Rollback()
-// 	repo := NewAuthRepository(tx)
-// 	roleID, err := repo.CreateRole(info)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	role, err := repo.GetRoleByID(roleID)
-// 	tx.Commit()
-// 	return role, err
-// }
+func (s *authService) NewRole(info RoleNew) (*RoleResponse, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	repo := NewAuthRepository(tx)
+	isConflict, err := repo.CheckRoleConfict(0, info.Name)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "Role name conflict"
+		return nil, errors.New(msg)
+	}
+	var role Role
+	role.Name = info.Name
+	role.OrganizationID = info.OrganizationID
+	role.Priority = info.Priority
+	role.IsAdmin = info.IsAdmin
+	role.IsDefault = 2
+	role.CreatedBy = info.Name
+	role.UpdatedBy = info.Name
+	role.Status = info.Status
+	roleID, err := repo.CreateRole(role)
+	if err != nil {
+		return nil, err
+	}
+	res, err := repo.GetRoleByID(roleID)
+	tx.Commit()
+	return res, err
+}
 
 func (s *authService) GetRoleList(filter RoleFilter) (int, *[]RoleResponse, error) {
 	db := database.RDB()
@@ -307,22 +325,80 @@ func (s *authService) GetRoleList(filter RoleFilter) (int, *[]RoleResponse, erro
 	return count, list, err
 }
 
-// func (s *authService) UpdateRole(roleID int64, info RoleNew) (*Role, error) {
-// 	db := database.InitMySQL()
-// 	tx, err := db.Begin()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	defer tx.Rollback()
-// 	repo := NewAuthRepository(tx)
-// 	_, err = repo.UpdateRole(roleID, info)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	role, err := repo.GetRoleByID(roleID)
-// 	tx.Commit()
-// 	return role, err
-// }
+func (s *authService) UpdateRole(roleID int64, info RoleNew) (*RoleResponse, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	repo := NewAuthRepository(tx)
+	isConflict, err := repo.CheckRoleConfict(roleID, info.Name)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "role name conflict"
+		return nil, errors.New(msg)
+	}
+	oldRole, err := repo.GetRoleByID(roleID)
+	if err != nil {
+		msg := "Role not exist"
+		return nil, errors.New(msg)
+	}
+	if oldRole.IsDefault == 1 {
+		msg := "default Role can not be modified"
+		return nil, errors.New(msg)
+	}
+	if oldRole.OrganizationID != info.OrganizationID {
+		msg := "Role not exist"
+		return nil, errors.New(msg)
+	}
+	var role Role
+	role.Name = info.Name
+	role.Priority = info.Priority
+	role.IsAdmin = info.IsAdmin
+	role.UpdatedBy = info.Name
+	role.Status = info.Status
+	err = repo.UpdateRole(roleID, role)
+	if err != nil {
+		msg := "update role error"
+		return nil, errors.New(msg)
+	}
+	res, err := repo.GetRoleByID(roleID)
+	tx.Commit()
+	return res, err
+}
+
+func (s *authService) DeleteRole(roleID int64, organizationID int64, user string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	repo := NewAuthRepository(tx)
+	oldRole, err := repo.GetRoleByID(roleID)
+	if err != nil {
+		msg := "Role not exist"
+		return errors.New(msg)
+	}
+	if oldRole.IsDefault == 1 {
+		msg := "default Role can not be deleted"
+		return errors.New(msg)
+	}
+	if oldRole.OrganizationID != organizationID {
+		msg := "Role not exist"
+		return errors.New(msg)
+	}
+	err = repo.DeleteRole(roleID, user)
+	if err != nil {
+		return err
+	}
+	tx.Commit()
+	return nil
+}
 
 // func (s *authService) GetUserByID(id int64, organizationID int64) (*User, error) {
 // 	db := database.InitMySQL()
@@ -559,22 +635,6 @@ func (s *authService) GetRoleList(filter RoleFilter) (int, *[]RoleResponse, erro
 // 	query := NewAuthQuery(db)
 // 	menu, err := query.GetMyMenu(roleID)
 // 	return menu, err
-// }
-
-// func (s *authService) DeleteRole(roleID int64, user string) error {
-// 	db := database.InitMySQL()
-// 	tx, err := db.Begin()
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer tx.Rollback()
-// 	repo := NewAuthRepository(tx)
-// 	err = repo.DeleteRole(roleID, user)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	tx.Commit()
-// 	return nil
 // }
 
 // func (s *authService) UpdatePassword(info PasswordUpdate) error {

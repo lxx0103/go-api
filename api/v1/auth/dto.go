@@ -31,19 +31,22 @@ type RoleFilter struct {
 }
 
 type RoleResponse struct {
-	ID        int64  `db:"id" json:"id"`
-	Name      string `db:"name" json:"name"`
-	IsAdmin   int    `db:"is_admin" json:"is_admin"`
-	Priority  int    `db:"priority" json:"priority"`
-	IsDefault int    `db:"is_default" json:"is_default"`
-	Status    int    `db:"status" json:"status"`
+	ID             int64  `db:"id" json:"id"`
+	OrganizationID int64  `db:"organization_id" json:"organization_id"`
+	Name           string `db:"name" json:"name"`
+	IsAdmin        int    `db:"is_admin" json:"is_admin"`
+	Priority       int    `db:"priority" json:"priority"`
+	IsDefault      int    `db:"is_default" json:"is_default"`
+	Status         int    `db:"status" json:"status"`
 }
 
 type RoleNew struct {
-	Name     string `json:"name" binding:"required,min=1,max=64"`
-	Priority int    `json:"priority" binding:"required,min=1"`
-	Status   int    `json:"status" binding:"required,oneof=1 2"`
-	User     string `json:"user" swaggerignore:"true"`
+	Name           string `json:"name" binding:"required,min=1,max=64"`
+	IsAdmin        int    `json:"is_admin" binding:"required,oneof=1 2"`
+	Priority       int    `json:"priority" binding:"required,min=1"`
+	Status         int    `json:"status" binding:"required,oneof=1 2"`
+	OrganizationID int64  `json:"organiztion_id" swaggerignore:"true"`
+	User           string `json:"user" swaggerignore:"true"`
 }
 
 type RoleID struct {
