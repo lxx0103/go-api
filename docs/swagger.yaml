@@ -1,5 +1,47 @@
 basePath: /
 definitions:
+  auth.RoleResponse:
+    properties:
+      id:
+        type: integer
+      is_admin:
+        type: integer
+      is_default:
+        type: integer
+      name:
+        type: string
+      priority:
+        type: integer
+      status:
+        type: integer
+    type: object
+  auth.SigninRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  auth.SigninResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/auth.UserResponse'
+    type: object
+  auth.UserResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      role_name:
+        type: string
+    type: object
   organization.OrganizationNew:
     properties:
       email:
@@ -26,6 +68,16 @@ definitions:
         type: string
       message:
         type: string
+    type: object
+  response.ListRes:
+    properties:
+      count:
+        type: integer
+      data: {}
+      page_id:
+        type: integer
+      page_size:
+        type: integer
     type: object
   response.SuccessRes:
     properties:
@@ -71,4 +123,80 @@ paths:
       summary: 新建组织
       tags:
       - 组织管理
+  /roles:
+    get:
+      consumes:
+      - application/json
+      operationId: "18"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 角色名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/auth.RoleResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 角色列表
+      tags:
+      - 角色管理
+  /signin:
+    post:
+      consumes:
+      - application/json
+      operationId: "002"
+      parameters:
+      - description: 登录类型
+        in: body
+        name: signin_info
+        required: true
+        schema:
+          $ref: '#/definitions/auth.SigninRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/auth.SigninResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 登录
+      tags:
+      - 用户权限
 swagger: "2.0"

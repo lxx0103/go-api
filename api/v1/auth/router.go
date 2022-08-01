@@ -3,12 +3,12 @@ package auth
 import "github.com/gin-gonic/gin"
 
 func Routers(g *gin.RouterGroup) {
-	// g.POST("/signin", Signin)
+	g.POST("/signin", Signin)
 	// g.POST("/signup", Signup)
 }
 
 func AuthRouter(g *gin.RouterGroup) {
-	// g.GET("/roles", GetRoleList)
+	g.GET("/roles", GetRoleList)
 	// g.GET("/roles/:id", GetRoleByID)
 	// g.PUT("/roles/:id", UpdateRole)
 	// g.POST("/roles", NewRole)

@@ -1,6 +1,70 @@
 package auth
 
-// // @Id 001
+import (
+	"go-api/core/response"
+	"go-api/service"
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
+)
+
+// @Summary 登录
+// @Id 002
+// @Tags 用户权限
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param signin_info body SigninRequest true "登录类型"
+// @Success 200 object response.SuccessRes{data=SigninResponse} 登录成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Failure 401 object response.ErrorRes 登录失败
+// @Router /signin [POST]
+func Signin(c *gin.Context) {
+	var signinInfo SigninRequest
+	err := c.ShouldBindJSON(&signinInfo)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	authService := NewAuthService()
+	userInfo, err := authService.VerifyCredential(signinInfo)
+	if err != nil {
+		response.ResponseUnauthorized(c, "AuthError", err)
+		return
+	}
+	roleInfo, err := authService.GetRoleByID(userInfo.RoleID)
+	if err != nil {
+		response.ResponseUnauthorized(c, "AuthError", err)
+		return
+	}
+	var userResponse UserResponse
+	userResponse.ID = userInfo.ID
+	userResponse.Email = userInfo.Email
+	userResponse.RoleName = roleInfo.Name
+
+	claims := service.CustomClaims{
+		UserID:         userInfo.ID,
+		Email:          userInfo.Email,
+		RoleID:         userInfo.RoleID,
+		RoleName:       roleInfo.Name,
+		IsAdmin:        roleInfo.IsAdmin,
+		OrganizationID: userInfo.OrganizationID,
+		StandardClaims: jwt.StandardClaims{
+			NotBefore: time.Now().Unix() - 1000,
+			ExpiresAt: time.Now().Unix() + 72000,
+			Issuer:    "wms",
+		},
+	}
+	jwtServices := service.JWTAuthService()
+	generatedToken := jwtServices.GenerateToken(claims)
+	var res SigninResponse
+	res.Token = generatedToken
+	res.User = userResponse
+	response.Response(c, res)
+}
+
+// // @Id 003
 // // @Tags 用户权限
 // // @Summary 用户注册
 // // @version 1.0
@@ -26,80 +90,35 @@ package auth
 // 	response.Response(c, authID)
 // }
 
-// // @Summary 登录
-// // @Id 002
-// // @Tags 用户权限
-// // @version 1.0
-// // @Accept application/json
-// // @Produce application/json
-// // @Param signin_info body SigninRequest true "登录类型"
-// // @Success 200 object response.SuccessRes{data=SigninResponse} 登录成功
-// // @Failure 400 object response.ErrorRes 内部错误
-// // @Failure 401 object response.ErrorRes 登录失败
-// // @Router /signin [POST]
-// func Signin(c *gin.Context) {
-// 	var signinInfo SigninRequest
-// 	var userInfo *UserResponse
-// 	err := c.ShouldBindJSON(&signinInfo)
-// 	if err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	authService := NewAuthService()
-// 	userInfo, err = authService.VerifyCredential(signinInfo)
-// 	if err != nil {
-// 		response.ResponseUnauthorized(c, "AuthError", err)
-// 		return
-// 	}
-// 	claims := service.CustomClaims{
-// 		UserID:           userInfo.ID,
-// 		UserType:         userInfo.Type,
-// 		Username:         userInfo.Name,
-// 		RoleID:           userInfo.RoleID,
-// 		OrganizationID:   userInfo.OrganizationID,
-// 		OrganizationName: userInfo.OrganizationName,
-// 		PositionID:       userInfo.PositionID,
-// 		StandardClaims: jwt.StandardClaims{
-// 			NotBefore: time.Now().Unix() - 1000,
-// 			ExpiresAt: time.Now().Unix() + 72000,
-// 			Issuer:    "wms",
-// 		},
-// 	}
-// 	jwtServices := service.JWTAuthService()
-// 	generatedToken := jwtServices.GenerateToken(claims)
-// 	var res SigninResponse
-// 	res.Token = generatedToken
-// 	res.User = *userInfo
-// 	response.Response(c, res)
-// }
-
-// // @Summary 角色列表
-// // @Id 18
-// // @Tags 角色管理
-// // @version 1.0
-// // @Accept application/json
-// // @Produce application/json
-// // @Param page_id query int true "页码"
-// // @Param page_size query int true "每页行数（5/10/15/20）"
-// // @Param name query string false "角色名称"
-// // @Success 200 object response.ListRes{data=[]Role} 成功
-// // @Failure 400 object response.ErrorRes 内部错误
-// // @Router /roles [GET]
-// func GetRoleList(c *gin.Context) {
-// 	var filter RoleFilter
-// 	err := c.ShouldBindQuery(&filter)
-// 	if err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	authService := NewAuthService()
-// 	count, list, err := authService.GetRoleList(filter)
-// 	if err != nil {
-// 		response.ResponseError(c, "DatabaseError", err)
-// 		return
-// 	}
-// 	response.ResponseList(c, filter.PageId, filter.PageSize, count, list)
-// }
+// @Summary 角色列表
+// @Id 18
+// @Tags 角色管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数（5/10/15/20）"
+// @Param name query string false "角色名称"
+// @Success 200 object response.ListRes{data=[]RoleResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /roles [GET]
+func GetRoleList(c *gin.Context) {
+	var filter RoleFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	filter.OrganizationID = claims.OrganizationID
+	authService := NewAuthService()
+	count, list, err := authService.GetRoleList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageID, filter.PageSize, count, list)
+}
 
 // // @Summary 新建角色
 // // @Id 19

@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"strings"
+
 	"github.com/jmoiron/sqlx"
 )
 
@@ -17,14 +19,13 @@ func NewAuthQuery(connection *sqlx.DB) AuthQuery {
 type AuthQuery interface {
 	// //User Management
 	// GetUserByID(int64, int64) (*User, error)
-	// GetUserByOpenID(openID string) (*UserResponse, error)
-	// GetUserCredential(int64) (string, error)
+	GetUserByEmail(email string) (*User, error)
 	// GetUserCount(UserFilter) (int, error)
 	// GetUserList(UserFilter) (*[]UserResponse, error)
 	// //Role Management
-	// GetRoleByID(id int64) (*Role, error)
-	// GetRoleCount(filter RoleFilter) (int, error)
-	// GetRoleList(filter RoleFilter) (*[]Role, error)
+	GetRoleByID(id int64) (*Role, error)
+	GetRoleCount(filter RoleFilter) (int, error)
+	GetRoleList(filter RoleFilter) (*[]RoleResponse, error)
 	// // //API Management
 	// GetAPIByID(id int64) (*API, error)
 	// GetAPICount(filter APIFilter) (int, error)
@@ -53,29 +54,18 @@ type AuthQuery interface {
 // 	return &user, nil
 // }
 
-// func (r *authQuery) GetUserByOpenID(openID string) (*UserResponse, error) {
-// 	var user UserResponse
-// 	err := r.conn.Get(&user, `
-// 		SELECT u.id as id, u.type as type, u.identifier as identifier, u.organization_id as organization_id, u.position_id as position_id, u.role_id as role_id, u.name as name, u.email as email, u.gender as gender, u.phone as phone, u.birthday as birthday, u.address as address, u.status as status, IFNULL(o.name, "ADMIN") as organization_name
-// 		FROM users u
-// 		LEFT JOIN organizations o
-// 		ON u.organization_id = o.id
-// 		WHERE identifier = ?
-// 	`, openID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return &user, nil
-// }
-
-// func (r *authQuery) GetUserCredential(id int64) (string, error) {
-// 	var credential string
-// 	err := r.conn.Get(&credential, "SELECT credential FROM users WHERE id = ? ", id)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return credential, nil
-// }
+func (r *authQuery) GetUserByEmail(email string) (*User, error) {
+	var user User
+	err := r.conn.Get(&user, `
+		SELECT *
+		FROM u_users
+		WHERE email = ?
+	`, email)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
 
 // func (r *authQuery) GetUserCount(filter UserFilter) (int, error) {
 // 	where, args := []string{"status > 0"}, []interface{}{}
@@ -133,49 +123,50 @@ type AuthQuery interface {
 // 	return &users, nil
 // }
 
-// func (r *authQuery) GetRoleByID(id int64) (*Role, error) {
-// 	var role Role
-// 	err := r.conn.Get(&role, "SELECT * FROM roles WHERE id = ? AND status > 0", id)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return &role, nil
-// }
-// func (r *authQuery) GetRoleCount(filter RoleFilter) (int, error) {
-// 	where, args := []string{"status > 0"}, []interface{}{}
-// 	if v := filter.Name; v != "" {
-// 		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
-// 	}
-// 	var count int
-// 	err := r.conn.Get(&count, `
-// 		SELECT count(1) as count
-// 		FROM roles
-// 		WHERE `+strings.Join(where, " AND "), args...)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	return count, nil
-// }
+func (r *authQuery) GetRoleByID(id int64) (*Role, error) {
+	var role Role
+	err := r.conn.Get(&role, "SELECT * FROM s_roles WHERE id = ? AND status > 0", id)
+	if err != nil {
+		return nil, err
+	}
+	return &role, nil
+}
 
-// func (r *authQuery) GetRoleList(filter RoleFilter) (*[]Role, error) {
-// 	where, args := []string{"status > 0"}, []interface{}{}
-// 	if v := filter.Name; v != "" {
-// 		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
-// 	}
-// 	args = append(args, filter.PageId*filter.PageSize-filter.PageSize)
-// 	args = append(args, filter.PageSize)
-// 	var roles []Role
-// 	err := r.conn.Select(&roles, `
-// 		SELECT *
-// 		FROM roles
-// 		WHERE `+strings.Join(where, " AND ")+`
-// 		LIMIT ?, ?
-// 	`, args...)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return &roles, nil
-// }
+func (r *authQuery) GetRoleCount(filter RoleFilter) (int, error) {
+	where, args := []string{"status > 0"}, []interface{}{}
+	if v := filter.OrganizationID; v != 0 {
+		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	if v := filter.Name; v != "" {
+		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
+	}
+	var count int
+	err := r.conn.Get(&count, `
+		SELECT count(1) as count
+		FROM s_roles
+		WHERE `+strings.Join(where, " AND "), args...)
+	return count, err
+}
+
+func (r *authQuery) GetRoleList(filter RoleFilter) (*[]RoleResponse, error) {
+	where, args := []string{"status > 0"}, []interface{}{}
+	if v := filter.Name; v != "" {
+		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.OrganizationID; v != 0 {
+		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	args = append(args, filter.PageID*filter.PageSize-filter.PageSize)
+	args = append(args, filter.PageSize)
+	var roles []RoleResponse
+	err := r.conn.Select(&roles, `
+		SELECT id, name, priority, is_admin, is_default, status
+		FROM s_roles
+		WHERE `+strings.Join(where, " AND ")+`
+		LIMIT ?, ?
+	`, args...)
+	return &roles, err
+}
 
 // func (r *authQuery) GetAPIByID(id int64) (*API, error) {
 // 	var api API

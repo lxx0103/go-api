@@ -1,6 +1,11 @@
 package auth
 
-import "golang.org/x/crypto/bcrypt"
+import (
+	"errors"
+	"go-api/core/database"
+
+	"golang.org/x/crypto/bcrypt"
+)
 
 type authService struct {
 }
@@ -11,18 +16,17 @@ func NewAuthService() AuthService {
 
 type AuthService interface {
 	// CreateAuth(SignupRequest) (int64, error)
-	// VerifyWechatSignin(string) (*WechatCredential, error)
-	// VerifyCredential(SigninRequest) (*UserResponse, error)
+	VerifyCredential(SigninRequest) (*User, error)
 	// //User Management
 	// GetUserInfo(string, int, int64) (*UserResponse, error)
 	// UpdateUser(int64, UserUpdate, int64) (*UserResponse, error)
 	// GetUserByID(int64, int64) (*User, error)
 	// GetUserList(UserFilter, int64) (int, *[]UserResponse, error)
 	// UpdatePassword(PasswordUpdate) error
-	// //Role Management
-	// GetRoleByID(int64) (*Role, error)
+	// Role Management
+	GetRoleByID(int64) (*Role, error)
+	GetRoleList(RoleFilter) (int, *[]RoleResponse, error)
 	// NewRole(RoleNew) (*Role, error)
-	// GetRoleList(RoleFilter) (int, *[]Role, error)
 	// UpdateRole(int64, RoleNew) (*Role, error)
 	// DeleteRole(int64, string) error
 	// // //API Management
@@ -143,33 +147,30 @@ type AuthService interface {
 // 	return user, nil
 // }
 
-// func (s *authService) VerifyCredential(signinInfo SigninRequest) (*UserResponse, error) {
-// 	db := database.InitMySQL()
-// 	query := NewAuthQuery(db)
-// 	userInfo, err := query.GetUserByOpenID(signinInfo.Identifier)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	credential, err := query.GetUserCredential(userInfo.ID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	if !checkPasswordHash(signinInfo.Credential, credential) {
-// 		errMessage := "密码错误"
-// 		return nil, errors.New(errMessage)
-// 	}
-// 	return userInfo, err
-// }
+func (s *authService) VerifyCredential(signinInfo SigninRequest) (*User, error) {
+	db := database.RDB()
+	query := NewAuthQuery(db)
+	userInfo, err := query.GetUserByEmail(signinInfo.Email)
+	if err != nil {
+		msg := "get user info error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if !checkPasswordHash(signinInfo.Password, userInfo.Password) {
+		msg := "password error"
+		return nil, errors.New(msg)
+	}
+	return userInfo, nil
+}
 
 func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err
 }
 
-// func checkPasswordHash(password, hash string) bool {
-// 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-// 	return err == nil
-// }
+func checkPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
 
 // func (s *authService) UpdateUser(userID int64, info UserUpdate, byUserID int64) (*UserResponse, error) {
 // 	db := database.InitMySQL()
@@ -264,12 +265,16 @@ func hashPassword(password string) (string, error) {
 // 	return user, err
 // }
 
-// func (s *authService) GetRoleByID(id int64) (*Role, error) {
-// 	db := database.InitMySQL()
-// 	query := NewAuthQuery(db)
-// 	role, err := query.GetRoleByID(id)
-// 	return role, err
-// }
+func (s *authService) GetRoleByID(id int64) (*Role, error) {
+	db := database.RDB()
+	query := NewAuthQuery(db)
+	role, err := query.GetRoleByID(id)
+	if err != nil {
+		msg := "get role error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	return role, nil
+}
 
 // func (s *authService) NewRole(info RoleNew) (*Role, error) {
 // 	db := database.InitMySQL()
@@ -288,19 +293,19 @@ func hashPassword(password string) (string, error) {
 // 	return role, err
 // }
 
-// func (s *authService) GetRoleList(filter RoleFilter) (int, *[]Role, error) {
-// 	db := database.InitMySQL()
-// 	query := NewAuthQuery(db)
-// 	count, err := query.GetRoleCount(filter)
-// 	if err != nil {
-// 		return 0, nil, err
-// 	}
-// 	list, err := query.GetRoleList(filter)
-// 	if err != nil {
-// 		return 0, nil, err
-// 	}
-// 	return count, list, err
-// }
+func (s *authService) GetRoleList(filter RoleFilter) (int, *[]RoleResponse, error) {
+	db := database.RDB()
+	query := NewAuthQuery(db)
+	count, err := query.GetRoleCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := query.GetRoleList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
 
 // func (s *authService) UpdateRole(roleID int64, info RoleNew) (*Role, error) {
 // 	db := database.InitMySQL()

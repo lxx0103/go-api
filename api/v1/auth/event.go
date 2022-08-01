@@ -62,6 +62,7 @@ func CreateOrganizationOwner(d amqp.Delivery) bool {
 	roleInfo.Name = "owner"
 	roleInfo.Priority = 99
 	roleInfo.IsAdmin = 1
+	roleInfo.IsDefault = 1
 	roleInfo.CreatedBy = "SIGNUP"
 	roleInfo.UpdatedBy = "SIGNUP"
 	roleInfo.Status = 2

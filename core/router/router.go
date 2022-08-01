@@ -35,7 +35,7 @@ func InitPublicRouter(r *gin.Engine, options ...func(*gin.RouterGroup)) {
 
 func InitAuthRouter(r *gin.Engine, options ...func(*gin.RouterGroup)) {
 	g := r.Group("")
-	// g.Use(middleware.AuthorizeJWT())
+	g.Use(middleware.AuthorizeJWT())
 	// g.Use(middleware.RbacCheck())
 	for _, opt := range options {
 		opt(g)

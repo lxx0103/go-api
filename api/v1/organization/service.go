@@ -39,6 +39,15 @@ func (s *organizationService) NewOrganization(info OrganizationNew) (*int64, err
 	}
 	defer tx.Rollback()
 	repo := NewOrganizationRepository(tx)
+	isConflict, err := repo.CheckConfict(info.Email)
+	if err != nil {
+		msg := "check conflict error"
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "organization owner exists"
+		return nil, errors.New(msg)
+	}
 	organizationID, err := repo.CreateOrganization(info)
 	if err != nil {
 		msg := "create organizationerror: " + err.Error()

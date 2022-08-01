@@ -18,6 +18,6 @@ func Run(args []string) {
 	event.Subscribe(auth.Subscribe)
 	r := router.InitRouter()
 	router.InitPublicRouter(r, auth.Routers, organization.Routers)
-	// router.InitAuthRouter(r, example.Routers)
+	router.InitAuthRouter(r, auth.AuthRouter)
 	router.RunServer(r)
 }

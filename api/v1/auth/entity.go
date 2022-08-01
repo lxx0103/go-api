@@ -19,6 +19,7 @@ type Role struct {
 	OrganizationID int64     `db:"organization_id" json:"organization_id"`
 	Name           string    `db:"name" json:"name"`
 	Priority       int       `db:"priority" json:"priority"`
+	IsDefault      int       `db:"is_default" json:"is_default"`
 	IsAdmin        int       `db:"is_admin" json:"is_admin"`
 	Status         int       `db:"status" json:"status"`
 	Created        time.Time `db:"created" json:"created"`

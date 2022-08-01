@@ -1,5 +1,7 @@
 package auth
 
+import "go-api/core/request"
+
 type SignupRequest struct {
 	OrganizationID int64  `json:"organization_id" binding:"required,min=1"`
 	Email          string `json:"email" binding:"email,required"`
@@ -18,25 +20,23 @@ type SigninResponse struct {
 }
 
 type UserResponse struct {
-	ID               int64  `db:"id" json:"id"`
-	Type             int    `db:"type" json:"type"`
-	Identifier       string `db:"identifier" json:"identifier"`
-	OrganizationID   int64  `db:"organization_id" json:"organization_id"`
-	OrganizationName string `db:"organization_name" json:"organization_name"`
-	PositionID       int64  `db:"position_id" json:"position_id"`
-	RoleID           int64  `db:"role_id" json:"role_id"`
-	Name             string `db:"name" json:"name"`
-	Email            string `db:"email" json:"email"`
-	Gender           string `db:"gender" json:"gender"`
-	Phone            string `db:"phone" json:"phone"`
-	Birthday         string `db:"birthday" json:"birthday"`
-	Address          string `db:"address" json:"address"`
-	Status           int    `db:"status" json:"status"`
+	ID       int64  `db:"id" json:"id"`
+	Email    string `db:"email" json:"email"`
+	RoleName string `json:"role_name"`
 }
 type RoleFilter struct {
-	Name     string `form:"name" binding:"omitempty,max=64,min=1"`
-	PageId   int    `form:"page_id" binding:"required,min=1"`
-	PageSize int    `form:"page_size" binding:"required,min=5,max=200"`
+	Name           string `form:"name" binding:"omitempty,max=64,min=1"`
+	OrganizationID int64  `json:"organiztion_id" swaggerignore:"true"`
+	request.PageInfo
+}
+
+type RoleResponse struct {
+	ID        int64  `db:"id" json:"id"`
+	Name      string `db:"name" json:"name"`
+	IsAdmin   int    `db:"is_admin" json:"is_admin"`
+	Priority  int    `db:"priority" json:"priority"`
+	IsDefault int    `db:"is_default" json:"is_default"`
+	Status    int    `db:"status" json:"status"`
 }
 
 type RoleNew struct {
