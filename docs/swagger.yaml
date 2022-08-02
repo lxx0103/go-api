@@ -15,9 +15,11 @@ definitions:
       name:
         type: string
       organization_id:
-        type: integer
+        type: string
       priority:
         type: integer
+      role_id:
+        type: string
       status:
         type: integer
       updated:
@@ -52,8 +54,6 @@ definitions:
     type: object
   auth.RoleResponse:
     properties:
-      id:
-        type: integer
       is_admin:
         type: integer
       is_default:
@@ -61,9 +61,11 @@ definitions:
       name:
         type: string
       organization_id:
-        type: integer
+        type: string
       priority:
         type: integer
+      role_id:
+        type: string
       status:
         type: integer
     type: object
@@ -89,9 +91,9 @@ definitions:
     properties:
       email:
         type: string
-      id:
-        type: integer
       role_name:
+        type: string
+      user_id:
         type: string
     type: object
   organization.OrganizationNew:
@@ -135,6 +137,53 @@ definitions:
     properties:
       data: {}
     type: object
+  setting.Unit:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      organization_id:
+        type: string
+      status:
+        type: integer
+      unit_id:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  setting.UnitNew:
+    properties:
+      name:
+        maxLength: 64
+        minLength: 1
+        type: string
+      status:
+        enum:
+        - 1
+        - 2
+        type: integer
+    required:
+    - name
+    - status
+    type: object
+  setting.UnitResponse:
+    properties:
+      name:
+        type: string
+      organization_id:
+        type: string
+      status:
+        type: integer
+      unit_id:
+        type: string
+    type: object
 host: 0.0.0.0:8080
 info:
   contact:
@@ -148,7 +197,7 @@ paths:
     post:
       consumes:
       - application/json
-      operationId: "001"
+      operationId: "101"
       parameters:
       - description: 组织信息
         in: body
@@ -375,4 +424,169 @@ paths:
       summary: 登录
       tags:
       - 用户权限
+  /units:
+    get:
+      consumes:
+      - application/json
+      operationId: "301"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 单位名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/setting.UnitResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 单位列表
+      tags:
+      - 单位管理
+    post:
+      consumes:
+      - application/json
+      operationId: "302"
+      parameters:
+      - description: 单位信息
+        in: body
+        name: unit_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.UnitNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.UnitResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建单位
+      tags:
+      - 单位管理
+  /units/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "305"
+      parameters:
+      - description: 单位ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除单位
+      tags:
+      - 单位管理
+    get:
+      consumes:
+      - application/json
+      operationId: "304"
+      parameters:
+      - description: 单位ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.UnitResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取单位
+      tags:
+      - 单位管理
+    put:
+      consumes:
+      - application/json
+      operationId: "303"
+      parameters:
+      - description: 单位ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 单位信息
+        in: body
+        name: unit_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.UnitNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.Unit'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新单位
+      tags:
+      - 单位管理
 swagger: "2.0"

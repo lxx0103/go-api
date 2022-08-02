@@ -5,6 +5,9 @@ import (
 	"errors"
 	"go-api/core/database"
 	"go-api/core/queue"
+	"time"
+
+	"github.com/rs/xid"
 )
 
 type organizationService struct {
@@ -16,19 +19,8 @@ func NewOrganizationService() OrganizationService {
 
 // OrganizationService represents a service for managing organizations.
 type OrganizationService interface {
-	//Organization Management
-	// GetOrganizationByID(int64) (*Organization, error)
 	NewOrganization(OrganizationNew) (*int64, error)
-	// GetOrganizationList(OrganizationFilter) (int, *[]Organization, error)
-	// UpdateOrganization(int64, OrganizationNew) (*Organization, error)
 }
-
-// func (s *organizationService) GetOrganizationByID(id int64) (*Organization, error) {
-// 	db := database.RDB()
-// 	query := NewOrganizationQuery(db)
-// 	organization, err := query.GetOrganizationByID(id)
-// 	return organization, err
-// }
 
 func (s *organizationService) NewOrganization(info OrganizationNew) (*int64, error) {
 	db := database.WDB()
@@ -48,13 +40,22 @@ func (s *organizationService) NewOrganization(info OrganizationNew) (*int64, err
 		msg := "organization owner exists"
 		return nil, errors.New(msg)
 	}
-	organizationID, err := repo.CreateOrganization(info)
+	var organization Organization
+	organization.OrganizationID = "org-" + xid.New().String()
+	organization.Name = info.Name
+	organization.Owner = info.Email
+	organization.Status = 2
+	organization.Created = time.Now()
+	organization.CreatedBy = "SIGNUP"
+	organization.Updated = time.Now()
+	organization.UpdatedBy = "SIGNUP"
+	organizationID, err := repo.CreateOrganization(organization)
 	if err != nil {
 		msg := "create organizationerror: " + err.Error()
 		return nil, errors.New(msg)
 	}
 	var newEvent NewOrganizationCreated
-	newEvent.OrganizationID = organizationID
+	newEvent.OrganizationID = organization.OrganizationID
 	newEvent.Owner = info.Email
 	newEvent.Password = info.Password
 	rabbit, _ := queue.GetConn()

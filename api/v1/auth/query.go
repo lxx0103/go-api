@@ -10,33 +10,10 @@ type authQuery struct {
 	conn *sqlx.DB
 }
 
-func NewAuthQuery(connection *sqlx.DB) AuthQuery {
+func NewAuthQuery(connection *sqlx.DB) *authQuery {
 	return &authQuery{
 		conn: connection,
 	}
-}
-
-type AuthQuery interface {
-	// //User Management
-	// GetUserByID(int64, int64) (*User, error)
-	GetUserByEmail(email string) (*User, error)
-	// GetUserCount(UserFilter) (int, error)
-	// GetUserList(UserFilter) (*[]UserResponse, error)
-	// //Role Management
-	GetRoleByID(id int64) (*RoleResponse, error)
-	GetRoleCount(filter RoleFilter) (int, error)
-	GetRoleList(filter RoleFilter) (*[]RoleResponse, error)
-	// // //API Management
-	// GetAPIByID(id int64) (*API, error)
-	// GetAPICount(filter APIFilter) (int, error)
-	// GetAPIList(filter APIFilter) (*[]API, error)
-	// //Menu Management
-	// GetMenuByID(id int64) (*Menu, error)
-	// GetMenuCount(filter MenuFilter) (int, error)
-	// GetMenuList(filter MenuFilter) (*[]Menu, error)
-	// GetMenuAPIByID(int64) ([]int64, error)
-	// GetRoleMenuByID(int64) ([]int64, error)
-	// GetMyMenu(int64) ([]Menu, error)
 }
 
 // func (r *authQuery) GetUserByID(id int64, organizationID int64) (*User, error) {
@@ -123,15 +100,15 @@ func (r *authQuery) GetUserByEmail(email string) (*User, error) {
 // 	return &users, nil
 // }
 
-func (r *authQuery) GetRoleByID(id int64) (*RoleResponse, error) {
+func (r *authQuery) GetRoleByID(id string) (*RoleResponse, error) {
 	var role RoleResponse
-	err := r.conn.Get(&role, "SELECT id, name, organization_id, is_admin, is_default, priority, status FROM s_roles WHERE id = ? AND status > 0", id)
+	err := r.conn.Get(&role, "SELECT role_id, name, organization_id, is_admin, is_default, priority, status FROM s_roles WHERE role_id = ? AND status > 0", id)
 	return &role, err
 }
 
 func (r *authQuery) GetRoleCount(filter RoleFilter) (int, error) {
 	where, args := []string{"status > 0"}, []interface{}{}
-	if v := filter.OrganizationID; v != 0 {
+	if v := filter.OrganizationID; v != "" {
 		where, args = append(where, "organization_id = ?"), append(args, v)
 	}
 	if v := filter.Name; v != "" {
@@ -150,14 +127,14 @@ func (r *authQuery) GetRoleList(filter RoleFilter) (*[]RoleResponse, error) {
 	if v := filter.Name; v != "" {
 		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
 	}
-	if v := filter.OrganizationID; v != 0 {
+	if v := filter.OrganizationID; v != "" {
 		where, args = append(where, "organization_id = ?"), append(args, v)
 	}
 	args = append(args, filter.PageID*filter.PageSize-filter.PageSize)
 	args = append(args, filter.PageSize)
 	var roles []RoleResponse
 	err := r.conn.Select(&roles, `
-		SELECT id, name, priority, organization_id, is_admin, is_default, status
+		SELECT role_id, name, priority, organization_id, is_admin, is_default, status
 		FROM s_roles
 		WHERE `+strings.Join(where, " AND ")+`
 		LIMIT ?, ?

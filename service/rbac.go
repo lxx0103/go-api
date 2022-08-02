@@ -4,19 +4,14 @@ import (
 	"go-api/core/database"
 )
 
-//rbac service
-type RbacService interface {
-	CheckPrivilege(int64, string, string) bool
+type rbacService struct {
 }
 
-type rbacServices struct {
+func NewRbacService() *rbacService {
+	return &rbacService{}
 }
 
-func NewRbacService() RbacService {
-	return &rbacServices{}
-}
-
-func (service *rbacServices) CheckPrivilege(role_id int64, route string, method string) bool {
+func (service *rbacService) CheckPrivilege(role_id string, route string, method string) bool {
 	var res int64
 	db := database.RDB()
 	err := db.Get(&res, `

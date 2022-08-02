@@ -7,7 +7,7 @@ import (
 )
 
 // @Summary 新建组织
-// @Id 001
+// @Id 101
 // @Tags 组织管理
 // @version 1.0
 // @Accept application/json

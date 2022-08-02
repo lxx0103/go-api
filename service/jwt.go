@@ -9,10 +9,10 @@ import (
 )
 
 type CustomClaims struct {
-	UserID         int64
-	OrganizationID int64
+	UserID         string
+	OrganizationID string
 	Email          string
-	RoleID         int64
+	RoleID         string
 	RoleName       string
 	IsAdmin        int
 	jwt.StandardClaims

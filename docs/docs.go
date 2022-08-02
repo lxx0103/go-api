@@ -38,7 +38,7 @@ var doc = `{
                     "组织管理"
                 ],
                 "summary": "新建组织",
-                "operationId": "001",
+                "operationId": "101",
                 "parameters": [
                     {
                         "description": "组织信息",
@@ -406,6 +406,277 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/units": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "单位管理"
+                ],
+                "summary": "单位列表",
+                "operationId": "301",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "单位名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/setting.UnitResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "单位管理"
+                ],
+                "summary": "新建单位",
+                "operationId": "302",
+                "parameters": [
+                    {
+                        "description": "单位信息",
+                        "name": "unit_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/setting.UnitNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/setting.UnitResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/units/:id": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "单位管理"
+                ],
+                "summary": "根据ID获取单位",
+                "operationId": "304",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "单位ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/setting.UnitResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "单位管理"
+                ],
+                "summary": "根据ID更新单位",
+                "operationId": "303",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "单位ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "单位信息",
+                        "name": "unit_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/setting.UnitNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/setting.Unit"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "单位管理"
+                ],
+                "summary": "根据ID删除单位",
+                "operationId": "305",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "单位ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -431,10 +702,13 @@ var doc = `{
                     "type": "string"
                 },
                 "organization_id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "priority": {
                     "type": "integer"
+                },
+                "role_id": {
+                    "type": "string"
                 },
                 "status": {
                     "type": "integer"
@@ -484,9 +758,6 @@ var doc = `{
         "auth.RoleResponse": {
             "type": "object",
             "properties": {
-                "id": {
-                    "type": "integer"
-                },
                 "is_admin": {
                     "type": "integer"
                 },
@@ -497,10 +768,13 @@ var doc = `{
                     "type": "string"
                 },
                 "organization_id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "priority": {
                     "type": "integer"
+                },
+                "role_id": {
+                    "type": "string"
                 },
                 "status": {
                     "type": "integer"
@@ -540,10 +814,10 @@ var doc = `{
                 "email": {
                     "type": "string"
                 },
-                "id": {
-                    "type": "integer"
-                },
                 "role_name": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }
@@ -605,6 +879,76 @@ var doc = `{
             "type": "object",
             "properties": {
                 "data": {}
+            }
+        },
+        "setting.Unit": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "unit_id": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "setting.UnitNew": {
+            "type": "object",
+            "required": [
+                "name",
+                "status"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                },
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
+                }
+            }
+        },
+        "setting.UnitResponse": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "unit_id": {
+                    "type": "string"
+                }
             }
         }
     }

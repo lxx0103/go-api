@@ -3,49 +3,17 @@ package auth
 import (
 	"errors"
 	"go-api/core/database"
+	"time"
 
+	"github.com/rs/xid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type authService struct {
 }
 
-func NewAuthService() AuthService {
+func NewAuthService() *authService {
 	return &authService{}
-}
-
-type AuthService interface {
-	// CreateAuth(SignupRequest) (int64, error)
-	VerifyCredential(SigninRequest) (*User, error)
-	// //User Management
-	// GetUserInfo(string, int, int64) (*UserResponse, error)
-	// UpdateUser(int64, UserUpdate, int64) (*UserResponse, error)
-	// GetUserByID(int64, int64) (*User, error)
-	// GetUserList(UserFilter, int64) (int, *[]UserResponse, error)
-	// UpdatePassword(PasswordUpdate) error
-	// Role Management
-	GetRoleByID(int64) (*RoleResponse, error)
-	GetRoleList(RoleFilter) (int, *[]RoleResponse, error)
-	NewRole(RoleNew) (*RoleResponse, error)
-	UpdateRole(int64, RoleNew) (*RoleResponse, error)
-	DeleteRole(int64, int64, string) error
-	// // //API Management
-	// GetAPIByID(int64) (*API, error)
-	// NewAPI(APINew) (*API, error)
-	// GetAPIList(APIFilter) (int, *[]API, error)
-	// UpdateAPI(int64, APINew) (*API, error)
-	// //Menu Management
-	// GetMenuByID(int64) (*Menu, error)
-	// NewMenu(MenuNew) (*Menu, error)
-	// GetMenuList(MenuFilter) (int, *[]Menu, error)
-	// UpdateMenu(int64, MenuUpdate) (*Menu, error)
-	// DeleteMenu(int64, string) error
-	// // Privilege Management
-	// GetRoleMenuByID(int64) ([]int64, error)
-	// NewRoleMenu(int64, RoleMenuNew) error
-	// GetMenuAPIByID(int64) ([]int64, error)
-	// NewMenuAPI(int64, MenuAPINew) error
-	// GetMyMenu(int64) ([]Menu, error)
 }
 
 // func (s authService) CreateAuth(signupInfo SignupRequest) (int64, error) {
@@ -265,7 +233,7 @@ func checkPasswordHash(password, hash string) bool {
 // 	return user, err
 // }
 
-func (s *authService) GetRoleByID(id int64) (*RoleResponse, error) {
+func (s *authService) GetRoleByID(id string) (*RoleResponse, error) {
 	db := database.RDB()
 	query := NewAuthQuery(db)
 	role, err := query.GetRoleByID(id)
@@ -284,7 +252,7 @@ func (s *authService) NewRole(info RoleNew) (*RoleResponse, error) {
 	}
 	defer tx.Rollback()
 	repo := NewAuthRepository(tx)
-	isConflict, err := repo.CheckRoleConfict(0, info.Name)
+	isConflict, err := repo.CheckRoleConflict("", info.OrganizationID, info.Name)
 	if err != nil {
 		msg := "check conflict error: " + err.Error()
 		return nil, errors.New(msg)
@@ -294,19 +262,22 @@ func (s *authService) NewRole(info RoleNew) (*RoleResponse, error) {
 		return nil, errors.New(msg)
 	}
 	var role Role
+	role.RoleID = "role-" + xid.New().String()
 	role.Name = info.Name
 	role.OrganizationID = info.OrganizationID
 	role.Priority = info.Priority
 	role.IsAdmin = info.IsAdmin
 	role.IsDefault = 2
+	role.Created = time.Now()
 	role.CreatedBy = info.Name
+	role.Updated = time.Now()
 	role.UpdatedBy = info.Name
 	role.Status = info.Status
-	roleID, err := repo.CreateRole(role)
+	err = repo.CreateRole(role)
 	if err != nil {
 		return nil, err
 	}
-	res, err := repo.GetRoleByID(roleID)
+	res, err := repo.GetRoleByID(role.RoleID)
 	tx.Commit()
 	return res, err
 }
@@ -325,7 +296,7 @@ func (s *authService) GetRoleList(filter RoleFilter) (int, *[]RoleResponse, erro
 	return count, list, err
 }
 
-func (s *authService) UpdateRole(roleID int64, info RoleNew) (*RoleResponse, error) {
+func (s *authService) UpdateRole(roleID string, info RoleNew) (*RoleResponse, error) {
 	db := database.WDB()
 	tx, err := db.Begin()
 	if err != nil {
@@ -333,7 +304,7 @@ func (s *authService) UpdateRole(roleID int64, info RoleNew) (*RoleResponse, err
 	}
 	defer tx.Rollback()
 	repo := NewAuthRepository(tx)
-	isConflict, err := repo.CheckRoleConfict(roleID, info.Name)
+	isConflict, err := repo.CheckRoleConflict(roleID, info.OrganizationID, info.Name)
 	if err != nil {
 		msg := "check conflict error: " + err.Error()
 		return nil, errors.New(msg)
@@ -371,7 +342,7 @@ func (s *authService) UpdateRole(roleID int64, info RoleNew) (*RoleResponse, err
 	return res, err
 }
 
-func (s *authService) DeleteRole(roleID int64, organizationID int64, user string) error {
+func (s *authService) DeleteRole(roleID, organizationID, user string) error {
 	db := database.WDB()
 	tx, err := db.Begin()
 	if err != nil {

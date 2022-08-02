@@ -6,12 +6,14 @@ import (
 	"go-api/core/database"
 	"go-api/core/log"
 	"go-api/core/queue"
+	"time"
 
+	"github.com/rs/xid"
 	"github.com/streadway/amqp"
 )
 
 type NewOrganizationCreated struct {
-	OrganizationID int64  `json:"organization_id"`
+	OrganizationID string `json:"organization_id"`
 	Owner          string `json:"owner"`
 	Password       string `json:"password"`
 }
@@ -58,26 +60,32 @@ func CreateOrganizationOwner(d amqp.Delivery) bool {
 	defer tx.Rollback()
 	repo := NewAuthRepository(tx)
 	var roleInfo Role
+	roleInfo.RoleID = "role-" + xid.New().String()
 	roleInfo.OrganizationID = event.OrganizationID
 	roleInfo.Name = "owner"
 	roleInfo.Priority = 99
 	roleInfo.IsAdmin = 1
 	roleInfo.IsDefault = 1
+	roleInfo.Created = time.Now()
 	roleInfo.CreatedBy = "SIGNUP"
+	roleInfo.Updated = time.Now()
 	roleInfo.UpdatedBy = "SIGNUP"
 	roleInfo.Status = 2
-	roleID, err := repo.CreateRole(roleInfo)
+	err = repo.CreateRole(roleInfo)
 	if err != nil {
 		fmt.Println(err)
 		return false
 	}
 	var info User
+	info.UserID = "user-" + xid.New().String()
 	info.Email = event.Owner
 	info.Password = hashed
 	info.OrganizationID = event.OrganizationID
 	info.Status = 2
-	info.RoleID = roleID
+	info.RoleID = roleInfo.RoleID
+	info.Created = time.Now()
 	info.CreatedBy = "SIGNUP"
+	info.Updated = time.Now()
 	info.UpdatedBy = "SIGNUP"
 	userID, err := repo.CreateUser(info)
 	if err != nil {

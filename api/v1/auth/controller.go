@@ -39,12 +39,12 @@ func Signin(c *gin.Context) {
 		return
 	}
 	var userResponse UserResponse
-	userResponse.ID = userInfo.ID
+	userResponse.UserID = userInfo.UserID
 	userResponse.Email = userInfo.Email
 	userResponse.RoleName = roleInfo.Name
 
 	claims := service.CustomClaims{
-		UserID:         userInfo.ID,
+		UserID:         userInfo.UserID,
 		Email:          userInfo.Email,
 		RoleID:         userInfo.RoleID,
 		RoleName:       roleInfo.Name,
@@ -219,7 +219,7 @@ func GetRoleByID(c *gin.Context) {
 // @Failure 400 object response.ErrorRes 内部错误
 // @Router /roles/:id [DELETE]
 func DeleteRole(c *gin.Context) {
-	var uri MenuID
+	var uri RoleID
 	if err := c.ShouldBindUri(&uri); err != nil {
 		response.ResponseError(c, "BindingError", err)
 		return
@@ -233,6 +233,35 @@ func DeleteRole(c *gin.Context) {
 	}
 	response.Response(c, "OK")
 }
+
+// // @Summary 菜单列表
+// // @Id 40
+// // @Tags 菜单管理
+// // @version 1.0
+// // @Accept application/json
+// // @Produce application/json
+// // @Param page_id query int true "页码"
+// // @Param page_size query int true "每页行数（5/10/15/20）"
+// // @Param name query string false "菜单名称"
+// // @Param only_top query bool false "只显示顶级菜单"
+// // @Success 200 object response.ListRes{data=[]Menu} 成功
+// // @Failure 400 object response.ErrorRes 内部错误
+// // @Router /menus [GET]
+// func GetMenuList(c *gin.Context) {
+// 	var filter MenuFilter
+// 	err := c.ShouldBindQuery(&filter)
+// 	if err != nil {
+// 		response.ResponseError(c, "BindingError", err)
+// 		return
+// 	}
+// 	authService := NewAuthService()
+// 	count, list, err := authService.GetMenuList(filter)
+// 	if err != nil {
+// 		response.ResponseError(c, "DatabaseError", err)
+// 		return
+// 	}
+// 	response.ResponseList(c, filter.PageId, filter.PageSize, count, list)
+// }
 
 // // @Summary 根据ID更新用户
 // // @Id 23
@@ -327,263 +356,6 @@ func DeleteRole(c *gin.Context) {
 
 // }
 
-// // @Summary API列表
-// // @Id 36
-// // @Tags API管理
-// // @version 1.0
-// // @Accept application/json
-// // @Produce application/json
-// // @Param page_id query int true "页码"
-// // @Param page_size query int true "每页行数"
-// // @Param name query string false "API名称"
-// // @Param route query string false "API路由"
-// // @Success 200 object response.ListRes{data=[]API} 成功
-// // @Failure 400 object response.ErrorRes 内部错误
-// // @Router /apis [GET]
-// func GetAPIList(c *gin.Context) {
-// 	var filter APIFilter
-// 	err := c.ShouldBindQuery(&filter)
-// 	if err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	authService := NewAuthService()
-// 	count, list, err := authService.GetAPIList(filter)
-// 	if err != nil {
-// 		response.ResponseError(c, "DatabaseError", err)
-// 		return
-// 	}
-// 	response.ResponseList(c, filter.PageId, filter.PageSize, count, list)
-// }
-
-// // @Summary 新建API
-// // @Id 37
-// // @Tags API管理
-// // @version 1.0
-// // @Accept application/json
-// // @Produce application/json
-// // @Param api_info body APINew true "API信息"
-// // @Success 200 object response.SuccessRes{data=API} 成功
-// // @Failure 400 object response.ErrorRes 内部错误
-// // @Router /apis [POST]
-// func NewAPI(c *gin.Context) {
-// 	var api APINew
-// 	if err := c.ShouldBindJSON(&api); err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	claims := c.MustGet("claims").(*service.CustomClaims)
-// 	api.User = claims.Username
-// 	authService := NewAuthService()
-// 	new, err := authService.NewAPI(api)
-// 	if err != nil {
-// 		response.ResponseError(c, "DatabaseError", err)
-// 		return
-// 	}
-// 	response.Response(c, new)
-// }
-
-// // @Summary 根据ID获取API
-// // @Id 38
-// // @Tags API管理
-// // @version 1.0
-// // @Accept application/json
-// // @Produce application/json
-// // @Param id path int true "API ID"
-// // @Success 200 object response.SuccessRes{data=API} 成功
-// // @Failure 400 object response.ErrorRes 内部错误
-// // @Router /apis/:id [GET]
-// func GetAPIByID(c *gin.Context) {
-// 	var uri APIID
-// 	if err := c.ShouldBindUri(&uri); err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	authService := NewAuthService()
-// 	api, err := authService.GetAPIByID(uri.ID)
-// 	if err != nil {
-// 		response.ResponseError(c, "DatabaseError", err)
-// 		return
-// 	}
-// 	response.Response(c, api)
-
-// }
-
-// // @Summary 根据ID更新API
-// // @Id 39
-// // @Tags API管理
-// // @version 1.0
-// // @Accept application/json
-// // @Produce application/json
-// // @Param id path int true "API ID"
-// // @Param api_info body APINew true "API信息"
-// // @Success 200 object response.SuccessRes{data=API} 成功
-// // @Failure 400 object response.ErrorRes 内部错误
-// // @Router /apis/:id [PUT]
-// func UpdateAPI(c *gin.Context) {
-// 	var uri APIID
-// 	if err := c.ShouldBindUri(&uri); err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	var api APINew
-// 	if err := c.ShouldBindJSON(&api); err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	claims := c.MustGet("claims").(*service.CustomClaims)
-// 	api.User = claims.Username
-// 	authService := NewAuthService()
-// 	new, err := authService.UpdateAPI(uri.ID, api)
-// 	if err != nil {
-// 		response.ResponseError(c, "DatabaseError", err)
-// 		return
-// 	}
-// 	response.Response(c, new)
-// }
-
-// // @Summary 菜单列表
-// // @Id 40
-// // @Tags 菜单管理
-// // @version 1.0
-// // @Accept application/json
-// // @Produce application/json
-// // @Param page_id query int true "页码"
-// // @Param page_size query int true "每页行数（5/10/15/20）"
-// // @Param name query string false "菜单名称"
-// // @Param only_top query bool false "只显示顶级菜单"
-// // @Success 200 object response.ListRes{data=[]Menu} 成功
-// // @Failure 400 object response.ErrorRes 内部错误
-// // @Router /menus [GET]
-// func GetMenuList(c *gin.Context) {
-// 	var filter MenuFilter
-// 	err := c.ShouldBindQuery(&filter)
-// 	if err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	authService := NewAuthService()
-// 	count, list, err := authService.GetMenuList(filter)
-// 	if err != nil {
-// 		response.ResponseError(c, "DatabaseError", err)
-// 		return
-// 	}
-// 	response.ResponseList(c, filter.PageId, filter.PageSize, count, list)
-// }
-
-// // @Summary 新建菜单
-// // @Id 41
-// // @Tags 菜单管理
-// // @version 1.0
-// // @Accept application/json
-// // @Produce application/json
-// // @Param menu_info body MenuNew true "菜单信息"
-// // @Success 200 object response.SuccessRes{data=Menu} 成功
-// // @Failure 400 object response.ErrorRes 内部错误
-// // @Router /menus [POST]
-// func NewMenu(c *gin.Context) {
-// 	var menu MenuNew
-// 	if err := c.ShouldBindJSON(&menu); err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	claims := c.MustGet("claims").(*service.CustomClaims)
-// 	menu.User = claims.Username
-// 	authService := NewAuthService()
-// 	new, err := authService.NewMenu(menu)
-// 	if err != nil {
-// 		response.ResponseError(c, "DatabaseError", err)
-// 		return
-// 	}
-// 	response.Response(c, new)
-// }
-
-// // @Summary 根据ID获取菜单
-// // @Id 42
-// // @Tags 菜单管理
-// // @version 1.0
-// // @Accept application/json
-// // @Produce application/json
-// // @Param id path int true "菜单ID"
-// // @Success 200 object response.SuccessRes{data=Menu} 成功
-// // @Failure 400 object response.ErrorRes 内部错误
-// // @Router /menus/:id [GET]
-// func GetMenuByID(c *gin.Context) {
-// 	var uri MenuID
-// 	if err := c.ShouldBindUri(&uri); err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	authService := NewAuthService()
-// 	menu, err := authService.GetMenuByID(uri.ID)
-// 	if err != nil {
-// 		response.ResponseError(c, "DatabaseError", err)
-// 		return
-// 	}
-// 	response.Response(c, menu)
-
-// }
-
-// // @Summary 根据ID更新菜单
-// // @Id 43
-// // @Tags 菜单管理
-// // @version 1.0
-// // @Accept application/json
-// // @Produce application/json
-// // @Param id path int true "菜单ID"
-// // @Param menu_info body MenuNew true "菜单信息"
-// // @Success 200 object response.SuccessRes{data=Menu} 成功
-// // @Failure 400 object response.ErrorRes 内部错误
-// // @Router /menus/:id [PUT]
-// func UpdateMenu(c *gin.Context) {
-// 	var uri MenuID
-// 	if err := c.ShouldBindUri(&uri); err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	var menu MenuUpdate
-// 	if err := c.ShouldBindJSON(&menu); err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	claims := c.MustGet("claims").(*service.CustomClaims)
-// 	menu.User = claims.Username
-// 	authService := NewAuthService()
-// 	new, err := authService.UpdateMenu(uri.ID, menu)
-// 	if err != nil {
-// 		response.ResponseError(c, "DatabaseError", err)
-// 		return
-// 	}
-// 	response.Response(c, new)
-// }
-
-// // @Summary 根据ID更新菜单
-// // @Id 50
-// // @Tags 菜单管理
-// // @version 1.0
-// // @Accept application/json
-// // @Produce application/json
-// // @Param id path int true "菜单ID"
-// // @Param menu_info body MenuNew true "菜单信息"
-// // @Success 200 object response.SuccessRes{data=string} 成功
-// // @Failure 400 object response.ErrorRes 内部错误
-// // @Router /menus/:id [DELETE]
-// func DeleteMenu(c *gin.Context) {
-// 	var uri MenuID
-// 	if err := c.ShouldBindUri(&uri); err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	claims := c.MustGet("claims").(*service.CustomClaims)
-// 	authService := NewAuthService()
-// 	err := authService.DeleteMenu(uri.ID, claims.Username)
-// 	if err != nil {
-// 		response.ResponseError(c, "DatabaseError", err)
-// 		return
-// 	}
-// 	response.Response(c, "OK")
-// }
-
 // // @Summary 根据角色ID获取菜单权限
 // // @Id 44
 // // @Tags 权限管理
@@ -636,65 +408,6 @@ func DeleteRole(c *gin.Context) {
 // 	menu.User = claims.Username
 // 	authService := NewAuthService()
 // 	err := authService.NewRoleMenu(uri.ID, menu)
-// 	if err != nil {
-// 		response.ResponseError(c, "DatabaseError", err)
-// 		return
-// 	}
-// 	response.Response(c, "OK")
-// }
-
-// // @Summary 根据菜单ID获取API权限
-// // @Id 46
-// // @Tags 权限管理
-// // @version 1.0
-// // @Accept application/json
-// // @Produce application/json
-// // @Param id path int true "菜单ID"
-// // @Success 200 object response.SuccessRes{data=[]int64} 成功
-// // @Failure 400 object response.ErrorRes 内部错误
-// // @Router /menuapis/:id [GET]
-// func GetMenuApi(c *gin.Context) {
-// 	var uri MenuID
-// 	if err := c.ShouldBindUri(&uri); err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	authService := NewAuthService()
-// 	menu, err := authService.GetMenuAPIByID(uri.ID)
-// 	if err != nil {
-// 		response.ResponseError(c, "DatabaseError", err)
-// 		return
-// 	}
-// 	response.Response(c, menu)
-
-// }
-
-// // @Summary 根据菜单ID更新API权限
-// // @Id 47
-// // @Tags 权限管理
-// // @version 1.0
-// // @Accept application/json
-// // @Produce application/json
-// // @Param id path int true "菜单ID"
-// // @Param menu_info body MenuAPINew true "菜单信息"
-// // @Success 200 object response.SuccessRes{data=string} 成功
-// // @Failure 400 object response.ErrorRes 内部错误
-// // @Router /menuapis/:id [POST]
-// func NewMenuApi(c *gin.Context) {
-// 	var uri MenuID
-// 	if err := c.ShouldBindUri(&uri); err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	var menu MenuAPINew
-// 	if err := c.ShouldBindJSON(&menu); err != nil {
-// 		response.ResponseError(c, "BindingError", err)
-// 		return
-// 	}
-// 	claims := c.MustGet("claims").(*service.CustomClaims)
-// 	menu.User = claims.Username
-// 	authService := NewAuthService()
-// 	err := authService.NewMenuAPI(uri.ID, menu)
 // 	if err != nil {
 // 		response.ResponseError(c, "DatabaseError", err)
 // 		return

@@ -9,46 +9,17 @@ type authRepository struct {
 	tx *sql.Tx
 }
 
-func NewAuthRepository(transaction *sql.Tx) AuthRepository {
+func NewAuthRepository(transaction *sql.Tx) *authRepository {
 	return &authRepository{
 		tx: transaction,
 	}
 }
 
-type AuthRepository interface {
-	// // GetCredential(SigninRequest) (UserAuth, error)
-	CreateUser(User) (int64, error)
-	// GetUserByID(int64) (*UserResponse, error)
-	// CheckConfict(int, string) (bool, error)
-	// UpdateUser(int64, UserResponse, string) error
-	// UpdatePassword(int64, string, string) error
-	// // GetAuthCount(filter AuthFilter) (int, error)
-	// // GetAuthList(filter AuthFilter) ([]Auth, error)
-
-	//  Role Management
-	GetRoleByID(int64) (*RoleResponse, error)
-	CheckRoleConfict(int64, string) (bool, error)
-	CreateRole(info Role) (int64, error)
-	UpdateRole(int64, Role) error
-	DeleteRole(int64, string) error
-	// // API Management
-	// CreateAPI(APINew) (int64, error)
-	// UpdateAPI(int64, APINew) (int64, error)
-	// GetAPIByID(int64) (*API, error)
-	// // Menu Management
-	// GetMenuByID(id int64) (*Menu, error)
-	// CreateMenu(info MenuNew) (int64, error)
-	// UpdateMenu(int64, Menu, string) error
-	// DeleteMenu(int64, string) error
-	// // Privilege Management
-	// NewMenuAPI(int64, MenuAPINew) error
-	// NewRoleMenu(int64, RoleMenuNew) error
-}
-
-func (r *authRepository) CreateUser(newUser User) (int64, error) {
+func (r *authRepository) CreateUser(info User) (int64, error) {
 	result, err := r.tx.Exec(`
 		INSERT INTO u_users
 		(
+			user_id,
 			organization_id,
 			role_id,
 			email,
@@ -59,8 +30,8 @@ func (r *authRepository) CreateUser(newUser User) (int64, error) {
 			updated,
 			updated_by
 		)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, newUser.OrganizationID, newUser.RoleID, newUser.Email, newUser.Password, newUser.Status, time.Now(), newUser.CreatedBy, time.Now(), newUser.UpdatedBy)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.UserID, info.OrganizationID, info.RoleID, info.Email, info.Password, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	if err != nil {
 		return 0, err
 	}
@@ -120,16 +91,16 @@ func (r *authRepository) CreateUser(newUser User) (int64, error) {
 // 	return nil
 // }
 
-func (r *authRepository) GetRoleByID(id int64) (*RoleResponse, error) {
+func (r *authRepository) GetRoleByID(id string) (*RoleResponse, error) {
 	var res RoleResponse
-	row := r.tx.QueryRow(`SELECT id, organization_id, priority, name, is_admin, is_default, status FROM s_roles WHERE id = ? AND status > 0 LIMIT 1`, id)
-	err := row.Scan(&res.ID, &res.OrganizationID, &res.Priority, &res.Name, &res.IsAdmin, &res.IsDefault, &res.Status)
+	row := r.tx.QueryRow(`SELECT role_id, organization_id, priority, name, is_admin, is_default, status FROM s_roles WHERE role_id = ? AND status > 0 LIMIT 1`, id)
+	err := row.Scan(&res.RoleID, &res.OrganizationID, &res.Priority, &res.Name, &res.IsAdmin, &res.IsDefault, &res.Status)
 	return &res, err
 }
 
-func (r *authRepository) CheckRoleConfict(roleID int64, name string) (bool, error) {
+func (r *authRepository) CheckRoleConflict(roleID, organizationID, name string) (bool, error) {
 	var existed int
-	row := r.tx.QueryRow("SELECT count(1) FROM s_roles WHERE id != ? AND name = ?", roleID, name)
+	row := r.tx.QueryRow("SELECT count(1) FROM s_roles WHERE role_id != ? AND organization_id = ? AND name = ? AND status > 0", roleID, organizationID, name)
 	err := row.Scan(&existed)
 	if err != nil {
 		return true, err
@@ -137,10 +108,11 @@ func (r *authRepository) CheckRoleConfict(roleID int64, name string) (bool, erro
 	return existed != 0, nil
 }
 
-func (r *authRepository) CreateRole(info Role) (int64, error) {
-	result, err := r.tx.Exec(`
+func (r *authRepository) CreateRole(info Role) error {
+	_, err := r.tx.Exec(`
 		INSERT INTO s_roles
 		(
+			role_id,
 			organization_id,
 			name,
 			priority,
@@ -152,19 +124,12 @@ func (r *authRepository) CreateRole(info Role) (int64, error) {
 			updated,
 			updated_by
 		)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, info.OrganizationID, info.Name, info.Priority, info.IsDefault, info.IsAdmin, info.Status, time.Now(), info.CreatedBy, time.Now(), info.UpdatedBy)
-	if err != nil {
-		return 0, err
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.RoleID, info.OrganizationID, info.Name, info.Priority, info.IsDefault, info.IsAdmin, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
 }
 
-func (r *authRepository) UpdateRole(id int64, info Role) error {
+func (r *authRepository) UpdateRole(id string, info Role) error {
 	_, err := r.tx.Exec(`
 		Update s_roles SET
 		name = ?,
@@ -173,18 +138,18 @@ func (r *authRepository) UpdateRole(id int64, info Role) error {
 		status = ?,
 		updated = ?,
 		updated_by = ?
-		WHERE id = ?
+		WHERE role_id = ?
 	`, info.Name, info.Priority, info.IsAdmin, info.Status, time.Now(), info.UpdatedBy, id)
 	return err
 }
 
-func (r *authRepository) DeleteRole(id int64, byUser string) error {
+func (r *authRepository) DeleteRole(id, byUser string) error {
 	_, err := r.tx.Exec(`
 		Update s_roles SET
 		status = -1,
 		updated = ?,
 		updated_by = ?
-		WHERE id = ?
+		WHERE role_id = ?
 	`, time.Now(), byUser, id)
 	return err
 }

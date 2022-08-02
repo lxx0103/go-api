@@ -3,7 +3,7 @@ package auth
 import "go-api/core/request"
 
 type SignupRequest struct {
-	OrganizationID int64  `json:"organization_id" binding:"required,min=1"`
+	OrganizationID string `json:"organization_id" binding:"required,min=1"`
 	Email          string `json:"email" binding:"email,required"`
 	Password       string `json:"password" binding:"required,min=6"`
 	// Phone          string `json:"phone" binding:"required"`
@@ -20,19 +20,19 @@ type SigninResponse struct {
 }
 
 type UserResponse struct {
-	ID       int64  `db:"id" json:"id"`
+	UserID   string `db:"user_id" json:"user_id"`
 	Email    string `db:"email" json:"email"`
 	RoleName string `json:"role_name"`
 }
 type RoleFilter struct {
 	Name           string `form:"name" binding:"omitempty,max=64,min=1"`
-	OrganizationID int64  `json:"organiztion_id" swaggerignore:"true"`
+	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
 	request.PageInfo
 }
 
 type RoleResponse struct {
-	ID             int64  `db:"id" json:"id"`
-	OrganizationID int64  `db:"organization_id" json:"organization_id"`
+	RoleID         string `db:"role_id" json:"role_id"`
+	OrganizationID string `db:"organization_id" json:"organization_id"`
 	Name           string `db:"name" json:"name"`
 	IsAdmin        int    `db:"is_admin" json:"is_admin"`
 	Priority       int    `db:"priority" json:"priority"`
@@ -45,18 +45,18 @@ type RoleNew struct {
 	IsAdmin        int    `json:"is_admin" binding:"required,oneof=1 2"`
 	Priority       int    `json:"priority" binding:"required,min=1"`
 	Status         int    `json:"status" binding:"required,oneof=1 2"`
-	OrganizationID int64  `json:"organiztion_id" swaggerignore:"true"`
+	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
 	User           string `json:"user" swaggerignore:"true"`
 }
 
 type RoleID struct {
-	ID int64 `uri:"id" binding:"required,min=1"`
+	ID string `uri:"id" binding:"required,min=1"`
 }
 
 type UserFilter struct {
 	Name           string `form:"name" binding:"omitempty,max=64,min=1"`
 	Type           string `form:"type" binding:"omitempty,oneof=wx admin"`
-	OrganizationID int64  `form:"organization_id" binding:"omitempty,min=1"`
+	OrganizationID string `form:"organization_id" binding:"omitempty,min=1"`
 	PageId         int    `form:"page_id" binding:"required,min=1"`
 	PageSize       int    `form:"page_size" binding:"required,min=5,max=200"`
 }
