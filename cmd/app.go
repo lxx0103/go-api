@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"go-api/api/v1/auth"
+	"go-api/api/v1/item"
 	"go-api/api/v1/organization"
 	"go-api/api/v1/setting"
 	"go-api/core/config"
@@ -19,6 +20,6 @@ func Run(args []string) {
 	event.Subscribe(auth.Subscribe)
 	r := router.InitRouter()
 	router.InitPublicRouter(r, auth.Routers, organization.Routers)
-	router.InitAuthRouter(r, auth.AuthRouter, setting.AuthRouter)
+	router.InitAuthRouter(r, auth.AuthRouter, setting.AuthRouter, item.AuthRouter)
 	router.RunServer(r)
 }

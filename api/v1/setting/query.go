@@ -16,9 +16,9 @@ func NewSettingQuery(connection *sqlx.DB) *settingQuery {
 	}
 }
 
-func (r *settingQuery) GetUnitByID(id string) (*UnitResponse, error) {
+func (r *settingQuery) GetUnitByID(organizationID, id string) (*UnitResponse, error) {
 	var unit UnitResponse
-	err := r.conn.Get(&unit, "SELECT unit_id, organization_id, name, status FROM s_units WHERE id = ? AND status > 0", id)
+	err := r.conn.Get(&unit, "SELECT unit_id, organization_id, name, status FROM s_units WHERE organization_id = ? AND unit_id = ? AND status > 0", organizationID, id)
 	return &unit, err
 }
 

@@ -115,8 +115,9 @@ func GetUnitByID(c *gin.Context) {
 		response.ResponseError(c, "BindingError", err)
 		return
 	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
 	settingService := NewSettingService()
-	unit, err := settingService.GetUnitByID(uri.ID)
+	unit, err := settingService.GetUnitByID(claims.OrganizationID, uri.ID)
 	if err != nil {
 		response.ResponseError(c, "DatabaseError", err)
 		return

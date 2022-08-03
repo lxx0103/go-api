@@ -15,10 +15,10 @@ func NewSettingService() *settingService {
 	return &settingService{}
 }
 
-func (s *settingService) GetUnitByID(id string) (*UnitResponse, error) {
+func (s *settingService) GetUnitByID(organizationID, id string) (*UnitResponse, error) {
 	db := database.RDB()
 	query := NewSettingQuery(db)
-	unit, err := query.GetUnitByID(id)
+	unit, err := query.GetUnitByID(organizationID, id)
 	if err != nil {
 		msg := "get unit error: " + err.Error()
 		return nil, errors.New(msg)
