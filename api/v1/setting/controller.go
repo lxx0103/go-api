@@ -441,3 +441,148 @@ func DeleteBrand(c *gin.Context) {
 	}
 	response.Response(c, "OK")
 }
+
+// @Summary 供应商列表
+// @Id 316
+// @Tags 供应商管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数（5/10/15/20）"
+// @Param name query string false "供应商名称"
+// @Success 200 object response.ListRes{data=[]VendorResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /vendors [GET]
+func GetVendorList(c *gin.Context) {
+	var filter VendorFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	filter.OrganizationID = claims.OrganizationID
+	settingService := NewSettingService()
+	count, list, err := settingService.GetVendorList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageID, filter.PageSize, count, list)
+}
+
+// @Summary 新建供应商
+// @Id 317
+// @Tags 供应商管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param vendor_info body VendorNew true "供应商信息"
+// @Success 200 object response.SuccessRes{data=VendorResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /vendors [POST]
+func NewVendor(c *gin.Context) {
+	var info VendorNew
+	if err := c.ShouldBindJSON(&info); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	info.User = claims.Email
+	info.OrganizationID = claims.OrganizationID
+	settingService := NewSettingService()
+	new, err := settingService.NewVendor(info)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
+
+// @Summary 根据ID更新供应商
+// @Id 318
+// @Tags 供应商管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "供应商ID"
+// @Param vendor_info body VendorNew true "供应商信息"
+// @Success 200 object response.SuccessRes{data=Vendor} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /vendors/:id [PUT]
+func UpdateVendor(c *gin.Context) {
+	var uri VendorID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	var info VendorNew
+	if err := c.ShouldBindJSON(&info); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	info.User = claims.Email
+	info.OrganizationID = claims.OrganizationID
+	settingService := NewSettingService()
+	new, err := settingService.UpdateVendor(uri.ID, info)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
+
+// @Summary 根据ID获取供应商
+// @Id 319
+// @Tags 供应商管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "供应商ID"
+// @Success 200 object response.SuccessRes{data=VendorResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /vendors/:id [GET]
+func GetVendorByID(c *gin.Context) {
+	var uri VendorID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	settingService := NewSettingService()
+	vendor, err := settingService.GetVendorByID(claims.OrganizationID, uri.ID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, vendor)
+
+}
+
+// @Summary 根据ID删除供应商
+// @Id 320
+// @Tags 供应商管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "供应商ID"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /vendors/:id [DELETE]
+func DeleteVendor(c *gin.Context) {
+	var uri VendorID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	settingService := NewSettingService()
+	err := settingService.DeleteVendor(uri.ID, claims.OrganizationID, claims.Email)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, "OK")
+}

@@ -394,3 +394,157 @@ func (s *settingService) DeleteBrand(brandID, organizationID, user string) error
 	tx.Commit()
 	return nil
 }
+
+//vendor
+
+func (s *settingService) GetVendorByID(organizationID, id string) (*VendorResponse, error) {
+	db := database.RDB()
+	query := NewSettingQuery(db)
+	vendor, err := query.GetVendorByID(organizationID, id)
+	if err != nil {
+		msg := "get vendor error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	return vendor, nil
+}
+
+func (s *settingService) NewVendor(info VendorNew) (*VendorResponse, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	isConflict, err := repo.CheckVendorConfict("", info.OrganizationID, info.Name)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "Vendor name conflict"
+		return nil, errors.New(msg)
+	}
+	var vendor Vendor
+	vendor.VendorID = "ven-" + xid.New().String()
+	vendor.OrganizationID = info.OrganizationID
+	vendor.Name = info.Name
+	vendor.ContactSalutation = info.ContactSalutation
+	vendor.ContactFirstName = info.ContactFirstName
+	vendor.ContactLastName = info.ContactLastName
+	vendor.ContactEmail = info.ContactEmail
+	vendor.ContactPhone = info.ContactPhone
+	vendor.Country = info.Country
+	vendor.State = info.State
+	vendor.City = info.City
+	vendor.Address1 = info.Address1
+	vendor.Address2 = info.Address2
+	vendor.Zip = info.Zip
+	vendor.Phone = info.Phone
+	vendor.Fax = info.Fax
+	vendor.Status = info.Status
+	vendor.Created = time.Now()
+	vendor.CreatedBy = info.Name
+	vendor.Updated = time.Now()
+	vendor.UpdatedBy = info.Name
+	err = repo.CreateVendor(vendor)
+	if err != nil {
+		return nil, err
+	}
+	res, err := repo.GetVendorByID(vendor.VendorID)
+	tx.Commit()
+	return res, err
+}
+
+func (s *settingService) GetVendorList(filter VendorFilter) (int, *[]VendorResponse, error) {
+	db := database.RDB()
+	query := NewSettingQuery(db)
+	count, err := query.GetVendorCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := query.GetVendorList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *settingService) UpdateVendor(vendorID string, info VendorNew) (*VendorResponse, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	isConflict, err := repo.CheckVendorConfict(vendorID, info.OrganizationID, info.Name)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "vendor name conflict"
+		return nil, errors.New(msg)
+	}
+	oldVendor, err := repo.GetVendorByID(vendorID)
+	if err != nil {
+		msg := "Vendor not exist"
+		return nil, errors.New(msg)
+	}
+	if oldVendor.OrganizationID != info.OrganizationID {
+		msg := "Vendor not exist"
+		return nil, errors.New(msg)
+	}
+	var vendor Vendor
+	vendor.Name = info.Name
+	vendor.ContactSalutation = info.ContactSalutation
+	vendor.ContactFirstName = info.ContactFirstName
+	vendor.ContactLastName = info.ContactLastName
+	vendor.ContactEmail = info.ContactEmail
+	vendor.ContactPhone = info.ContactPhone
+	vendor.Country = info.Country
+	vendor.State = info.State
+	vendor.City = info.City
+	vendor.Address1 = info.Address1
+	vendor.Address2 = info.Address2
+	vendor.Zip = info.Zip
+	vendor.Phone = info.Phone
+	vendor.Fax = info.Fax
+	vendor.UpdatedBy = info.Name
+	vendor.Updated = time.Now()
+	vendor.Status = info.Status
+	err = repo.UpdateVendor(vendorID, vendor)
+	if err != nil {
+		msg := "update vendor error"
+		return nil, errors.New(msg)
+	}
+	res, err := repo.GetVendorByID(vendorID)
+	tx.Commit()
+	return res, err
+}
+
+func (s *settingService) DeleteVendor(vendorID, organizationID, user string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	oldVendor, err := repo.GetVendorByID(vendorID)
+	if err != nil {
+		msg := "Vendor not exist"
+		return errors.New(msg)
+	}
+	if oldVendor.OrganizationID != organizationID {
+		msg := "Vendor not exist"
+		return errors.New(msg)
+	}
+	err = repo.DeleteVendor(vendorID, user)
+	if err != nil {
+		return err
+	}
+	tx.Commit()
+	return nil
+}

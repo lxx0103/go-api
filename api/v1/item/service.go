@@ -123,18 +123,18 @@ func (s *itemService) UpdateItem(itemID string, info ItemNew) (*ItemResponse, er
 	if err != nil {
 		return nil, err
 	}
-	// _, err = settingService.GetBrandByID(info.BrandID)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// _, err = settingService.GetManufacturerByID(info.ManufacturerID)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// _, err = settingService.GetVendorByID(info.DefaultVendorID)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	_, err = settingService.GetBrandByID(info.OrganizationID, info.BrandID)
+	if err != nil {
+		return nil, err
+	}
+	_, err = settingService.GetManufacturerByID(info.OrganizationID, info.ManufacturerID)
+	if err != nil {
+		return nil, err
+	}
+	_, err = settingService.GetVendorByID(info.OrganizationID, info.DefaultVendorID)
+	if err != nil {
+		return nil, err
+	}
 	oldItem, err := repo.GetItemByID(itemID)
 	if err != nil {
 		msg := "Item not exist"

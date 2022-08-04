@@ -145,3 +145,47 @@ func (r *settingQuery) GetBrandList(filter BrandFilter) (*[]BrandResponse, error
 	`, args...)
 	return &brands, err
 }
+
+//Vendor
+
+func (r *settingQuery) GetVendorByID(organizationID, id string) (*VendorResponse, error) {
+	var vendor VendorResponse
+	err := r.conn.Get(&vendor, "SELECT vendor_id, organization_id, name, contact_salutation, contact_first_name, contact_last_name, contact_email, contact_phone, country, state, city, address1, address2, zip, phone, fax, status FROM s_vendors WHERE organization_id = ? AND vendor_id = ? AND status > 0", organizationID, id)
+	return &vendor, err
+}
+
+func (r *settingQuery) GetVendorCount(filter VendorFilter) (int, error) {
+	where, args := []string{"status > 0"}, []interface{}{}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	if v := filter.Name; v != "" {
+		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
+	}
+	var count int
+	err := r.conn.Get(&count, `
+		SELECT count(1) as count
+		FROM s_vendors
+		WHERE `+strings.Join(where, " AND "), args...)
+	return count, err
+}
+
+func (r *settingQuery) GetVendorList(filter VendorFilter) (*[]VendorResponse, error) {
+	where, args := []string{"status > 0"}, []interface{}{}
+	if v := filter.Name; v != "" {
+		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	args = append(args, filter.PageID*filter.PageSize-filter.PageSize)
+	args = append(args, filter.PageSize)
+	var vendors []VendorResponse
+	err := r.conn.Select(&vendors, `
+		SELECT vendor_id, organization_id, name, contact_salutation, contact_first_name, contact_last_name, contact_email, contact_phone, country, state, city, address1, address2, zip, phone, fax, status
+		FROM s_vendors
+		WHERE `+strings.Join(where, " AND ")+`
+		LIMIT ?, ?
+	`, args...)
+	return &vendors, err
+}

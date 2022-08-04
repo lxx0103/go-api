@@ -96,6 +96,175 @@ definitions:
       user_id:
         type: string
     type: object
+  item.Item:
+    properties:
+      brand_id:
+        type: string
+      cost_price:
+        type: number
+      created:
+        type: string
+      created_by:
+        type: string
+      default_vendor_id:
+        type: string
+      description:
+        type: string
+      dimension_unit:
+        type: string
+      height:
+        type: number
+      id:
+        type: integer
+      item_id:
+        type: string
+      length:
+        type: number
+      manufacturer_id:
+        type: string
+      name:
+        type: string
+      openning_stock:
+        type: number
+      openning_stock_rate:
+        type: number
+      organization_id:
+        type: string
+      reorder_stock:
+        type: number
+      selling_price:
+        type: number
+      sku:
+        type: string
+      status:
+        type: integer
+      unit_id:
+        type: string
+      updated:
+        type: string
+      updated_by:
+        type: string
+      weight:
+        type: number
+      weight_unit:
+        type: string
+      width:
+        type: number
+    type: object
+  item.ItemNew:
+    properties:
+      brand_id:
+        maxLength: 64
+        minLength: 6
+        type: string
+      cost_price:
+        type: number
+      default_vendor_id:
+        type: string
+      description:
+        type: string
+      dimension_unit:
+        maxLength: 64
+        minLength: 6
+        type: string
+      height:
+        type: number
+      length:
+        type: number
+      manufacturer_id:
+        maxLength: 64
+        minLength: 6
+        type: string
+      name:
+        maxLength: 255
+        minLength: 6
+        type: string
+      openning_stock:
+        type: number
+      openning_stock_rate:
+        type: number
+      reorder_stock:
+        type: number
+      selling_price:
+        type: number
+      sku:
+        maxLength: 64
+        minLength: 6
+        type: string
+      status:
+        enum:
+        - 1
+        - 2
+        type: integer
+      unit_id:
+        maxLength: 64
+        minLength: 6
+        type: string
+      weight:
+        type: number
+      weight_unit:
+        maxLength: 64
+        minLength: 6
+        type: string
+      width:
+        type: number
+    required:
+    - name
+    - sku
+    - status
+    - unit_id
+    type: object
+  item.ItemResponse:
+    properties:
+      brand_id:
+        type: string
+      brand_name:
+        type: string
+      cost_price:
+        type: number
+      default_vendor_id:
+        type: string
+      description:
+        type: string
+      dimension_unit:
+        type: string
+      height:
+        type: number
+      item_id:
+        type: string
+      length:
+        type: number
+      manufacturer_id:
+        type: string
+      manufacturer_name:
+        type: string
+      name:
+        type: string
+      openning_stock:
+        type: number
+      openning_stock_rate:
+        type: number
+      organization_id:
+        type: string
+      reorder_stock:
+        type: number
+      selling_price:
+        type: number
+      sku:
+        type: string
+      status:
+        type: integer
+      unit_id:
+        type: string
+      unit_name:
+        type: string
+      weight:
+        type: number
+      weight_unit:
+        type: string
+      width:
+        type: number
+    type: object
   organization.OrganizationNew:
     properties:
       email:
@@ -136,6 +305,100 @@ definitions:
   response.SuccessRes:
     properties:
       data: {}
+    type: object
+  setting.Brand:
+    properties:
+      brand_id:
+        type: string
+      created:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      organization_id:
+        type: string
+      status:
+        type: integer
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  setting.BrandNew:
+    properties:
+      name:
+        maxLength: 64
+        minLength: 1
+        type: string
+      status:
+        enum:
+        - 1
+        - 2
+        type: integer
+    required:
+    - name
+    - status
+    type: object
+  setting.BrandResponse:
+    properties:
+      brand_id:
+        type: string
+      name:
+        type: string
+      organization_id:
+        type: string
+      status:
+        type: integer
+    type: object
+  setting.Manufacturer:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: integer
+      manufacturer_id:
+        type: string
+      name:
+        type: string
+      organization_id:
+        type: string
+      status:
+        type: integer
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  setting.ManufacturerNew:
+    properties:
+      name:
+        maxLength: 64
+        minLength: 1
+        type: string
+      status:
+        enum:
+        - 1
+        - 2
+        type: integer
+    required:
+    - name
+    - status
+    type: object
+  setting.ManufacturerResponse:
+    properties:
+      manufacturer_id:
+        type: string
+      name:
+        type: string
+      organization_id:
+        type: string
+      status:
+        type: integer
     type: object
   setting.Unit:
     properties:
@@ -184,6 +447,144 @@ definitions:
       unit_id:
         type: string
     type: object
+  setting.Vendor:
+    properties:
+      address1:
+        type: string
+      address2:
+        type: string
+      city:
+        type: string
+      contact_email:
+        type: string
+      contact_first_name:
+        type: string
+      contact_last_name:
+        type: string
+      contact_phone:
+        type: string
+      contact_salutation:
+        type: string
+      country:
+        type: string
+      created:
+        type: string
+      created_by:
+        type: string
+      fax:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      organization_id:
+        type: string
+      phone:
+        type: string
+      state:
+        type: string
+      status:
+        type: integer
+      updated:
+        type: string
+      updated_by:
+        type: string
+      vendor_id:
+        type: string
+      zip:
+        type: string
+    type: object
+  setting.VendorNew:
+    properties:
+      address1:
+        maxLength: 255
+        type: string
+      address2:
+        maxLength: 255
+        type: string
+      city:
+        maxLength: 64
+        type: string
+      contact_email:
+        maxLength: 64
+        type: string
+      contact_first_name:
+        maxLength: 64
+        type: string
+      contact_last_name:
+        maxLength: 64
+        type: string
+      contact_phone:
+        maxLength: 64
+        type: string
+      contact_salutation:
+        maxLength: 64
+        type: string
+      country:
+        maxLength: 64
+        type: string
+      fax:
+        maxLength: 64
+        type: string
+      name:
+        maxLength: 64
+        minLength: 1
+        type: string
+      phone:
+        maxLength: 64
+        type: string
+      state:
+        maxLength: 64
+        type: string
+      status:
+        enum:
+        - 1
+        - 2
+        type: integer
+      zip:
+        maxLength: 64
+        type: string
+    required:
+    - name
+    - status
+    type: object
+  setting.VendorResponse:
+    properties:
+      address1:
+        type: string
+      address2:
+        type: string
+      city:
+        type: string
+      contact_email:
+        type: string
+      contact_first_name:
+        type: string
+      contact_last_name:
+        type: string
+      contact_phone:
+        type: string
+      contact_salutation:
+        type: string
+      country:
+        type: string
+      fax:
+        type: string
+      name:
+        type: string
+      organization_id:
+        type: string
+      phone:
+        type: string
+      state:
+        type: string
+      status:
+        type: integer
+      vendor_id:
+        type: string
+      zip:
+        type: string
+    type: object
 host: 0.0.0.0:8080
 info:
   contact:
@@ -193,6 +594,501 @@ info:
   title: go-api API
   version: "1.0"
 paths:
+  /brands:
+    get:
+      consumes:
+      - application/json
+      operationId: "311"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 品牌名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/setting.BrandResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 品牌列表
+      tags:
+      - 品牌管理
+    post:
+      consumes:
+      - application/json
+      operationId: "312"
+      parameters:
+      - description: 品牌信息
+        in: body
+        name: brand_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.BrandNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.BrandResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建品牌
+      tags:
+      - 品牌管理
+  /brands/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "315"
+      parameters:
+      - description: 品牌ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除品牌
+      tags:
+      - 品牌管理
+    get:
+      consumes:
+      - application/json
+      operationId: "314"
+      parameters:
+      - description: 品牌ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.BrandResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取品牌
+      tags:
+      - 品牌管理
+    put:
+      consumes:
+      - application/json
+      operationId: "313"
+      parameters:
+      - description: 品牌ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 品牌信息
+        in: body
+        name: brand_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.BrandNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.Brand'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新品牌
+      tags:
+      - 品牌管理
+  /items:
+    get:
+      consumes:
+      - application/json
+      operationId: "202"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 商品名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/item.ItemResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 商品列表
+      tags:
+      - 商品管理
+    post:
+      consumes:
+      - application/json
+      operationId: "201"
+      parameters:
+      - description: 商品信息
+        in: body
+        name: item_info
+        required: true
+        schema:
+          $ref: '#/definitions/item.ItemNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建商品
+      tags:
+      - 商品管理
+  /items/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "205"
+      parameters:
+      - description: 商品ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除商品
+      tags:
+      - 商品管理
+    get:
+      consumes:
+      - application/json
+      operationId: "204"
+      parameters:
+      - description: 商品ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/item.ItemResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取商品
+      tags:
+      - 商品管理
+    put:
+      consumes:
+      - application/json
+      operationId: "203"
+      parameters:
+      - description: 商品ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 商品信息
+        in: body
+        name: item_info
+        required: true
+        schema:
+          $ref: '#/definitions/item.ItemNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/item.Item'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新商品
+      tags:
+      - 商品管理
+  /manufacturers:
+    get:
+      consumes:
+      - application/json
+      operationId: "306"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 生产商名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/setting.ManufacturerResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 生产商列表
+      tags:
+      - 生产商管理
+    post:
+      consumes:
+      - application/json
+      operationId: "307"
+      parameters:
+      - description: 生产商信息
+        in: body
+        name: manufacturer_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.ManufacturerNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.ManufacturerResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建生产商
+      tags:
+      - 生产商管理
+  /manufacturers/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "310"
+      parameters:
+      - description: 生产商ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除生产商
+      tags:
+      - 生产商管理
+    get:
+      consumes:
+      - application/json
+      operationId: "309"
+      parameters:
+      - description: 生产商ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.ManufacturerResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取生产商
+      tags:
+      - 生产商管理
+    put:
+      consumes:
+      - application/json
+      operationId: "308"
+      parameters:
+      - description: 生产商ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 生产商信息
+        in: body
+        name: manufacturer_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.ManufacturerNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.Manufacturer'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新生产商
+      tags:
+      - 生产商管理
   /organizations:
     post:
       consumes:
@@ -589,4 +1485,169 @@ paths:
       summary: 根据ID更新单位
       tags:
       - 单位管理
+  /vendors:
+    get:
+      consumes:
+      - application/json
+      operationId: "316"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 供应商名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/setting.VendorResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 供应商列表
+      tags:
+      - 供应商管理
+    post:
+      consumes:
+      - application/json
+      operationId: "317"
+      parameters:
+      - description: 供应商信息
+        in: body
+        name: vendor_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.VendorNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.VendorResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建供应商
+      tags:
+      - 供应商管理
+  /vendors/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "320"
+      parameters:
+      - description: 供应商ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除供应商
+      tags:
+      - 供应商管理
+    get:
+      consumes:
+      - application/json
+      operationId: "319"
+      parameters:
+      - description: 供应商ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.VendorResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取供应商
+      tags:
+      - 供应商管理
+    put:
+      consumes:
+      - application/json
+      operationId: "318"
+      parameters:
+      - description: 供应商ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 供应商信息
+        in: body
+        name: vendor_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.VendorNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.Vendor'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新供应商
+      tags:
+      - 供应商管理
 swagger: "2.0"
