@@ -81,3 +81,17 @@ type ItemAttribute struct {
 	Updated     time.Time `db:"updated" json:"updated"`
 	UpdatedBy   string    `db:"updated_by" json:"updated_by"`
 }
+
+type Barcode struct {
+	ID             int64     `db:"id" json:"id"`
+	OrganizationID string    `db:"organization_id" json:"organization_id"`
+	BarcodeID      string    `db:"barcode_id" json:"barcode_id"`
+	Code           string    `db:"code" json:"code"`
+	ItemID         string    `db:"item_id" json:"item_id"`
+	Quantity       int       `db:"quantity" json:"quantity"`
+	Status         int       `db:"status" json:"status"`
+	Created        time.Time `db:"created" json:"created"`
+	CreatedBy      string    `db:"created_by" json:"created_by"`
+	Updated        time.Time `db:"updated" json:"updated"`
+	UpdatedBy      string    `db:"updated_by" json:"updated_by"`
+}

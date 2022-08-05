@@ -1,6 +1,8 @@
 package item
 
-import "go-api/core/request"
+import (
+	"go-api/core/request"
+)
 
 type ItemNew struct {
 	SKU               string  `json:"sku" binding:"required,min=6,max=64"`
@@ -60,5 +62,36 @@ type ItemResponse struct {
 }
 
 type ItemID struct {
+	ID string `uri:"id" binding:"required,min=1"`
+}
+
+type BarcodeFilter struct {
+	Code           string `form:"code" binding:"omitempty,max=64,min=1"`
+	ItemID         string `form:"item_id" binding:"omitempty,max=64,min=1"`
+	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
+	request.PageInfo
+}
+
+type BarcodeResponse struct {
+	BarcodeID      string `db:"barcode_id" json:"barcode_id"`
+	OrganizationID string `db:"organization_id" json:"organization_id"`
+	ItemID         string `db:"item_id" json:"item_id"`
+	ItemName       string `db:"item_name" json:"item_name"`
+	Code           string `db:"code" json:"code"`
+	SKU            string `db:"sku" json:"sku"`
+	Unit           string `db:"unit" json:"unit"`
+	Quantity       int    `db:"quantity" json:"quantity"`
+	Status         int    `db:"status" json:"status"`
+}
+
+type BarcodeNew struct {
+	Code           string `json:"code" binding:"required,min=1,max=64"`
+	ItemID         string `json:"item_id" binding:"required,min=1,max=64"`
+	Quantity       int    `json:"quantity" binding:"required,min=1"`
+	Status         int    `json:"status" binding:"required,oneof=1 2"`
+	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
+	User           string `json:"user" swaggerignore:"true"`
+}
+type BarcodeID struct {
 	ID string `uri:"id" binding:"required,min=1"`
 }

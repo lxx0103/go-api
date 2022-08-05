@@ -83,6 +83,8 @@ func (r *itemQuery) GetItemList(filter ItemFilter) (*[]ItemResponse, error) {
 	var items []ItemResponse
 	err := r.conn.Select(&items, `
 		SELECT 
+		i.item_id,
+		i.organization_id,
 		i.sku, 
 		i.name, 
 		i.unit_id, 
@@ -116,4 +118,82 @@ func (r *itemQuery) GetItemList(filter ItemFilter) (*[]ItemResponse, error) {
 		LIMIT ?, ?
 	`, args...)
 	return &items, err
+}
+
+//Barcode
+func (r *itemQuery) GetBarcodeCount(filter BarcodeFilter) (int, error) {
+	where, args := []string{"status > 0"}, []interface{}{}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	if v := filter.Code; v != "" {
+		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.ItemID; v != "" {
+		where, args = append(where, "item_id = ?"), append(args, v)
+	}
+	var count int
+	err := r.conn.Get(&count, `
+		SELECT count(1) as count
+		FROM i_barcodes
+		WHERE `+strings.Join(where, " AND "), args...)
+	return count, err
+}
+
+func (r *itemQuery) GetBarcodeList(filter BarcodeFilter) (*[]BarcodeResponse, error) {
+	where, args := []string{"b.status > 0"}, []interface{}{}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "b.organization_id = ?"), append(args, v)
+	}
+	if v := filter.Code; v != "" {
+		where, args = append(where, "b.name like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.ItemID; v != "" {
+		where, args = append(where, "b.item_id = ?"), append(args, v)
+	}
+	args = append(args, filter.PageID*filter.PageSize-filter.PageSize)
+	args = append(args, filter.PageSize)
+	var barcodes []BarcodeResponse
+	err := r.conn.Select(&barcodes, `
+		SELECT 
+		b.barcode_id, 
+		b.organization_id,
+		b.item_id,
+		i.name as item_name, 
+		b.code, 
+		i.sku, 
+		u.name as unit, 
+		b.quantity,
+		b.status
+		FROM i_barcodes b
+		LEFT JOIN i_items i
+		ON b.item_id = i.item_id
+		LEFT JOIN s_units u
+		ON i.unit_id = u.unit_id
+		WHERE `+strings.Join(where, " AND ")+`
+		LIMIT ?, ?
+	`, args...)
+	return &barcodes, err
+}
+
+func (r *itemQuery) GetBarcodeByID(organizationID, barcodeID string) (*BarcodeResponse, error) {
+	var barcode BarcodeResponse
+	err := r.conn.Get(&barcode, `
+		SELECT 
+		b.barcode_id, 
+		b.item_id,
+		i.name as item_name, 
+		b.code, 
+		i.sku, 
+		u.name as unit, 
+		b.quantity,
+		b.status
+		FROM i_barcodes b
+		LEFT JOIN i_items i
+		ON b.item_id = i.item_id
+		LEFT JOIN s_units u
+		ON i.unit_id = u.unit_id
+		WHERE b.organization_id = ? AND b.barcode_id = ? AND b.status > 0
+	`, organizationID, barcodeID)
+	return &barcode, err
 }

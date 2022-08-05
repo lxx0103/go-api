@@ -105,7 +105,7 @@ func UpdateItem(c *gin.Context) {
 // @version 1.0
 // @Accept application/json
 // @Produce application/json
-// @Param id path int true "商品ID"
+// @Param id path string true "商品ID"
 // @Success 200 object response.SuccessRes{data=ItemResponse} 成功
 // @Failure 400 object response.ErrorRes 内部错误
 // @Router /items/:id [GET]
@@ -132,7 +132,7 @@ func GetItemByID(c *gin.Context) {
 // @version 1.0
 // @Accept application/json
 // @Produce application/json
-// @Param id path int true "商品ID"
+// @Param id path string true "商品ID"
 // @Success 200 object response.SuccessRes{data=string} 成功
 // @Failure 400 object response.ErrorRes 内部错误
 // @Router /items/:id [DELETE]
@@ -145,6 +145,150 @@ func DeleteItem(c *gin.Context) {
 	claims := c.MustGet("claims").(*service.CustomClaims)
 	itemService := NewItemService()
 	err := itemService.DeleteItem(uri.ID, claims.OrganizationID, claims.Email)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, "OK")
+}
+
+// @Summary 条码列表
+// @Id 206
+// @Tags 条码管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数"
+// @Param code query string false "条码编码"
+// @Param sku query string false "SKU"
+// @Success 200 object response.ListRes{data=[]BarcodeResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /barcodes [GET]
+func GetBarcodeList(c *gin.Context) {
+	var filter BarcodeFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	itemService := NewItemService()
+	count, list, err := itemService.GetBarcodeList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageID, filter.PageSize, count, list)
+}
+
+// @Summary 新建条码
+// @Id 207
+// @Tags 条码管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param barcode_info body BarcodeNew true "条码信息"
+// @Success 200 object response.SuccessRes{data=Barcode} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /barcodes [POST]
+func NewBarcode(c *gin.Context) {
+	var barcode BarcodeNew
+	if err := c.ShouldBindJSON(&barcode); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	barcode.User = claims.Email
+	barcode.OrganizationID = claims.OrganizationID
+	itemService := NewItemService()
+	new, err := itemService.NewBarcode(barcode)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
+
+// @Summary 根据ID获取条码
+// @Id 208
+// @Tags 条码管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "条码ID"
+// @Success 200 object response.SuccessRes{data=Barcode} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /barcodes/:id [GET]
+func GetBarcodeByID(c *gin.Context) {
+	var uri BarcodeID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	itemService := NewItemService()
+	barcode, err := itemService.GetBarcodeByID(claims.OrganizationID, uri.ID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, barcode)
+
+}
+
+// @Summary 根据ID更新条码
+// @Id 209
+// @Tags 条码管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "条码ID"
+// @Param barcode_info body BarcodeNew true "条码信息"
+// @Success 200 object response.SuccessRes{data=Barcode} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /barcodes/:id [PUT]
+func UpdateBarcode(c *gin.Context) {
+	var uri BarcodeID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	var barcode BarcodeNew
+	if err := c.ShouldBindJSON(&barcode); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	barcode.User = claims.Email
+	barcode.OrganizationID = claims.OrganizationID
+	itemService := NewItemService()
+	new, err := itemService.UpdateBarcode(uri.ID, barcode)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
+
+// @Summary 根据ID删除条码
+// @Id 210
+// @Tags 条码管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "条码ID"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /barcodes/:id [DELETE]
+func DeleteBarcode(c *gin.Context) {
+	var uri BarcodeID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	itemService := NewItemService()
+	err := itemService.DeleteBarcode(uri.ID, claims.OrganizationID, claims.Email)
 	if err != nil {
 		response.ResponseError(c, "DatabaseError", err)
 		return

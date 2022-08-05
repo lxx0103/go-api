@@ -39,18 +39,18 @@ func (s *itemService) NewItem(info ItemNew) (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	// _, err = settingService.GetBrandByID(info.BrandID)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// _, err = settingService.GetManufacturerByID(info.ManufacturerID)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// _, err = settingService.GetVendorByID(info.DefaultVendorID)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	_, err = settingService.GetBrandByID(info.OrganizationID, info.BrandID)
+	if err != nil {
+		return nil, err
+	}
+	_, err = settingService.GetManufacturerByID(info.OrganizationID, info.ManufacturerID)
+	if err != nil {
+		return nil, err
+	}
+	_, err = settingService.GetVendorByID(info.OrganizationID, info.DefaultVendorID)
+	if err != nil {
+		return nil, err
+	}
 	var item Item
 	item.ItemID = "item-" + xid.New().String()
 	item.OrganizationID = info.OrganizationID
@@ -207,6 +207,160 @@ func (s *itemService) DeleteItem(itemID, organizationID, user string) error {
 		return errors.New(msg)
 	}
 	err = repo.DeleteItem(itemID, user)
+	if err != nil {
+		return err
+	}
+	tx.Commit()
+	return nil
+}
+
+//Barcode
+
+func (s *itemService) GetBarcodeList(filter BarcodeFilter) (int, *[]BarcodeResponse, error) {
+	db := database.RDB()
+	query := NewItemQuery(db)
+	count, err := query.GetBarcodeCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := query.GetBarcodeList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *itemService) NewBarcode(info BarcodeNew) (*string, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return nil, errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewItemRepository(tx)
+	isConflict, err := repo.CheckBarcodeConfict("", info.OrganizationID, info.Code)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "barcode conflict"
+		return nil, errors.New(msg)
+	}
+	item, err := repo.GetItemByID(info.ItemID)
+	if err != nil {
+		msg := "Item not exist"
+		return nil, errors.New(msg)
+	}
+	if item.OrganizationID != info.OrganizationID {
+		msg := "Item not exist"
+		return nil, errors.New(msg)
+	}
+	var barcode Barcode
+	barcode.BarcodeID = "bar-" + xid.New().String()
+	barcode.OrganizationID = info.OrganizationID
+	barcode.Code = info.Code
+	barcode.ItemID = info.ItemID
+	barcode.Quantity = info.Quantity
+	barcode.Status = info.Status
+	barcode.Created = time.Now()
+	barcode.CreatedBy = info.User
+	barcode.Updated = time.Now()
+	barcode.UpdatedBy = info.User
+
+	err = repo.CreateBarcode(barcode)
+	if err != nil {
+		msg := "create barcode error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	tx.Commit()
+	return &barcode.BarcodeID, err
+}
+
+func (s *itemService) UpdateBarcode(barcodeID string, info BarcodeNew) (*BarcodeResponse, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	repo := NewItemRepository(tx)
+	isConflict, err := repo.CheckBarcodeConfict(barcodeID, info.OrganizationID, info.Code)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "barcode conflict"
+		return nil, errors.New(msg)
+	}
+	item, err := repo.GetItemByID(info.ItemID)
+	if err != nil {
+		msg := "Item not exist"
+		return nil, errors.New(msg)
+	}
+	if item.OrganizationID != info.OrganizationID {
+		msg := "Item not exist"
+		return nil, errors.New(msg)
+	}
+	oldBarcode, err := repo.GetBarcodeByID(barcodeID)
+	if err != nil {
+		msg := "Barcode not exist"
+		return nil, errors.New(msg)
+	}
+	if oldBarcode.OrganizationID != info.OrganizationID {
+		msg := "Barcode not exist"
+		return nil, errors.New(msg)
+	}
+	var barcode Barcode
+	barcode.Code = info.Code
+	barcode.ItemID = info.ItemID
+	barcode.Quantity = info.Quantity
+	barcode.Status = info.Status
+	barcode.Updated = time.Now()
+	barcode.UpdatedBy = info.User
+	err = repo.UpdateBarcode(barcodeID, barcode)
+	if err != nil {
+		return nil, err
+	}
+	res, err := repo.GetBarcodeByID(barcodeID)
+	if err != nil {
+		return nil, err
+	}
+	tx.Commit()
+	return res, err
+}
+
+func (s *itemService) GetBarcodeByID(organizationID, id string) (*BarcodeResponse, error) {
+	db := database.RDB()
+	query := NewItemQuery(db)
+	unit, err := query.GetBarcodeByID(organizationID, id)
+	if err != nil {
+		msg := "get unit error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	return unit, nil
+}
+
+func (s *itemService) DeleteBarcode(barcodeID, organizationID, user string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	repo := NewItemRepository(tx)
+	oldBarcode, err := repo.GetBarcodeByID(barcodeID)
+	if err != nil {
+		msg := "Barcode not exist"
+		return errors.New(msg)
+	}
+	if oldBarcode.OrganizationID != organizationID {
+		msg := "Barcode not exist"
+		return errors.New(msg)
+	}
+	err = repo.DeleteBarcode(barcodeID, user)
 	if err != nil {
 		return err
 	}

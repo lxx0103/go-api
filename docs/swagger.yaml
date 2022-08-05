@@ -96,6 +96,76 @@ definitions:
       user_id:
         type: string
     type: object
+  item.Barcode:
+    properties:
+      barcode_id:
+        type: string
+      code:
+        type: string
+      created:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: integer
+      item_id:
+        type: string
+      organization_id:
+        type: string
+      quantity:
+        type: integer
+      status:
+        type: integer
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  item.BarcodeNew:
+    properties:
+      code:
+        maxLength: 64
+        minLength: 1
+        type: string
+      item_id:
+        maxLength: 64
+        minLength: 1
+        type: string
+      quantity:
+        minimum: 1
+        type: integer
+      status:
+        enum:
+        - 1
+        - 2
+        type: integer
+    required:
+    - code
+    - item_id
+    - quantity
+    - status
+    type: object
+  item.BarcodeResponse:
+    properties:
+      barcode_id:
+        type: string
+      code:
+        type: string
+      item_id:
+        type: string
+      item_name:
+        type: string
+      organization_id:
+        type: string
+      quantity:
+        type: integer
+      sku:
+        type: string
+      status:
+        type: integer
+      unit:
+        type: string
+    type: object
   item.Item:
     properties:
       brand_id:
@@ -594,6 +664,175 @@ info:
   title: go-api API
   version: "1.0"
 paths:
+  /barcodes:
+    get:
+      consumes:
+      - application/json
+      operationId: "206"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 条码编码
+        in: query
+        name: code
+        type: string
+      - description: SKU
+        in: query
+        name: sku
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/item.BarcodeResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 条码列表
+      tags:
+      - 条码管理
+    post:
+      consumes:
+      - application/json
+      operationId: "207"
+      parameters:
+      - description: 条码信息
+        in: body
+        name: barcode_info
+        required: true
+        schema:
+          $ref: '#/definitions/item.BarcodeNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/item.Barcode'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建条码
+      tags:
+      - 条码管理
+  /barcodes/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "210"
+      parameters:
+      - description: 条码ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除条码
+      tags:
+      - 条码管理
+    get:
+      consumes:
+      - application/json
+      operationId: "208"
+      parameters:
+      - description: 条码ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/item.Barcode'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取条码
+      tags:
+      - 条码管理
+    put:
+      consumes:
+      - application/json
+      operationId: "209"
+      parameters:
+      - description: 条码ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 条码信息
+        in: body
+        name: barcode_info
+        required: true
+        schema:
+          $ref: '#/definitions/item.BarcodeNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/item.Barcode'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新条码
+      tags:
+      - 条码管理
   /brands:
     get:
       consumes:
@@ -840,7 +1079,7 @@ paths:
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -869,7 +1108,7 @@ paths:
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
