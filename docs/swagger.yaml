@@ -355,6 +355,135 @@ definitions:
     - password
     - phone
     type: object
+  purchaseorder.Purchaseorder:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      discount_type:
+        type: integer
+      discount_value:
+        type: number
+      expected_delivery_date:
+        type: string
+      id:
+        type: integer
+      item_count:
+        type: integer
+      notes:
+        type: string
+      organization_id:
+        type: string
+      purchaseorder_date:
+        type: string
+      purchaseorder_id:
+        type: string
+      purchaseorder_number:
+        type: string
+      shipping_fee:
+        type: number
+      status:
+        type: integer
+      subtotal:
+        type: number
+      total:
+        type: number
+      updated:
+        type: string
+      updated_by:
+        type: string
+      vendor_id:
+        type: string
+    type: object
+  purchaseorder.PurchaseorderItemNew:
+    properties:
+      item_id:
+        type: string
+      purchaseorder_item_id:
+        type: string
+      quantity:
+        type: integer
+      rate:
+        type: number
+    required:
+    - item_id
+    - quantity
+    - rate
+    type: object
+  purchaseorder.PurchaseorderNew:
+    properties:
+      discount_type:
+        enum:
+        - 1
+        - 2
+        type: integer
+      discount_value:
+        type: number
+      expected_delivery_date:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/purchaseorder.PurchaseorderItemNew'
+        type: array
+      notes:
+        type: string
+      purchaseorder_date:
+        type: string
+      purchaseorder_number:
+        maxLength: 64
+        minLength: 6
+        type: string
+      shipping_fee:
+        type: number
+      status:
+        enum:
+        - 1
+        - 2
+        type: integer
+      vendor_id:
+        type: string
+    required:
+    - expected_delivery_date
+    - items
+    - purchaseorder_date
+    - purchaseorder_number
+    - status
+    - vendor_id
+    type: object
+  purchaseorder.PurchaseorderResponse:
+    properties:
+      discount_type:
+        type: integer
+      discount_value:
+        type: number
+      expected_delivery_date:
+        type: string
+      item_count:
+        type: number
+      notes:
+        type: string
+      organization_id:
+        type: string
+      purchaseorder_date:
+        type: string
+      purchaseorder_id:
+        type: string
+      purchaseorder_number:
+        type: string
+      shipping_fee:
+        type: number
+      status:
+        type: integer
+      sub_total:
+        type: number
+      total:
+        type: number
+      vendor_id:
+        type: string
+      vendor_name:
+        type: string
+    type: object
   response.ErrorRes:
     properties:
       code:
@@ -1359,6 +1488,171 @@ paths:
       summary: 新建组织
       tags:
       - 组织管理
+  /purchaseorders:
+    get:
+      consumes:
+      - application/json
+      operationId: "402"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 采购单名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/purchaseorder.PurchaseorderResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 采购单列表
+      tags:
+      - 采购单管理
+    post:
+      consumes:
+      - application/json
+      operationId: "401"
+      parameters:
+      - description: 采购单信息
+        in: body
+        name: purchaseorder_info
+        required: true
+        schema:
+          $ref: '#/definitions/purchaseorder.PurchaseorderNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建采购单
+      tags:
+      - 采购单管理
+  /purchaseorders/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "405"
+      parameters:
+      - description: 采购单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除采购单
+      tags:
+      - 采购单管理
+    get:
+      consumes:
+      - application/json
+      operationId: "404"
+      parameters:
+      - description: 采购单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/purchaseorder.PurchaseorderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取采购单
+      tags:
+      - 采购单管理
+    put:
+      consumes:
+      - application/json
+      operationId: "403"
+      parameters:
+      - description: 采购单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 采购单信息
+        in: body
+        name: purchaseorder_info
+        required: true
+        schema:
+          $ref: '#/definitions/purchaseorder.PurchaseorderNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/purchaseorder.Purchaseorder'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新采购单
+      tags:
+      - 采购单管理
   /roles:
     get:
       consumes:

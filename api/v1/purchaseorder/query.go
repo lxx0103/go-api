@@ -53,7 +53,7 @@ func (r *purchaseorderQuery) GetPurchaseorderCount(filter PurchaseorderFilter) (
 	var count int
 	err := r.conn.Get(&count, `
 		SELECT count(1) as count
-		FROM i_purchaseorders
+		FROM p_purchaseorders
 		WHERE `+strings.Join(where, " AND "), args...)
 	return count, err
 }
@@ -76,6 +76,7 @@ func (r *purchaseorderQuery) GetPurchaseorderList(filter PurchaseorderFilter) (*
 		p.purchaseorder_number, 
 		p.purchaseorder_date, 
 		p.expected_delivery_date, 
+		p.vendor_id,
 		v.name as vendor_name, 
 		p.item_count,
 		p.sub_total,
@@ -84,7 +85,7 @@ func (r *purchaseorderQuery) GetPurchaseorderList(filter PurchaseorderFilter) (*
 		p.shipping_fee,
 		p.total,
 		p.notes,
-		p.status,
+		p.status
 		FROM p_purchaseorders p
 		LEFT JOIN s_vendors v
 		ON p.vendor_id = v.vendor_id

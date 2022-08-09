@@ -1168,6 +1168,277 @@ var doc = `{
                 }
             }
         },
+        "/purchaseorders": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "采购单列表",
+                "operationId": "402",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "采购单名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/purchaseorder.PurchaseorderResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "新建采购单",
+                "operationId": "401",
+                "parameters": [
+                    {
+                        "description": "采购单信息",
+                        "name": "purchaseorder_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/purchaseorder.PurchaseorderNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/purchaseorders/:id": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "根据ID获取采购单",
+                "operationId": "404",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "采购单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/purchaseorder.PurchaseorderResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "根据ID更新采购单",
+                "operationId": "403",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "采购单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "采购单信息",
+                        "name": "purchaseorder_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/purchaseorder.PurchaseorderNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/purchaseorder.Purchaseorder"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "根据ID删除采购单",
+                "operationId": "405",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "采购单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/roles": {
             "get": {
                 "consumes": [
@@ -2555,6 +2826,196 @@ var doc = `{
                 "phone": {
                     "type": "string",
                     "minLength": 8
+                }
+            }
+        },
+        "purchaseorder.Purchaseorder": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "discount_type": {
+                    "type": "integer"
+                },
+                "discount_value": {
+                    "type": "number"
+                },
+                "expected_delivery_date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "item_count": {
+                    "type": "integer"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "purchaseorder_date": {
+                    "type": "string"
+                },
+                "purchaseorder_id": {
+                    "type": "string"
+                },
+                "purchaseorder_number": {
+                    "type": "string"
+                },
+                "shipping_fee": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "subtotal": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                },
+                "vendor_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "purchaseorder.PurchaseorderItemNew": {
+            "type": "object",
+            "required": [
+                "item_id",
+                "quantity",
+                "rate"
+            ],
+            "properties": {
+                "item_id": {
+                    "type": "string"
+                },
+                "purchaseorder_item_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "rate": {
+                    "type": "number"
+                }
+            }
+        },
+        "purchaseorder.PurchaseorderNew": {
+            "type": "object",
+            "required": [
+                "expected_delivery_date",
+                "items",
+                "purchaseorder_date",
+                "purchaseorder_number",
+                "status",
+                "vendor_id"
+            ],
+            "properties": {
+                "discount_type": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
+                },
+                "discount_value": {
+                    "type": "number"
+                },
+                "expected_delivery_date": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/purchaseorder.PurchaseorderItemNew"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "purchaseorder_date": {
+                    "type": "string"
+                },
+                "purchaseorder_number": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 6
+                },
+                "shipping_fee": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
+                },
+                "vendor_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "purchaseorder.PurchaseorderResponse": {
+            "type": "object",
+            "properties": {
+                "discount_type": {
+                    "type": "integer"
+                },
+                "discount_value": {
+                    "type": "number"
+                },
+                "expected_delivery_date": {
+                    "type": "string"
+                },
+                "item_count": {
+                    "type": "number"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "purchaseorder_date": {
+                    "type": "string"
+                },
+                "purchaseorder_id": {
+                    "type": "string"
+                },
+                "purchaseorder_number": {
+                    "type": "string"
+                },
+                "shipping_fee": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "sub_total": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                },
+                "vendor_id": {
+                    "type": "string"
+                },
+                "vendor_name": {
+                    "type": "string"
                 }
             }
         },
