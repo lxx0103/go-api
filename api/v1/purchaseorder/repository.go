@@ -121,7 +121,7 @@ func (r *purchaseorderRepository) GetPurchaseorderItemByID(organizationID, purch
 		p.organization_id,
 		p.purchaseorder_item_id,
 		p.purchaseorder_id,
-		item_id,
+		p.item_id,
 		i.name as item_name,
 		i.sku as sku,
 		p.quantity,
@@ -189,4 +189,15 @@ func (r *purchaseorderRepository) ChceckPOItemExist(organizationID, purchaseorde
 		return true, err
 	}
 	return existed != 0, nil
+}
+
+func (r *purchaseorderRepository) UpdatePurchaseorderStatus(id string, status int, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update p_purchaseorders SET
+		status = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE purchaseorder_id = ?
+	`, status, time.Now(), byUser, id)
+	return err
 }

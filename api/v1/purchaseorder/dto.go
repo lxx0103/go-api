@@ -13,7 +13,6 @@ type PurchaseorderNew struct {
 	DiscountValue        float64                `json:"discount_value" binding:"omitempty"`
 	ShippingFee          float64                `json:"shipping_fee" binding:"omitempty"`
 	Notes                string                 `json:"notes" binding:"omitempty"`
-	Status               int                    `json:"status" binding:"required,oneof=1 2"`
 	Items                []PurchaseorderItemNew `json:"items" binding:"required"`
 	OrganizationID       string                 `json:"organiztion_id" swaggerignore:"true"`
 	User                 string                 `json:"user" swaggerignore:"true"`

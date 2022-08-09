@@ -411,6 +411,31 @@ definitions:
     - quantity
     - rate
     type: object
+  purchaseorder.PurchaseorderItemResponse:
+    properties:
+      amount:
+        type: number
+      item_id:
+        type: string
+      item_name:
+        type: string
+      organization_id:
+        type: string
+      purchaseorder_id:
+        type: string
+      purchaseorder_item_id:
+        type: string
+      quantity:
+        type: integer
+      quantity_received:
+        type: integer
+      rate:
+        type: number
+      sku:
+        type: string
+      status:
+        type: integer
+    type: object
   purchaseorder.PurchaseorderNew:
     properties:
       discount_type:
@@ -436,11 +461,6 @@ definitions:
         type: string
       shipping_fee:
         type: number
-      status:
-        enum:
-        - 1
-        - 2
-        type: integer
       vendor_id:
         type: string
     required:
@@ -448,7 +468,6 @@ definitions:
     - items
     - purchaseorder_date
     - purchaseorder_number
-    - status
     - vendor_id
     type: object
   purchaseorder.PurchaseorderResponse:
@@ -1651,6 +1670,68 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorRes'
       summary: 根据ID更新采购单
+      tags:
+      - 采购单管理
+  /purchaseorders/:id/issued:
+    post:
+      consumes:
+      - application/json
+      operationId: "407"
+      parameters:
+      - description: 采购单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 更新采购单为ISSUED
+      tags:
+      - 采购单管理
+  /purchaseorders/:id/items:
+    get:
+      consumes:
+      - application/json
+      operationId: "406"
+      parameters:
+      - description: 采购单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/purchaseorder.PurchaseorderItemResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 采购单产品列表
       tags:
       - 采购单管理
   /roles:

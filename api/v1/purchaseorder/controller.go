@@ -151,3 +151,55 @@ func DeletePurchaseorder(c *gin.Context) {
 	}
 	response.Response(c, "OK")
 }
+
+// @Summary 采购单产品列表
+// @Id 406
+// @Tags 采购单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "采购单ID"
+// @Success 200 object response.ListRes{data=[]PurchaseorderItemResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /purchaseorders/:id/items [GET]
+func GetPurchaseorderItemList(c *gin.Context) {
+	var uri PurchaseorderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	purchaseorderService := NewPurchaseorderService()
+	list, err := purchaseorderService.GetPurchaseorderItemList(uri.ID, claims.OrganizationID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, list)
+}
+
+// @Summary 更新采购单为ISSUED
+// @Id 407
+// @Tags 采购单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "采购单ID"
+// @Success 200 object response.ListRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /purchaseorders/:id/issued [POST]
+func IssuePurchaseorder(c *gin.Context) {
+	var uri PurchaseorderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	purchaseorderService := NewPurchaseorderService()
+	err := purchaseorderService.IssuePurchaseorder(uri.ID, claims.OrganizationID, claims.Email)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, "ok")
+}

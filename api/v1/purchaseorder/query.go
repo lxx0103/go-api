@@ -33,7 +33,7 @@ func (r *purchaseorderQuery) GetPurchaseorderByID(organizationID, id string) (*P
 	p.shipping_fee,
 	p.total,
 	p.notes,
-	p.status,
+	p.status
 	FROM p_purchaseorders p
 	LEFT JOIN s_vendors v
 	ON p.vendor_id = v.vendor_id
@@ -92,5 +92,28 @@ func (r *purchaseorderQuery) GetPurchaseorderList(filter PurchaseorderFilter) (*
 		WHERE `+strings.Join(where, " AND ")+`
 		LIMIT ?, ?
 	`, args...)
+	return &purchaseorders, err
+}
+
+func (r *purchaseorderQuery) GetPurchaseorderItemList(purchaseorderID string) (*[]PurchaseorderItemResponse, error) {
+	var purchaseorders []PurchaseorderItemResponse
+	err := r.conn.Select(&purchaseorders, `
+		SELECT
+		p.organization_id,
+		p.purchaseorder_item_id,
+		p.purchaseorder_id,
+		p.item_id,
+		i.name as item_name,
+		i.sku as sku,
+		p.quantity,
+		p.rate,
+		p.amount,
+		p.quantity_received,
+		p.status
+		FROM p_purchaseorder_items p
+		LEFT JOIN i_items i
+		ON p.item_id = i.item_id
+		WHERE p.purchaseorder_id = ? AND p.status > 0 
+	`, purchaseorderID)
 	return &purchaseorders, err
 }

@@ -100,7 +100,7 @@ func (s *purchaseorderService) NewPurchaseorder(info PurchaseorderNew) (*string,
 		purchaseorder.Total = itemTotal + info.ShippingFee
 	}
 	purchaseorder.Notes = info.Notes
-	purchaseorder.Status = info.Status
+	purchaseorder.Status = 1 //Draft
 	purchaseorder.Created = time.Now()
 	purchaseorder.CreatedBy = info.User
 	purchaseorder.Updated = time.Now()
@@ -236,7 +236,7 @@ func (s *purchaseorderService) UpdatePurchaseorder(purchaseorderID string, info 
 		purchaseorder.Total = itemTotal + info.ShippingFee
 	}
 	purchaseorder.Notes = info.Notes
-	purchaseorder.Status = info.Status
+	purchaseorder.Status = 1 //Draft
 	purchaseorder.Updated = time.Now()
 	purchaseorder.UpdatedBy = info.User
 
@@ -252,12 +252,12 @@ func (s *purchaseorderService) UpdatePurchaseorder(purchaseorderID string, info 
 func (s *purchaseorderService) GetPurchaseorderByID(organizationID, id string) (*PurchaseorderResponse, error) {
 	db := database.RDB()
 	query := NewPurchaseorderQuery(db)
-	unit, err := query.GetPurchaseorderByID(organizationID, id)
+	purchaseorder, err := query.GetPurchaseorderByID(organizationID, id)
 	if err != nil {
-		msg := "get unit error: " + err.Error()
+		msg := "get purchaseorder error: " + err.Error()
 		return nil, errors.New(msg)
 	}
-	return unit, nil
+	return purchaseorder, nil
 }
 
 func (s *purchaseorderService) DeletePurchaseorder(purchaseorderID, organizationID, user string) error {
@@ -279,4 +279,42 @@ func (s *purchaseorderService) DeletePurchaseorder(purchaseorderID, organization
 	}
 	tx.Commit()
 	return nil
+}
+
+func (s *purchaseorderService) GetPurchaseorderItemList(purchaseorderID, organizationID string) (*[]PurchaseorderItemResponse, error) {
+	db := database.RDB()
+	query := NewPurchaseorderQuery(db)
+	_, err := query.GetPurchaseorderByID(organizationID, purchaseorderID)
+	if err != nil {
+		msg := "get purchaseorder error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	list, err := query.GetPurchaseorderItemList(purchaseorderID)
+	return list, err
+}
+
+func (s *purchaseorderService) IssuePurchaseorder(purchaseorderID, organizationID, user string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	repo := NewPurchaseorderRepository(tx)
+	oldPurchaseorder, err := repo.GetPurchaseorderByID(organizationID, purchaseorderID)
+	if err != nil {
+		msg := "Purchaseorder not exist"
+		return errors.New(msg)
+	}
+	if oldPurchaseorder.Status != 1 {
+		msg := "Purchaseorder status error"
+		return errors.New(msg)
+	}
+	err = repo.UpdatePurchaseorderStatus(purchaseorderID, 2, user) //ISSUED
+	if err != nil {
+		msg := "update purchaseorder error: " + err.Error()
+		return errors.New(msg)
+	}
+	tx.Commit()
+	return err
 }

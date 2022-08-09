@@ -8,5 +8,7 @@ func AuthRouter(g *gin.RouterGroup) {
 	g.PUT("/purchaseorders/:id", UpdatePurchaseorder)
 	g.GET("/purchaseorders/:id", GetPurchaseorderByID)
 	g.DELETE("/purchaseorders/:id", DeletePurchaseorder)
+	g.GET("/purchaseorders/:id/items", GetPurchaseorderItemList)
+	g.POST("/purchaseorders/:id/issued", IssuePurchaseorder)
 
 }
