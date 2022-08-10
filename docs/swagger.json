@@ -2921,6 +2921,9 @@
         "purchaseorder.Purchaseorder": {
             "type": "object",
             "properties": {
+                "billing_status": {
+                    "type": "integer"
+                },
                 "created": {
                     "type": "string"
                 },
@@ -2956,6 +2959,9 @@
                 },
                 "purchaseorder_number": {
                     "type": "string"
+                },
+                "receive_status": {
+                    "type": "integer"
                 },
                 "shipping_fee": {
                     "type": "number"
@@ -3026,6 +3032,9 @@
                 "quantity": {
                     "type": "integer"
                 },
+                "quantity_billed": {
+                    "type": "integer"
+                },
                 "quantity_received": {
                     "type": "integer"
                 },
@@ -3091,6 +3100,9 @@
         "purchaseorder.PurchaseorderResponse": {
             "type": "object",
             "properties": {
+                "billing_status": {
+                    "type": "integer"
+                },
                 "discount_type": {
                     "type": "integer"
                 },
@@ -3117,6 +3129,9 @@
                 },
                 "purchaseorder_number": {
                     "type": "string"
+                },
+                "receive_status": {
+                    "type": "integer"
                 },
                 "shipping_fee": {
                     "type": "number"

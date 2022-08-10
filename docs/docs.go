@@ -2935,6 +2935,9 @@ var doc = `{
         "purchaseorder.Purchaseorder": {
             "type": "object",
             "properties": {
+                "billing_status": {
+                    "type": "integer"
+                },
                 "created": {
                     "type": "string"
                 },
@@ -2970,6 +2973,9 @@ var doc = `{
                 },
                 "purchaseorder_number": {
                     "type": "string"
+                },
+                "receive_status": {
+                    "type": "integer"
                 },
                 "shipping_fee": {
                     "type": "number"
@@ -3040,6 +3046,9 @@ var doc = `{
                 "quantity": {
                     "type": "integer"
                 },
+                "quantity_billed": {
+                    "type": "integer"
+                },
                 "quantity_received": {
                     "type": "integer"
                 },
@@ -3105,6 +3114,9 @@ var doc = `{
         "purchaseorder.PurchaseorderResponse": {
             "type": "object",
             "properties": {
+                "billing_status": {
+                    "type": "integer"
+                },
                 "discount_type": {
                     "type": "integer"
                 },
@@ -3131,6 +3143,9 @@ var doc = `{
                 },
                 "purchaseorder_number": {
                     "type": "string"
+                },
+                "receive_status": {
+                    "type": "integer"
                 },
                 "shipping_fee": {
                     "type": "number"

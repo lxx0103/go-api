@@ -35,6 +35,7 @@ func (r purchaseorderRepository) CreatePurchaseorderItem(info PurchaseorderItem)
 			rate,
 			amount,
 			quantity_received,
+			quantity_billed,
 			status,
 			created,
 			created_by,
@@ -42,8 +43,8 @@ func (r purchaseorderRepository) CreatePurchaseorderItem(info PurchaseorderItem)
 			updated_by
 		)
 		VALUES
-		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, info.OrganizationID, info.PurchaseorderItemID, info.PurchaseorderID, info.ItemID, info.Quantity, info.Rate, info.Amount, info.QuantityReceived, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.PurchaseorderItemID, info.PurchaseorderID, info.ItemID, info.Quantity, info.Rate, info.Amount, info.QuantityReceived, info.QuantityBilled, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	return err
 }
 
@@ -78,6 +79,8 @@ func (r purchaseorderRepository) CreatePurchaseorder(info Purchaseorder) error {
 			shipping_fee,
 			total,
 			notes,
+			receive_status,
+			billing_status,
 			status,
 			created,
 			created_by,
@@ -85,8 +88,8 @@ func (r purchaseorderRepository) CreatePurchaseorder(info Purchaseorder) error {
 			updated_by
 		)
 		VALUES
-		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, info.OrganizationID, info.PurchaseorderID, info.PurchaseorderNumber, info.PurchaseorderDate, info.ExpectedDeliveryDate, info.VendorID, info.ItemCount, info.Subtotal, info.DiscountType, info.DiscountValue, info.ShippingFee, info.Total, info.Notes, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.PurchaseorderID, info.PurchaseorderNumber, info.PurchaseorderDate, info.ExpectedDeliveryDate, info.VendorID, info.ItemCount, info.Subtotal, info.DiscountType, info.DiscountValue, info.ShippingFee, info.Total, info.Notes, info.ReceiveStatus, info.BillingStatus, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	return err
 }
 
@@ -107,10 +110,12 @@ func (r *purchaseorderRepository) GetPurchaseorderByID(organizationID, purchaseo
 		shipping_fee,
 		total,
 		notes,
+		receive_status,
+		billing_status,
 		status
 		FROM p_purchaseorders WHERE organization_id = ? AND purchaseorder_id = ? AND status > 0 LIMIT 1
 	`, organizationID, purchaseorderID)
-	err := row.Scan(&res.PurchaseorderID, &res.OrganizationID, &res.PurchaseorderNumber, &res.PurchaseorderDate, &res.ExpectedDeliveryDate, &res.VendorID, &res.ItemCount, &res.Subtotal, &res.DiscountType, &res.DiscountValue, &res.ShippingFee, &res.Total, &res.Notes, &res.Status)
+	err := row.Scan(&res.PurchaseorderID, &res.OrganizationID, &res.PurchaseorderNumber, &res.PurchaseorderDate, &res.ExpectedDeliveryDate, &res.VendorID, &res.ItemCount, &res.Subtotal, &res.DiscountType, &res.DiscountValue, &res.ShippingFee, &res.Total, &res.Notes, &res.ReceiveStatus, &res.BillingStatus, &res.Status)
 	return &res, err
 }
 
@@ -152,11 +157,13 @@ func (r *purchaseorderRepository) UpdatePurchaseorder(id string, info Purchaseor
 		shipping_fee = ?,
 		total = ?,
 		notes = ?,
+		receive_status = ?,
+		billing_status = ?,
 		status = ?,
 		updated = ?,
 		updated_by = ?
 		WHERE purchaseorder_id = ?
-	`, info.PurchaseorderNumber, info.PurchaseorderDate, info.ExpectedDeliveryDate, info.VendorID, info.ItemCount, info.Subtotal, info.DiscountType, info.DiscountValue, info.ShippingFee, info.Total, info.Notes, info.Status, info.Updated, info.UpdatedBy, id)
+	`, info.PurchaseorderNumber, info.PurchaseorderDate, info.ExpectedDeliveryDate, info.VendorID, info.ItemCount, info.Subtotal, info.DiscountType, info.DiscountValue, info.ShippingFee, info.Total, info.Notes, info.ReceiveStatus, info.BillingStatus, info.Status, info.Updated, info.UpdatedBy, id)
 	return err
 }
 
@@ -181,14 +188,29 @@ func (r *purchaseorderRepository) DeletePurchaseorder(id, byUser string) error {
 	return err
 }
 
-func (r *purchaseorderRepository) ChceckPOItemExist(organizationID, purchaseorderID, purchaseorderItemID string) (bool, error) {
-	var existed int
-	row := r.tx.QueryRow("SELECT count(1) FROM p_purchaseorder_items WHERE organization_id = ? AND purchaseorder_id = ? AND purchaseorder_item_id != ?", organizationID, purchaseorderID, purchaseorderItemID)
-	err := row.Scan(&existed)
-	if err != nil {
-		return true, err
-	}
-	return existed != 0, nil
+func (r *purchaseorderRepository) GetPurchaseorderItemByIDAll(organizationID, purchaseorderID, purchaseorderItemID string) (*PurchaseorderItemResponse, error) {
+	var res PurchaseorderItemResponse
+	row := r.tx.QueryRow(`
+		SELECT
+		p.organization_id,
+		p.purchaseorder_item_id,
+		p.purchaseorder_id,
+		p.item_id,
+		i.name as item_name,
+		i.sku as sku,
+		p.quantity,
+		p.rate,
+		p.amount,
+		p.quantity_received,
+		p.quantity_billed,
+		p.status
+		FROM p_purchaseorder_items p
+		LEFT JOIN i_items i
+		ON p.item_id = i.item_id
+		WHERE p.purchaseorder_item_id = ? AND p.organization_id = ? AND p.purchaseorder_id = ? LIMIT 1
+	`, purchaseorderItemID, organizationID, purchaseorderID)
+	err := row.Scan(&res.OrganizationID, &res.PurchaseorderItemID, &res.PurchaseorderID, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity, &res.Rate, &res.Amount, &res.QuantityReceived, &res.QuantityBilled, &res.Status)
+	return &res, err
 }
 
 func (r *purchaseorderRepository) UpdatePurchaseorderStatus(id string, status int, byUser string) error {
@@ -200,4 +222,14 @@ func (r *purchaseorderRepository) UpdatePurchaseorderStatus(id string, status in
 		WHERE purchaseorder_id = ?
 	`, status, time.Now(), byUser, id)
 	return err
+}
+
+func (r *purchaseorderRepository) CheckPOItem(purchaseorder_id, organizationID string) (bool, error) {
+	var existed int
+	row := r.tx.QueryRow("SELECT count(1) FROM p_purchaseorder_items WHERE organization_id = ? AND purchaseorder_id = ? AND status = -1  AND (quantity_received > 0 OR quantity_billed > 0)", organizationID, purchaseorder_id)
+	err := row.Scan(&existed)
+	if err != nil {
+		return true, err
+	}
+	return existed != 0, nil
 }

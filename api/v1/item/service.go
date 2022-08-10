@@ -39,17 +39,23 @@ func (s *itemService) NewItem(info ItemNew) (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = settingService.GetBrandByID(info.OrganizationID, info.BrandID)
-	if err != nil {
-		return nil, err
+	if info.BrandID != "" {
+		_, err = settingService.GetBrandByID(info.OrganizationID, info.BrandID)
+		if err != nil {
+			return nil, err
+		}
 	}
-	_, err = settingService.GetManufacturerByID(info.OrganizationID, info.ManufacturerID)
-	if err != nil {
-		return nil, err
+	if info.ManufacturerID != "" {
+		_, err = settingService.GetManufacturerByID(info.OrganizationID, info.ManufacturerID)
+		if err != nil {
+			return nil, err
+		}
 	}
-	_, err = settingService.GetVendorByID(info.OrganizationID, info.DefaultVendorID)
-	if err != nil {
-		return nil, err
+	if info.DefaultVendorID != "" {
+		_, err = settingService.GetVendorByID(info.OrganizationID, info.DefaultVendorID)
+		if err != nil {
+			return nil, err
+		}
 	}
 	var item Item
 	item.ItemID = "item-" + xid.New().String()

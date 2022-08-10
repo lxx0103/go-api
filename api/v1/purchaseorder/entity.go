@@ -17,6 +17,8 @@ type Purchaseorder struct {
 	ShippingFee          float64   `db:"shipping_fee" json:"shipping_fee"`
 	Total                float64   `db:"total" json:"total"`
 	Notes                string    `db:"notes" json:"notes"`
+	BillingStatus        int       `db:"billing_status" json:"billing_status"`
+	ReceiveStatus        int       `db:"receive_status" json:"receive_status"`
 	Status               int       `db:"status" json:"status"`
 	Created              time.Time `db:"created" json:"created"`
 	CreatedBy            string    `db:"created_by" json:"created_by"`
@@ -34,23 +36,10 @@ type PurchaseorderItem struct {
 	Rate                float64   `db:"rate" json:"rate"`
 	Amount              float64   `db:"amount" json:"amount"`
 	QuantityReceived    int       `db:"quantity_received" json:"quantity_received"`
+	QuantityBilled      int       `db:"quantity_billed" json:"quantity_billed"`
 	Status              int       `db:"status" json:"status"`
 	Created             time.Time `db:"created" json:"created"`
 	CreatedBy           string    `db:"created_by" json:"created_by"`
 	Updated             time.Time `db:"updated" json:"updated"`
 	UpdatedBy           string    `db:"updated_by" json:"updated_by"`
-}
-
-type Barcode struct {
-	ID              int64     `db:"id" json:"id"`
-	OrganizationID  string    `db:"organization_id" json:"organization_id"`
-	BarcodeID       string    `db:"barcode_id" json:"barcode_id"`
-	Code            string    `db:"code" json:"code"`
-	PurchaseorderID string    `db:"purchaseorder_id" json:"purchaseorder_id"`
-	Quantity        int       `db:"quantity" json:"quantity"`
-	Status          int       `db:"status" json:"status"`
-	Created         time.Time `db:"created" json:"created"`
-	CreatedBy       string    `db:"created_by" json:"created_by"`
-	Updated         time.Time `db:"updated" json:"updated"`
-	UpdatedBy       string    `db:"updated_by" json:"updated_by"`
 }

@@ -33,6 +33,8 @@ func (r *purchaseorderQuery) GetPurchaseorderByID(organizationID, id string) (*P
 	p.shipping_fee,
 	p.total,
 	p.notes,
+	p.receive_status,
+	p.billing_status,
 	p.status
 	FROM p_purchaseorders p
 	LEFT JOIN s_vendors v
@@ -85,6 +87,8 @@ func (r *purchaseorderQuery) GetPurchaseorderList(filter PurchaseorderFilter) (*
 		p.shipping_fee,
 		p.total,
 		p.notes,
+		p.receive_status,
+		p.billing_status,
 		p.status
 		FROM p_purchaseorders p
 		LEFT JOIN s_vendors v
@@ -109,6 +113,7 @@ func (r *purchaseorderQuery) GetPurchaseorderItemList(purchaseorderID string) (*
 		p.rate,
 		p.amount,
 		p.quantity_received,
+		p.quantity_billed,
 		p.status
 		FROM p_purchaseorder_items p
 		LEFT JOIN i_items i

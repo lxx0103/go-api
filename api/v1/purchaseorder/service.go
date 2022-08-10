@@ -60,6 +60,7 @@ func (s *purchaseorderService) NewPurchaseorder(info PurchaseorderNew) (*string,
 		poItem.Rate = item.Rate
 		poItem.Amount = float64(item.Quantity) * item.Rate
 		poItem.QuantityReceived = 0
+		poItem.QuantityBilled = 0
 		poItem.Status = 1
 		poItem.Created = time.Now()
 		poItem.CreatedBy = info.User
@@ -100,7 +101,9 @@ func (s *purchaseorderService) NewPurchaseorder(info PurchaseorderNew) (*string,
 		purchaseorder.Total = itemTotal + info.ShippingFee
 	}
 	purchaseorder.Notes = info.Notes
-	purchaseorder.Status = 1 //Draft
+	purchaseorder.Status = 1        //Draft
+	purchaseorder.ReceiveStatus = 1 //no receive
+	purchaseorder.BillingStatus = 1 //unbilled
 	purchaseorder.Created = time.Now()
 	purchaseorder.CreatedBy = info.User
 	purchaseorder.Updated = time.Now()
@@ -108,7 +111,7 @@ func (s *purchaseorderService) NewPurchaseorder(info PurchaseorderNew) (*string,
 
 	err = repo.CreatePurchaseorder(purchaseorder)
 	if err != nil {
-		msg := "create purchaseordererror: " + err.Error()
+		msg := "create purchaseorder error: " + err.Error()
 		return nil, errors.New(msg)
 	}
 	tx.Commit()
@@ -151,7 +154,7 @@ func (s *purchaseorderService) UpdatePurchaseorder(purchaseorderID string, info 
 	if err != nil {
 		return nil, err
 	}
-	_, err = repo.GetPurchaseorderByID(info.OrganizationID, purchaseorderID)
+	oldPurchaseorder, err := repo.GetPurchaseorderByID(info.OrganizationID, purchaseorderID)
 	if err != nil {
 		msg := "Purchaseorder not exist"
 		return nil, errors.New(msg)
@@ -162,6 +165,8 @@ func (s *purchaseorderService) UpdatePurchaseorder(purchaseorderID string, info 
 		return nil, errors.New(msg)
 	}
 	itemCount := 0
+	quantityBilled := 0
+	quantityReceived := 0
 	itemTotal := 0.0
 	itemService := item.NewItemService()
 	for _, item := range info.Items {
@@ -170,11 +175,21 @@ func (s *purchaseorderService) UpdatePurchaseorder(purchaseorderID string, info 
 			return nil, err
 		}
 		if item.PurchaseorderItemID != "" {
-			exist, err := repo.ChceckPOItemExist(info.OrganizationID, purchaseorderID, item.PurchaseorderItemID)
-			if err != nil || !exist {
+			oldItem, err := repo.GetPurchaseorderItemByIDAll(info.OrganizationID, purchaseorderID, item.PurchaseorderItemID)
+			if err != nil {
 				msg := "Purchaseorder Item not exist"
 				return nil, errors.New(msg)
 			}
+			if oldItem.QuantityBilled > item.Quantity {
+				msg := "can not set quantity lower than quantity billed"
+				return nil, errors.New(msg)
+			}
+			if oldItem.QuantityReceived > item.Quantity {
+				msg := "can not set quantity lower than quantity received"
+				return nil, errors.New(msg)
+			}
+			quantityBilled += oldItem.QuantityBilled
+			quantityReceived += oldItem.QuantityReceived
 			var poItem PurchaseorderItem
 			poItem.Quantity = item.Quantity
 			poItem.Rate = item.Rate
@@ -197,6 +212,7 @@ func (s *purchaseorderService) UpdatePurchaseorder(purchaseorderID string, info 
 			poItem.Rate = item.Rate
 			poItem.Amount = float64(item.Quantity) * item.Rate
 			poItem.QuantityReceived = 0
+			poItem.QuantityBilled = 0
 			poItem.Status = 1
 			poItem.Created = time.Now()
 			poItem.CreatedBy = info.User
@@ -211,11 +227,21 @@ func (s *purchaseorderService) UpdatePurchaseorder(purchaseorderID string, info 
 		itemCount += item.Quantity
 		itemTotal += item.Rate * float64(item.Quantity)
 	}
+	itemDeletedError, err := repo.CheckPOItem(purchaseorderID, info.OrganizationID)
+	if err != nil {
+		msg := "check purchaseorder item error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if itemDeletedError {
+		msg := "item received or billed can not be delete"
+		return nil, errors.New(msg)
+	}
 	var purchaseorder Purchaseorder
 	purchaseorder.PurchaseorderNumber = info.PurchaseorderNumber
 	purchaseorder.PurchaseorderDate = info.PurchaseorderDate
 	purchaseorder.ExpectedDeliveryDate = info.ExpectedDeliveryDate
 	purchaseorder.VendorID = info.VendorID
+	purchaseorder.ItemCount = itemCount
 	purchaseorder.Subtotal = itemTotal
 	purchaseorder.DiscountType = info.DiscountType
 	purchaseorder.DiscountValue = info.DiscountValue
@@ -236,7 +262,33 @@ func (s *purchaseorderService) UpdatePurchaseorder(purchaseorderID string, info 
 		purchaseorder.Total = itemTotal + info.ShippingFee
 	}
 	purchaseorder.Notes = info.Notes
-	purchaseorder.Status = 1 //Draft
+	if quantityBilled > 0 {
+		if quantityBilled == itemCount {
+			purchaseorder.BillingStatus = 3
+		} else {
+			purchaseorder.BillingStatus = 2
+		}
+	} else {
+		purchaseorder.BillingStatus = 1
+	}
+	if quantityReceived > 0 {
+		if quantityReceived == itemCount {
+			purchaseorder.ReceiveStatus = 3
+		} else {
+			purchaseorder.ReceiveStatus = 2
+		}
+	} else {
+		purchaseorder.ReceiveStatus = 1
+	}
+	if purchaseorder.BillingStatus == 3 && purchaseorder.ReceiveStatus == 3 {
+		purchaseorder.Status = 3 //Draft
+	} else {
+		if oldPurchaseorder.Status == 3 {
+			purchaseorder.Status = 2
+		} else {
+			purchaseorder.Status = oldPurchaseorder.Status
+		}
+	}
 	purchaseorder.Updated = time.Now()
 	purchaseorder.UpdatedBy = info.User
 

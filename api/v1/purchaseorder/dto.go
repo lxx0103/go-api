@@ -46,6 +46,8 @@ type PurchaseorderResponse struct {
 	ShippingFee          float64 `db:"shipping_fee" json:"shipping_fee"`
 	Total                float64 `db:"total" json:"total"`
 	Notes                string  `db:"notes" json:"notes"`
+	BillingStatus        int     `db:"billing_status" json:"billing_status"`
+	ReceiveStatus        int     `db:"receive_status" json:"receive_status"`
 	Status               int     `db:"status" json:"status"`
 }
 
@@ -60,6 +62,7 @@ type PurchaseorderItemResponse struct {
 	Rate                float64 `db:"rate" json:"rate"`
 	Amount              float64 `db:"amount" json:"amount"`
 	QuantityReceived    int     `db:"quantity_received" json:"quantity_received"`
+	QuantityBilled      int     `db:"quantity_billed" json:"quantity_billed"`
 	Status              int     `db:"status" json:"status"`
 }
 
