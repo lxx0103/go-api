@@ -1,13 +1,16 @@
-package organization
+package history
 
 import "time"
 
-type Organization struct {
+type History struct {
 	ID             int64     `db:"id" json:"id"`
 	OrganizationID string    `db:"organization_id" json:"organization_id"`
-	Name           string    `db:"name" json:"name"`
-	Owner          string    `db:"owner" json:"owner"`
-	OwnerEmail     string    `db:"owner_email" json:"owner_email"`
+	HistoryID      string    `db:"history_id" json:"history_id"`
+	HistoryType    string    `db:"history_type" json:"history_type"`
+	HistoryTime    string    `db:"history_date" json:"history_date"`
+	HistoryBy      string    `db:"history_by" json:"history_by"`
+	Description    string    `db:"description" json:"description"`
+	ReferenceID    string    `db:"reference_id" json:"reference_id"`
 	Status         int       `db:"status" json:"status"`
 	Created        time.Time `db:"created" json:"created"`
 	CreatedBy      string    `db:"created_by" json:"created_by"`

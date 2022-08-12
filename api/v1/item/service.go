@@ -1,9 +1,12 @@
 package item
 
 import (
+	"encoding/json"
 	"errors"
+	"go-api/api/v1/history"
 	"go-api/api/v1/setting"
 	"go-api/core/database"
+	"go-api/core/queue"
 	"time"
 
 	"github.com/rs/xid"
@@ -80,13 +83,28 @@ func (s *itemService) NewItem(info ItemNew) (*string, error) {
 	item.Description = info.Description
 	item.Status = info.Status
 	item.Created = time.Now()
-	item.CreatedBy = info.User
+	item.CreatedBy = info.Email
 	item.Updated = time.Now()
-	item.UpdatedBy = info.User
+	item.UpdatedBy = info.Email
 
 	err = repo.CreateItem(item)
 	if err != nil {
 		msg := "create itemerror: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	var newEvent history.NewHistoryCreated
+	newEvent.HistoryType = "item"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = info.User
+	newEvent.ReferenceID = item.ItemID
+	newEvent.Description = "Item Created"
+	newEvent.OrganizationID = info.OrganizationID
+	newEvent.Email = info.Email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
 		return nil, errors.New(msg)
 	}
 	tx.Commit()
@@ -129,17 +147,23 @@ func (s *itemService) UpdateItem(itemID string, info ItemNew) (*ItemResponse, er
 	if err != nil {
 		return nil, err
 	}
-	_, err = settingService.GetBrandByID(info.OrganizationID, info.BrandID)
-	if err != nil {
-		return nil, err
+	if info.BrandID != "" {
+		_, err = settingService.GetBrandByID(info.OrganizationID, info.BrandID)
+		if err != nil {
+			return nil, err
+		}
 	}
-	_, err = settingService.GetManufacturerByID(info.OrganizationID, info.ManufacturerID)
-	if err != nil {
-		return nil, err
+	if info.ManufacturerID != "" {
+		_, err = settingService.GetManufacturerByID(info.OrganizationID, info.ManufacturerID)
+		if err != nil {
+			return nil, err
+		}
 	}
-	_, err = settingService.GetVendorByID(info.OrganizationID, info.DefaultVendorID)
-	if err != nil {
-		return nil, err
+	if info.DefaultVendorID != "" {
+		_, err = settingService.GetVendorByID(info.OrganizationID, info.DefaultVendorID)
+		if err != nil {
+			return nil, err
+		}
 	}
 	oldItem, err := repo.GetItemByID(itemID)
 	if err != nil {
@@ -180,6 +204,21 @@ func (s *itemService) UpdateItem(itemID string, info ItemNew) (*ItemResponse, er
 	if err != nil {
 		return nil, err
 	}
+	var newEvent history.NewHistoryCreated
+	newEvent.HistoryType = "item"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = info.User
+	newEvent.ReferenceID = itemID
+	newEvent.Description = "Item Updated"
+	newEvent.OrganizationID = info.OrganizationID
+	newEvent.Email = info.Email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return nil, errors.New(msg)
+	}
 	tx.Commit()
 	return res, err
 }
@@ -195,7 +234,7 @@ func (s *itemService) GetItemByID(organizationID, id string) (*ItemResponse, err
 	return unit, nil
 }
 
-func (s *itemService) DeleteItem(itemID, organizationID, user string) error {
+func (s *itemService) DeleteItem(itemID, organizationID, email, user string) error {
 	db := database.WDB()
 	tx, err := db.Begin()
 	if err != nil {
@@ -212,9 +251,24 @@ func (s *itemService) DeleteItem(itemID, organizationID, user string) error {
 		msg := "Item not exist"
 		return errors.New(msg)
 	}
-	err = repo.DeleteItem(itemID, user)
+	err = repo.DeleteItem(itemID, email)
 	if err != nil {
 		return err
+	}
+	var newEvent history.NewHistoryCreated
+	newEvent.HistoryType = "item"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = user
+	newEvent.ReferenceID = itemID
+	newEvent.Description = "Item Deleted"
+	newEvent.OrganizationID = organizationID
+	newEvent.Email = email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return errors.New(msg)
 	}
 	tx.Commit()
 	return nil

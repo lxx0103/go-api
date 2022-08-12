@@ -13,13 +13,8 @@ import (
 type organizationService struct {
 }
 
-func NewOrganizationService() OrganizationService {
+func NewOrganizationService() *organizationService {
 	return &organizationService{}
-}
-
-// OrganizationService represents a service for managing organizations.
-type OrganizationService interface {
-	NewOrganization(OrganizationNew) (*int64, error)
 }
 
 func (s *organizationService) NewOrganization(info OrganizationNew) (*int64, error) {
@@ -43,7 +38,8 @@ func (s *organizationService) NewOrganization(info OrganizationNew) (*int64, err
 	var organization Organization
 	organization.OrganizationID = "org-" + xid.New().String()
 	organization.Name = info.Name
-	organization.Owner = info.Email
+	organization.Owner = info.UserName
+	organization.OwnerEmail = info.Email
 	organization.Status = 2
 	organization.Created = time.Now()
 	organization.CreatedBy = "SIGNUP"
@@ -56,7 +52,8 @@ func (s *organizationService) NewOrganization(info OrganizationNew) (*int64, err
 	}
 	var newEvent NewOrganizationCreated
 	newEvent.OrganizationID = organization.OrganizationID
-	newEvent.Owner = info.Email
+	newEvent.Owner = info.UserName
+	newEvent.OwnerEmail = info.Email
 	newEvent.Password = info.Password
 	rabbit, _ := queue.GetConn()
 	msg, _ := json.Marshal(newEvent)

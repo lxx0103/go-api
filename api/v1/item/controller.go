@@ -25,7 +25,8 @@ func NewItem(c *gin.Context) {
 	}
 	claims := c.MustGet("claims").(*service.CustomClaims)
 	item.OrganizationID = claims.OrganizationID
-	item.User = claims.Email
+	item.User = claims.UserName
+	item.Email = claims.Email
 	itemService := NewItemService()
 	new, err := itemService.NewItem(item)
 	if err != nil {
@@ -88,7 +89,8 @@ func UpdateItem(c *gin.Context) {
 		return
 	}
 	claims := c.MustGet("claims").(*service.CustomClaims)
-	info.User = claims.Email
+	info.User = claims.UserName
+	info.Email = claims.Email
 	info.OrganizationID = claims.OrganizationID
 	itemService := NewItemService()
 	new, err := itemService.UpdateItem(uri.ID, info)
@@ -144,7 +146,7 @@ func DeleteItem(c *gin.Context) {
 	}
 	claims := c.MustGet("claims").(*service.CustomClaims)
 	itemService := NewItemService()
-	err := itemService.DeleteItem(uri.ID, claims.OrganizationID, claims.Email)
+	err := itemService.DeleteItem(uri.ID, claims.OrganizationID, claims.Email, claims.UserName)
 	if err != nil {
 		response.ResponseError(c, "DatabaseError", err)
 		return

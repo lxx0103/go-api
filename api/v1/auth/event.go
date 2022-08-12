@@ -15,6 +15,7 @@ import (
 type NewOrganizationCreated struct {
 	OrganizationID string `json:"organization_id"`
 	Owner          string `json:"owner"`
+	OwnerEmail     string `json:"owner_email"`
 	Password       string `json:"password"`
 }
 
@@ -78,7 +79,8 @@ func CreateOrganizationOwner(d amqp.Delivery) bool {
 	}
 	var info User
 	info.UserID = "user-" + xid.New().String()
-	info.Email = event.Owner
+	info.UserName = event.Owner
+	info.Email = event.OwnerEmail
 	info.Password = hashed
 	info.OrganizationID = event.OrganizationID
 	info.Status = 2

@@ -1,10 +1,13 @@
 package purchaseorder
 
 import (
+	"encoding/json"
 	"errors"
+	"go-api/api/v1/history"
 	"go-api/api/v1/item"
 	"go-api/api/v1/setting"
 	"go-api/core/database"
+	"go-api/core/queue"
 	"time"
 
 	"github.com/rs/xid"
@@ -63,9 +66,9 @@ func (s *purchaseorderService) NewPurchaseorder(info PurchaseorderNew) (*string,
 		poItem.QuantityBilled = 0
 		poItem.Status = 1
 		poItem.Created = time.Now()
-		poItem.CreatedBy = info.User
+		poItem.CreatedBy = info.Email
 		poItem.Updated = time.Now()
-		poItem.UpdatedBy = info.User
+		poItem.UpdatedBy = info.Email
 
 		err = repo.CreatePurchaseorderItem(poItem)
 		if err != nil {
@@ -105,13 +108,28 @@ func (s *purchaseorderService) NewPurchaseorder(info PurchaseorderNew) (*string,
 	purchaseorder.ReceiveStatus = 1 //no receive
 	purchaseorder.BillingStatus = 1 //unbilled
 	purchaseorder.Created = time.Now()
-	purchaseorder.CreatedBy = info.User
+	purchaseorder.CreatedBy = info.Email
 	purchaseorder.Updated = time.Now()
-	purchaseorder.UpdatedBy = info.User
+	purchaseorder.UpdatedBy = info.Email
 
 	err = repo.CreatePurchaseorder(purchaseorder)
 	if err != nil {
 		msg := "create purchaseorder error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	var newEvent history.NewHistoryCreated
+	newEvent.HistoryType = "purchaseorder"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = info.User
+	newEvent.ReferenceID = poID
+	newEvent.Description = "Purchase Order Created"
+	newEvent.OrganizationID = info.OrganizationID
+	newEvent.Email = info.Email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
 		return nil, errors.New(msg)
 	}
 	tx.Commit()
@@ -297,6 +315,21 @@ func (s *purchaseorderService) UpdatePurchaseorder(purchaseorderID string, info 
 		msg := "update purchaseorder error: " + err.Error()
 		return nil, errors.New(msg)
 	}
+	var newEvent history.NewHistoryCreated
+	newEvent.HistoryType = "purchaseorder"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = info.User
+	newEvent.ReferenceID = purchaseorderID
+	newEvent.Description = "Purchase Order Updated"
+	newEvent.OrganizationID = info.OrganizationID
+	newEvent.Email = info.Email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return nil, errors.New(msg)
+	}
 	tx.Commit()
 	return &purchaseorderID, err
 }
@@ -312,7 +345,7 @@ func (s *purchaseorderService) GetPurchaseorderByID(organizationID, id string) (
 	return purchaseorder, nil
 }
 
-func (s *purchaseorderService) DeletePurchaseorder(purchaseorderID, organizationID, user string) error {
+func (s *purchaseorderService) DeletePurchaseorder(purchaseorderID, organizationID, user, email string) error {
 	db := database.WDB()
 	tx, err := db.Begin()
 	if err != nil {
@@ -325,9 +358,24 @@ func (s *purchaseorderService) DeletePurchaseorder(purchaseorderID, organization
 		msg := "Purchaseorder not exist"
 		return errors.New(msg)
 	}
-	err = repo.DeletePurchaseorder(purchaseorderID, user)
+	err = repo.DeletePurchaseorder(purchaseorderID, email)
 	if err != nil {
 		return err
+	}
+	var newEvent history.NewHistoryCreated
+	newEvent.HistoryType = "purchaseorder"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = user
+	newEvent.ReferenceID = purchaseorderID
+	newEvent.Description = "Purchase Order Deleted"
+	newEvent.OrganizationID = organizationID
+	newEvent.Email = email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return errors.New(msg)
 	}
 	tx.Commit()
 	return nil
@@ -345,7 +393,7 @@ func (s *purchaseorderService) GetPurchaseorderItemList(purchaseorderID, organiz
 	return list, err
 }
 
-func (s *purchaseorderService) IssuePurchaseorder(purchaseorderID, organizationID, user string) error {
+func (s *purchaseorderService) IssuePurchaseorder(purchaseorderID, organizationID, user, email string) error {
 	db := database.WDB()
 	tx, err := db.Begin()
 	if err != nil {
@@ -362,9 +410,24 @@ func (s *purchaseorderService) IssuePurchaseorder(purchaseorderID, organizationI
 		msg := "Purchaseorder status error"
 		return errors.New(msg)
 	}
-	err = repo.UpdatePurchaseorderStatus(purchaseorderID, 2, user) //ISSUED
+	err = repo.UpdatePurchaseorderStatus(purchaseorderID, 2, email) //ISSUED
 	if err != nil {
 		msg := "update purchaseorder error: " + err.Error()
+		return errors.New(msg)
+	}
+	var newEvent history.NewHistoryCreated
+	newEvent.HistoryType = "purchaseorder"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = user
+	newEvent.ReferenceID = purchaseorderID
+	newEvent.Description = "Purchase Order Issued"
+	newEvent.OrganizationID = organizationID
+	newEvent.Email = email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
 		return errors.New(msg)
 	}
 	tx.Commit()

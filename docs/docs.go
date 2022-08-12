@@ -845,6 +845,72 @@ var doc = `{
                 }
             }
         },
+        "/historys": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "采购单列表",
+                "operationId": "601",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "采购单名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/history.HistoryResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/items": {
             "get": {
                 "consumes": [
@@ -3102,6 +3168,35 @@ var doc = `{
                 },
                 "user_id": {
                     "type": "string"
+                },
+                "user_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "history.HistoryResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "history_by": {
+                    "type": "string"
+                },
+                "history_id": {
+                    "type": "string"
+                },
+                "history_time": {
+                    "type": "string"
+                },
+                "history_type": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "reference_id": {
+                    "type": "string"
                 }
             }
         },
@@ -3459,7 +3554,8 @@ var doc = `{
                 "email",
                 "name",
                 "password",
-                "phone"
+                "phone",
+                "user_name"
             ],
             "properties": {
                 "email": {
@@ -3477,6 +3573,11 @@ var doc = `{
                 "phone": {
                     "type": "string",
                     "minLength": 8
+                },
+                "user_name": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
                 }
             }
         },

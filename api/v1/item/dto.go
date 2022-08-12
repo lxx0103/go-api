@@ -26,6 +26,7 @@ type ItemNew struct {
 	Status            int     `json:"status" binding:"required,oneof=1 2"`
 	OrganizationID    string  `json:"organiztion_id" swaggerignore:"true"`
 	User              string  `json:"user" swaggerignore:"true"`
+	Email             string  `json:"email" swaggerignore:"true"`
 }
 
 type ItemFilter struct {

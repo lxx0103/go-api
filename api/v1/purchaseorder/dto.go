@@ -16,6 +16,7 @@ type PurchaseorderNew struct {
 	Items                []PurchaseorderItemNew `json:"items" binding:"required"`
 	OrganizationID       string                 `json:"organiztion_id" swaggerignore:"true"`
 	User                 string                 `json:"user" swaggerignore:"true"`
+	Email                string                 `json:"email" swaggerignore:"true"`
 }
 
 type PurchaseorderItemNew struct {

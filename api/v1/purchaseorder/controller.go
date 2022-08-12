@@ -25,7 +25,8 @@ func NewPurchaseorder(c *gin.Context) {
 	}
 	claims := c.MustGet("claims").(*service.CustomClaims)
 	purchaseorder.OrganizationID = claims.OrganizationID
-	purchaseorder.User = claims.Email
+	purchaseorder.User = claims.UserName
+	purchaseorder.Email = claims.Email
 	purchaseorderService := NewPurchaseorderService()
 	new, err := purchaseorderService.NewPurchaseorder(purchaseorder)
 	if err != nil {
@@ -88,7 +89,8 @@ func UpdatePurchaseorder(c *gin.Context) {
 		return
 	}
 	claims := c.MustGet("claims").(*service.CustomClaims)
-	info.User = claims.Email
+	info.User = claims.UserName
+	info.Email = claims.Email
 	info.OrganizationID = claims.OrganizationID
 	purchaseorderService := NewPurchaseorderService()
 	new, err := purchaseorderService.UpdatePurchaseorder(uri.ID, info)
@@ -144,7 +146,7 @@ func DeletePurchaseorder(c *gin.Context) {
 	}
 	claims := c.MustGet("claims").(*service.CustomClaims)
 	purchaseorderService := NewPurchaseorderService()
-	err := purchaseorderService.DeletePurchaseorder(uri.ID, claims.OrganizationID, claims.Email)
+	err := purchaseorderService.DeletePurchaseorder(uri.ID, claims.OrganizationID, claims.UserName, claims.Email)
 	if err != nil {
 		response.ResponseError(c, "DatabaseError", err)
 		return
@@ -196,7 +198,7 @@ func IssuePurchaseorder(c *gin.Context) {
 	}
 	claims := c.MustGet("claims").(*service.CustomClaims)
 	purchaseorderService := NewPurchaseorderService()
-	err := purchaseorderService.IssuePurchaseorder(uri.ID, claims.OrganizationID, claims.Email)
+	err := purchaseorderService.IssuePurchaseorder(uri.ID, claims.OrganizationID, claims.UserName, claims.Email)
 	if err != nil {
 		response.ResponseError(c, "DatabaseError", err)
 		return

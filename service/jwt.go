@@ -10,6 +10,7 @@ import (
 
 type CustomClaims struct {
 	UserID         string
+	UserName       string
 	OrganizationID string
 	Email          string
 	RoleID         string

@@ -40,11 +40,13 @@ func Signin(c *gin.Context) {
 	}
 	var userResponse UserResponse
 	userResponse.UserID = userInfo.UserID
+	userResponse.UserName = userInfo.UserName
 	userResponse.Email = userInfo.Email
 	userResponse.RoleName = roleInfo.Name
 
 	claims := service.CustomClaims{
 		UserID:         userInfo.UserID,
+		UserName:       userInfo.UserName,
 		Email:          userInfo.Email,
 		RoleID:         userInfo.RoleID,
 		RoleName:       roleInfo.Name,

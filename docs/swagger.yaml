@@ -95,6 +95,25 @@ definitions:
         type: string
       user_id:
         type: string
+      user_name:
+        type: string
+    type: object
+  history.HistoryResponse:
+    properties:
+      description:
+        type: string
+      history_by:
+        type: string
+      history_id:
+        type: string
+      history_time:
+        type: string
+      history_type:
+        type: string
+      organization_id:
+        type: string
+      reference_id:
+        type: string
     type: object
   item.Barcode:
     properties:
@@ -349,11 +368,16 @@ definitions:
       phone:
         minLength: 8
         type: string
+      user_name:
+        maxLength: 64
+        minLength: 1
+        type: string
     required:
     - email
     - name
     - password
     - phone
+    - user_name
     type: object
   purchaseorder.Purchaseorder:
     properties:
@@ -1453,6 +1477,47 @@ paths:
       summary: 根据ID更新品牌
       tags:
       - 品牌管理
+  /historys:
+    get:
+      consumes:
+      - application/json
+      operationId: "601"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 采购单名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/history.HistoryResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 采购单列表
+      tags:
+      - 采购单管理
   /items:
     get:
       consumes:

@@ -8,6 +8,7 @@ type OrganizationFilter struct {
 
 type OrganizationNew struct {
 	Name     string `json:"name" binding:"required,min=1,max=64"`
+	UserName string `json:"user_name" binding:"required,min=1,max=64"`
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
 	Phone    string `json:"phone" binding:"required,min=8"`

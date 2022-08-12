@@ -21,6 +21,7 @@ type SigninResponse struct {
 
 type UserResponse struct {
 	UserID   string `db:"user_id" json:"user_id"`
+	UserName string `db:"user_name" json:"user_name"`
 	Email    string `db:"email" json:"email"`
 	RoleName string `json:"role_name"`
 }
@@ -51,14 +52,6 @@ type RoleNew struct {
 
 type RoleID struct {
 	ID string `uri:"id" binding:"required,min=1"`
-}
-
-type UserFilter struct {
-	Name           string `form:"name" binding:"omitempty,max=64,min=1"`
-	Type           string `form:"type" binding:"omitempty,oneof=wx admin"`
-	OrganizationID string `form:"organization_id" binding:"omitempty,min=1"`
-	PageId         int    `form:"page_id" binding:"required,min=1"`
-	PageSize       int    `form:"page_size" binding:"required,min=5,max=200"`
 }
 
 type APIFilter struct {
