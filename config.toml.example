@@ -12,13 +12,19 @@
     host = "0.0.0.0"
     port = 9090
 
-[database]
+[rdb]
     host = "192.168.13.71"
     port = 3306
     user = "test"
     password = "test"
-    dbname = "test"
-
+    dbname = "wms"
+[wdb]
+    host = "192.168.13.71"
+    port = 3306
+    user = "test"
+    password = "test"
+    dbname = "wms"
+    
 [file]
     path = "upload/"
 
@@ -27,4 +33,9 @@
     port = 5672
     user = "test"
     password = "test"
-    exchange = "go-api"
+    exchange = "wms-new"
+
+[cache]
+    host = "192.168.13.71:6379"
+    port = 6379
+    password = ""
