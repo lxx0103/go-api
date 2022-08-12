@@ -29,7 +29,7 @@ type Location struct {
 	Available      int64     `db:"available" json:"available"`
 	CanPick        int64     `db:"can_pick" json:"can_pick"`
 	Alert          int64     `db:"alert" json:"alert"`
-	Status         string    `db:"status" json:"status"`
+	Status         int       `db:"status" json:"status"`
 	Created        time.Time `db:"created" json:"created"`
 	CreatedBy      string    `db:"created_by" json:"created_by"`
 	Updated        time.Time `db:"updated" json:"updated"`

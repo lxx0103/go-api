@@ -189,7 +189,7 @@ func (s *itemService) GetItemByID(organizationID, id string) (*ItemResponse, err
 	query := NewItemQuery(db)
 	unit, err := query.GetItemByID(organizationID, id)
 	if err != nil {
-		msg := "get unit error: " + err.Error()
+		msg := "get item error: " + err.Error()
 		return nil, errors.New(msg)
 	}
 	return unit, nil

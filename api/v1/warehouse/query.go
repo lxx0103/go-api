@@ -146,7 +146,7 @@ func (r *warehouseQuery) GetLocationByID(organizationID, locationID string) (*Lo
 		l.code,
 		l.level, 
 		l.bay_id,
-		b.name as bay_name,
+		b.code as bay_code,
 		l.item_id,
 		i.name as item_name,
 		i.sku,

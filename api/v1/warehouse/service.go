@@ -2,6 +2,7 @@ package warehouse
 
 import (
 	"errors"
+	"go-api/api/v1/item"
 	"go-api/core/database"
 	"time"
 
@@ -177,12 +178,32 @@ func (s *warehouseService) NewLocation(info LocationNew) (*string, error) {
 		msg := "location code conflict"
 		return nil, errors.New(msg)
 	}
+	if info.Capacity < info.Quantity {
+		msg := "capacity must be greater than quantity"
+		return nil, errors.New(msg)
+	}
+	_, err = repo.GetBayByID(info.BayID, info.OrganizationID)
+	if err != nil {
+		msg := "bay not exist"
+		return nil, errors.New(msg)
+	}
+	itemService := item.NewItemService()
+	_, err = itemService.GetItemByID(info.OrganizationID, info.ItemID)
+	if err != nil {
+		return nil, err
+	}
 	var location Location
-	location.LocationID = "location-" + xid.New().String()
+	location.LocationID = "loc-" + xid.New().String()
 	location.OrganizationID = info.OrganizationID
 	location.Code = info.Code
 	location.Level = info.Level
-	location.Location = info.Location
+	location.BayID = info.BayID
+	location.ItemID = info.ItemID
+	location.Capacity = info.Capacity
+	location.Quantity = info.Quantity
+	location.CanPick = info.Quantity
+	location.Available = info.Capacity - info.Quantity
+	location.Alert = info.Alert
 	location.Status = info.Status
 	location.Created = time.Now()
 	location.CreatedBy = info.User
@@ -215,18 +236,40 @@ func (s *warehouseService) UpdateLocation(locationID string, info LocationNew) (
 		msg := "location conflict"
 		return nil, errors.New(msg)
 	}
-	_, err = repo.GetLocationByID(locationID, info.OrganizationID)
+	oldLocation, err := repo.GetLocationByID(locationID, info.OrganizationID)
 	if err != nil {
 		msg := "Location not exist"
 		return nil, errors.New(msg)
 	}
+	if oldLocation.Quantity > 0 && oldLocation.ItemID != info.ItemID {
+		msg := "this location was occupied by another item"
+		return nil, errors.New(msg)
+	}
+	if oldLocation.Quantity > info.Capacity {
+		msg := "capacity must be greater than current quantity"
+		return nil, errors.New(msg)
+	}
+	if oldLocation.Quantity > 0 && info.Quantity != oldLocation.Quantity {
+		msg := "can not change quantity, please do ajustment"
+		return nil, errors.New(msg)
+	}
 	var location Location
 	location.Code = info.Code
+	location.BayID = info.BayID
 	location.Level = info.Level
-	location.Location = info.Location
+	location.ItemID = info.ItemID
+	location.Capacity = info.Capacity
+	location.Quantity = info.Quantity
+	location.Available = location.Capacity - location.Quantity
+	location.Alert = info.Alert
 	location.Status = info.Status
 	location.Updated = time.Now()
 	location.UpdatedBy = info.User
+	if oldLocation.ItemID == info.ItemID {
+		location.CanPick = oldLocation.CanPick
+	} else {
+		location.CanPick = location.Quantity
+	}
 	err = repo.UpdateLocation(locationID, location)
 	if err != nil {
 		return nil, err
@@ -258,9 +301,13 @@ func (s *warehouseService) DeleteLocation(locationID, organizationID, user strin
 	}
 	defer tx.Rollback()
 	repo := NewWarehouseRepository(tx)
-	_, err = repo.GetLocationByID(locationID, organizationID)
+	oldLocation, err := repo.GetLocationByID(locationID, organizationID)
 	if err != nil {
 		msg := "Location not exist"
+		return errors.New(msg)
+	}
+	if oldLocation.Quantity > 0 {
+		msg := "can not delete location when it's not empty"
 		return errors.New(msg)
 	}
 	err = repo.DeleteLocation(locationID, user)

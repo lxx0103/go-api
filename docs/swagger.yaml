@@ -813,6 +813,138 @@ definitions:
       zip:
         type: string
     type: object
+  warehouse.Bay:
+    properties:
+      bay_id:
+        type: string
+      code:
+        type: string
+      created:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: integer
+      level:
+        type: integer
+      location:
+        type: string
+      organization_id:
+        type: string
+      status:
+        type: integer
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  warehouse.BayNew:
+    properties:
+      code:
+        maxLength: 64
+        minLength: 1
+        type: string
+      level:
+        maximum: 64
+        minimum: 1
+        type: integer
+      location:
+        minLength: 1
+        type: string
+      status:
+        enum:
+        - 1
+        - 2
+        type: integer
+    required:
+    - code
+    - level
+    - location
+    - status
+    type: object
+  warehouse.BayResponse:
+    properties:
+      bay_id:
+        type: string
+      code:
+        type: string
+      level:
+        type: integer
+      location:
+        type: string
+      organization_id:
+        type: string
+      status:
+        type: integer
+    type: object
+  warehouse.Location:
+    properties:
+      alert:
+        type: integer
+      available:
+        type: integer
+      bay_id:
+        type: string
+      can_pick:
+        type: integer
+      capacity:
+        type: integer
+      code:
+        type: string
+      created:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: integer
+      item_id:
+        type: string
+      level:
+        type: string
+      location_id:
+        type: string
+      organization_id:
+        type: string
+      quantity:
+        type: integer
+      status:
+        type: integer
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  warehouse.LocationNew:
+    properties:
+      alert:
+        type: integer
+      bay_id:
+        type: string
+      capacity:
+        type: integer
+      code:
+        maxLength: 64
+        minLength: 1
+        type: string
+      item_id:
+        type: string
+      level:
+        type: string
+      quantity:
+        type: integer
+      status:
+        enum:
+        - 1
+        - 2
+        type: integer
+    required:
+    - bay_id
+    - capacity
+    - code
+    - item_id
+    - level
+    - status
+    type: object
 host: 0.0.0.0:8080
 info:
   contact:
@@ -991,6 +1123,171 @@ paths:
       summary: 根据ID更新条码
       tags:
       - 条码管理
+  /bays:
+    get:
+      consumes:
+      - application/json
+      operationId: "501"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 货架编码
+        in: query
+        name: code
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/warehouse.BayResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 货架列表
+      tags:
+      - 货架管理
+    post:
+      consumes:
+      - application/json
+      operationId: "502"
+      parameters:
+      - description: 货架信息
+        in: body
+        name: bay_info
+        required: true
+        schema:
+          $ref: '#/definitions/warehouse.BayNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/warehouse.Bay'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建货架
+      tags:
+      - 货架管理
+  /bays/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "505"
+      parameters:
+      - description: 货架ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除货架
+      tags:
+      - 货架管理
+    get:
+      consumes:
+      - application/json
+      operationId: "503"
+      parameters:
+      - description: 货架ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/warehouse.Bay'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取货架
+      tags:
+      - 货架管理
+    put:
+      consumes:
+      - application/json
+      operationId: "504"
+      parameters:
+      - description: 货架ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 货架信息
+        in: body
+        name: bay_info
+        required: true
+        schema:
+          $ref: '#/definitions/warehouse.BayNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/warehouse.Bay'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新货架
+      tags:
+      - 货架管理
   /brands:
     get:
       consumes:
@@ -1321,6 +1618,175 @@ paths:
       summary: 根据ID更新商品
       tags:
       - 商品管理
+  /locations:
+    get:
+      consumes:
+      - application/json
+      operationId: "506"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 货位编码
+        in: query
+        name: code
+        type: string
+      - description: 货架ID
+        in: query
+        name: bay_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/warehouse.BayResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 货位列表
+      tags:
+      - 货位管理
+    post:
+      consumes:
+      - application/json
+      operationId: "507"
+      parameters:
+      - description: 货位信息
+        in: body
+        name: location_info
+        required: true
+        schema:
+          $ref: '#/definitions/warehouse.LocationNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/warehouse.Location'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建货位
+      tags:
+      - 货位管理
+  /locations/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "510"
+      parameters:
+      - description: 货位ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除货位
+      tags:
+      - 货位管理
+    get:
+      consumes:
+      - application/json
+      operationId: "508"
+      parameters:
+      - description: 货位ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/warehouse.Location'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取货位
+      tags:
+      - 货位管理
+    put:
+      consumes:
+      - application/json
+      operationId: "509"
+      parameters:
+      - description: 货位ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 货位信息
+        in: body
+        name: location_info
+        required: true
+        schema:
+          $ref: '#/definitions/warehouse.LocationNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/warehouse.Location'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新货位
+      tags:
+      - 货位管理
   /manufacturers:
     get:
       consumes:

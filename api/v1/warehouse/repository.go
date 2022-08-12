@@ -110,7 +110,13 @@ func (r warehouseRepository) CreateLocation(info Location) error {
 			location_id,
 			code,
 			level,
-			location,
+			bay_id,
+			item_id,
+			capacity,
+			quantity,
+			available,
+			can_pick,
+			alert,
 			status,
 			created,
 			created_by,
@@ -118,8 +124,8 @@ func (r warehouseRepository) CreateLocation(info Location) error {
 			updated_by
 		)
 		VALUES
-		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, info.OrganizationID, info.LocationID, info.Code, info.Level, info.Location, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.LocationID, info.Code, info.Level, info.BayID, info.ItemID, info.Capacity, info.Quantity, info.Available, info.CanPick, info.Alert, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	return err
 }
 
@@ -127,16 +133,29 @@ func (r *warehouseRepository) GetLocationByID(locationID, organizationID string)
 	var res LocationResponse
 	row := r.tx.QueryRow(`
 		SELECT 
-		location_id, 
-		organization_id,
-		code,
-		level, 
-		location, 
-		status
-		FROM w_locations 
-		WHERE location_id = ? AND organization_id = ? LIMIT 1
+		l.location_id, 
+		l.organization_id,
+		l.code,
+		l.level, 
+		l.bay_id,
+		b.code as bay_code,
+		l.item_id,
+		i.name as item_name,
+		i.sku,
+		l.capacity,
+		l.quantity,
+		l.available,
+		l.can_pick,
+		l.alert, 
+		l.status
+		FROM w_locations l
+		LEFT JOIN w_bays b
+		ON l.bay_id = b.bay_id
+		LEFT JOIN i_items i
+		ON l.item_id = i.item_id
+		WHERE l.location_id = ? AND l.organization_id = ? AND l.status > 0
 	`, locationID, organizationID)
-	err := row.Scan(&res.LocationID, &res.OrganizationID, &res.Code, &res.Level, &res.Location, &res.Status)
+	err := row.Scan(&res.LocationID, &res.OrganizationID, &res.Code, &res.Level, &res.BayID, &res.BayCode, &res.ItemID, &res.ItemName, &res.SKU, &res.Capacity, &res.Quantity, &res.Available, &res.CanPick, &res.Alert, &res.Status)
 	return &res, err
 }
 
@@ -145,12 +164,18 @@ func (r *warehouseRepository) UpdateLocation(id string, info Location) error {
 		Update w_locations SET
 		code = ?,
 		level = ?,
-		location = ?,
+		bay_id = ?,
+		item_id = ?,
+		capacity = ?,
+		quantity = ?,
+		available = ?,
+		can_pick = ?,
+		alert = ?,
 		status = ?,
 		updated = ?,
 		updated_by = ?
 		WHERE location_id = ?
-	`, info.Code, info.Level, info.Location, info.Status, info.Updated, info.UpdatedBy, id)
+	`, info.Code, info.Level, info.BayID, info.ItemID, info.Capacity, info.Quantity, info.Available, info.CanPick, info.Alert, info.Status, info.Updated, info.UpdatedBy, id)
 	return err
 }
 

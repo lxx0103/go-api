@@ -53,7 +53,7 @@ type LocationResponse struct {
 	Available      int64  `db:"available" json:"available"`
 	CanPick        int64  `db:"can_pick" json:"can_pick"`
 	Alert          int64  `db:"alert" json:"alert"`
-	Status         string `db:"status" json:"status"`
+	Status         int    `db:"status" json:"status"`
 }
 
 type LocationNew struct {
@@ -64,10 +64,11 @@ type LocationNew struct {
 	Capacity       int64  `json:"capacity" binding:"required"`
 	Quantity       int64  `json:"quantity" binding:"omitempty"`
 	Alert          int64  `json:"alert" binding:"omitempty"`
-	Status         string `json:"status" binding:"required,oneof=1 2"`
+	Status         int    `json:"status" binding:"required,oneof=1 2"`
 	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
 	User           string `json:"user" swaggerignore:"true"`
 }
+
 type LocationID struct {
 	ID string `uri:"id" binding:"required,min=1"`
 }
