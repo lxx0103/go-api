@@ -875,9 +875,17 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "采购单名称",
-                        "name": "name",
-                        "in": "query"
+                        "description": "相关ID",
+                        "name": "reference_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "历史类型",
+                        "name": "history_type",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -2156,6 +2164,58 @@ var doc = `{
                 }
             }
         },
+        "/purchaseorders/:id/receives": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "新建收货单",
+                "operationId": "408",
+                "parameters": [
+                    {
+                        "description": "采购单信息",
+                        "name": "purchasereceive_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/purchaseorder.PurchasereceiveNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/roles": {
             "get": {
                 "consumes": [
@@ -3365,6 +3425,12 @@ var doc = `{
                 "status": {
                     "type": "integer"
                 },
+                "stock_on_hand": {
+                    "type": "number"
+                },
+                "track_location": {
+                    "type": "integer"
+                },
                 "unit_id": {
                     "type": "string"
                 },
@@ -3391,6 +3457,7 @@ var doc = `{
                 "name",
                 "sku",
                 "status",
+                "track_location",
                 "unit_id"
             ],
             "properties": {
@@ -3447,6 +3514,13 @@ var doc = `{
                     "minLength": 6
                 },
                 "status": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
+                },
+                "track_location": {
                     "type": "integer",
                     "enum": [
                         1,
@@ -3529,6 +3603,12 @@ var doc = `{
                     "type": "string"
                 },
                 "status": {
+                    "type": "integer"
+                },
+                "stock_on_hand": {
+                    "type": "number"
+                },
+                "track_location": {
                     "type": "integer"
                 },
                 "unit_id": {
@@ -3813,6 +3893,47 @@ var doc = `{
                 },
                 "vendor_name": {
                     "type": "string"
+                }
+            }
+        },
+        "purchaseorder.PurchasereceiveItemNew": {
+            "type": "object",
+            "required": [
+                "quantity"
+            ],
+            "properties": {
+                "item_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
+        "purchaseorder.PurchasereceiveNew": {
+            "type": "object",
+            "required": [
+                "items",
+                "purchasereceive_date",
+                "purchasereceive_number"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/purchaseorder.PurchasereceiveItemNew"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "purchasereceive_date": {
+                    "type": "string"
+                },
+                "purchasereceive_number": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 6
                 }
             }
         },

@@ -190,3 +190,31 @@ func (r *warehouseRepository) DeleteLocation(id, byUser string) error {
 	`, time.Now(), byUser, id)
 	return err
 }
+
+func (r *warehouseRepository) GetItemAvailable(itemID, organizationID string) (int, error) {
+	var available int
+	row := r.tx.QueryRow("SELECT sum(available) FROM w_locations WHERE organization_id = ? AND item_id = ? AND status > 0 ", organizationID, itemID)
+	err := row.Scan(&available)
+	return available, err
+}
+
+func (r *warehouseRepository) GetNextLocation(itemID, organizationID string) (*LocationResponse, error) {
+	var location LocationResponse
+	row := r.tx.QueryRow("SELECT location_id,available FROM w_locations WHERE organization_id = ? AND item_id = ? AND available > 0  AND status > 0  limit 1", organizationID, itemID)
+	err := row.Scan(&location.LocationID, &location.Available)
+	fmt.Println(itemID, organizationID)
+	return &location, err
+}
+
+func (r *warehouseRepository) ReceiveItem(locationID string, quantity int, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update w_locations SET
+		available = available - ?,
+		quantity = quantity + ?,
+		can_pick = can_pick + ?,
+		updated = ?,
+		updated_by = ?
+		WHERE location_id = ?
+	`, quantity, quantity, quantity, time.Now(), byUser, locationID)
+	return err
+}

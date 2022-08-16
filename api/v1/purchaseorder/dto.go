@@ -70,3 +70,18 @@ type PurchaseorderItemResponse struct {
 type PurchaseorderID struct {
 	ID string `uri:"id" binding:"required,min=1"`
 }
+
+type PurchasereceiveNew struct {
+	PurchasereceiveNumber string                   `json:"purchasereceive_number" binding:"required,min=6,max=64"`
+	PurchasereceiveDate   string                   `json:"purchasereceive_date" binding:"required,datetime=2006-01-02"`
+	Notes                 string                   `json:"notes" binding:"omitempty"`
+	Items                 []PurchasereceiveItemNew `json:"items" binding:"required"`
+	OrganizationID        string                   `json:"organiztion_id" swaggerignore:"true"`
+	User                  string                   `json:"user" swaggerignore:"true"`
+	Email                 string                   `json:"email" swaggerignore:"true"`
+}
+
+type PurchasereceiveItemNew struct {
+	ItemID   string `json:"item_id" binding:"omitempty"`
+	Quantity int    `json:"quantity" binding:"required"`
+}

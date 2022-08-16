@@ -61,8 +61,10 @@ type Item struct {
 	OpenningStock     float64   `db:"openning_stock" json:"openning_stock"`
 	OpenningStockRate float64   `db:"openning_stock_rate" json:"openning_stock_rate"`
 	ReorderStock      float64   `db:"reorder_stock" json:"reorder_stock"`
+	StockOnHand       float64   `db:"stock_on_hand" json:"stock_on_hand"`
 	DefaultVendorID   string    `db:"default_vendor_id" json:"default_vendor_id"`
 	Description       string    `db:"description" json:"description"`
+	TrackLocation     int       `db:"track_location" json:"track_location"`
 	Status            int       `db:"status" json:"status"`
 	Created           time.Time `db:"created" json:"created"`
 	CreatedBy         string    `db:"created_by" json:"created_by"`

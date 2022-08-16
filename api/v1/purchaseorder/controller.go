@@ -205,3 +205,37 @@ func IssuePurchaseorder(c *gin.Context) {
 	}
 	response.Response(c, "ok")
 }
+
+// @Summary 新建收货单
+// @Id 408
+// @Tags 采购单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param purchasereceive_info body PurchasereceiveNew true "采购单信息"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /purchaseorders/:id/receives [POST]
+func NewPurchasereceive(c *gin.Context) {
+	var uri PurchaseorderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	var purchasereceive PurchasereceiveNew
+	if err := c.ShouldBindJSON(&purchasereceive); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	purchasereceive.OrganizationID = claims.OrganizationID
+	purchasereceive.User = claims.UserName
+	purchasereceive.Email = claims.Email
+	purchaseorderService := NewPurchaseorderService()
+	new, err := purchaseorderService.NewPurchasereceive(uri.ID, purchasereceive)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}

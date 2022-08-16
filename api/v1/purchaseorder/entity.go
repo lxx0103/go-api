@@ -43,3 +43,50 @@ type PurchaseorderItem struct {
 	Updated             time.Time `db:"updated" json:"updated"`
 	UpdatedBy           string    `db:"updated_by" json:"updated_by"`
 }
+
+type Purchasereceive struct {
+	ID                    int64     `db:"id" json:"id"`
+	OrganizationID        string    `db:"organization_id" json:"organization_id"`
+	PurchaseorderID       string    `db:"purchaseorder_id" json:"purchaseorder_id"`
+	PurchasereceiveID     string    `db:"purchasereceive_id" json:"purchasereceive_id"`
+	PurchasereceiveNumber string    `db:"purchasereceive_number" json:"purchasereceive_number"`
+	PurchasereceiveDate   string    `db:"purchasereceive_date" json:"purchasereceive_date"`
+	Notes                 string    `db:"notes" json:"notes"`
+	Status                int       `db:"status" json:"status"`
+	Created               time.Time `db:"created" json:"created"`
+	CreatedBy             string    `db:"created_by" json:"created_by"`
+	Updated               time.Time `db:"updated" json:"updated"`
+	UpdatedBy             string    `db:"updated_by" json:"updated_by"`
+}
+
+type PurchasereceiveItem struct {
+	ID                    int64     `db:"id" json:"id"`
+	OrganizationID        string    `db:"organization_id" json:"organization_id"`
+	PurchasereceiveID     string    `db:"purchasereceive_id" json:"purchasereceive_id"`
+	PurchaseorderItemID   string    `db:"purchaseorder_item_id" json:"purchaseorder_item_id"`
+	PurchasereceiveItemID string    `db:"purchasereceive_item_id" json:"purchasereceive_item_id"`
+	ItemID                string    `db:"item_id" json:"item_id"`
+	Quantity              int       `db:"quantity" json:"quantity"`
+	Status                int       `db:"status" json:"status"`
+	Created               time.Time `db:"created" json:"created"`
+	CreatedBy             string    `db:"created_by" json:"created_by"`
+	Updated               time.Time `db:"updated" json:"updated"`
+	UpdatedBy             string    `db:"updated_by" json:"updated_by"`
+}
+
+type PurchasereceiveDetail struct {
+	ID                      int64     `db:"id" json:"id"`
+	PurchasereceiveDetailID string    `db:"purchasereceive_detail_id" json:"purchasereceive_detail_id"`
+	OrganizationID          string    `db:"organization_id" json:"organization_id"`
+	PurchasereceiveID       string    `db:"purchasereceive_id" json:"purchasereceive_id"`
+	PurchaseorderItemID     string    `db:"purchaseorder_item_id" json:"purchaseorder_item_id"`
+	PurchasereceiveItemID   string    `db:"purchasereceive_item_id" json:"purchasereceive_item_id"`
+	LocationID              string    `db:"location_id" json:"location_id"`
+	ItemID                  string    `db:"item_id" json:"item_id"`
+	Quantity                int       `db:"quantity" json:"quantity"`
+	Status                  int       `db:"status" json:"status"`
+	Created                 time.Time `db:"created" json:"created"`
+	CreatedBy               string    `db:"created_by" json:"created_by"`
+	Updated                 time.Time `db:"updated" json:"updated"`
+	UpdatedBy               string    `db:"updated_by" json:"updated_by"`
+}

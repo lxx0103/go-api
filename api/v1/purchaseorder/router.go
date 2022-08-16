@@ -11,4 +11,6 @@ func AuthRouter(g *gin.RouterGroup) {
 	g.GET("/purchaseorders/:id/items", GetPurchaseorderItemList)
 	g.POST("/purchaseorders/:id/issued", IssuePurchaseorder)
 
+	g.POST("/purchaseorders/:id/receives", NewPurchasereceive)
+
 }

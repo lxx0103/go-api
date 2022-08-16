@@ -20,6 +20,7 @@ func (r *itemQuery) GetItemByID(organizationID, id string) (*ItemResponse, error
 	var item ItemResponse
 	err := r.conn.Get(&item, `
 	SELECT 
+	i.item_id,
 	i.sku, 
 	i.name, 
 	i.unit_id, 
@@ -39,8 +40,10 @@ func (r *itemQuery) GetItemByID(organizationID, id string) (*ItemResponse, error
 	i.openning_stock,
 	i.openning_stock_rate,
 	i.reorder_stock,
+	i.stock_on_hand,
 	i.default_vendor_id,
 	i.description,
+	i.track_location,
 	i.status
 	FROM i_items i
 	LEFT JOIN s_units u
@@ -104,8 +107,10 @@ func (r *itemQuery) GetItemList(filter ItemFilter) (*[]ItemResponse, error) {
 		i.openning_stock,
 		i.openning_stock_rate,
 		i.reorder_stock,
+		i.stock_on_hand,
 		i.default_vendor_id,
 		i.description,
+		i.track_location,
 		i.status
 		FROM i_items i
 		LEFT JOIN s_units u

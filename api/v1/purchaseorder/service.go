@@ -3,9 +3,11 @@ package purchaseorder
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"go-api/api/v1/history"
 	"go-api/api/v1/item"
 	"go-api/api/v1/setting"
+	"go-api/api/v1/warehouse"
 	"go-api/core/database"
 	"go-api/core/queue"
 	"time"
@@ -432,4 +434,220 @@ func (s *purchaseorderService) IssuePurchaseorder(purchaseorderID, organizationI
 	}
 	tx.Commit()
 	return err
+}
+
+// receive
+
+func (s *purchaseorderService) NewPurchasereceive(purchaseorderID string, info PurchasereceiveNew) (*string, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return nil, errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewPurchaseorderRepository(tx)
+	isConflict, err := repo.CheckReceiveNumberConfict("", info.OrganizationID, info.PurchasereceiveNumber)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "purchase receive number exists"
+		return nil, errors.New(msg)
+	}
+	receiveID := "rec-" + xid.New().String()
+	itemRepo := item.NewItemRepository(tx)
+	for _, item := range info.Items {
+		oldPoItem, err := repo.GetPurchaseorderItemByID(info.OrganizationID, purchaseorderID, item.ItemID)
+		if err != nil {
+			msg := "purchase order item not exist"
+			return nil, errors.New(msg)
+		}
+		itemInfo, err := itemRepo.GetItemByID(item.ItemID, info.OrganizationID)
+		if err != nil {
+			return nil, err
+		}
+		receiveItemID := "rei-" + xid.New().String()
+		if itemInfo.TrackLocation == 1 {
+			warehouseRepo := warehouse.NewWarehouseRepository(tx)
+			canReceived, err := warehouseRepo.GetItemAvailable(item.ItemID, info.OrganizationID)
+			if err != nil {
+				msg := "get available location error"
+				return nil, errors.New(msg)
+			}
+			if canReceived < item.Quantity {
+				msg := "no enough space to receive item"
+				return nil, errors.New(msg)
+			}
+			quantityToReceive := item.Quantity
+			for quantityToReceive > 0 {
+				nextLocation, err := warehouseRepo.GetNextLocation(item.ItemID, info.OrganizationID)
+				if err != nil {
+					msg := "get next location error" + err.Error()
+					return nil, errors.New(msg)
+				}
+				if nextLocation.Available >= quantityToReceive {
+					err = warehouseRepo.ReceiveItem(nextLocation.LocationID, quantityToReceive, info.Email)
+					if err != nil {
+						msg := "receive item to location error"
+						return nil, errors.New(msg)
+					}
+					var purchasereceiveDetail PurchasereceiveDetail
+					purchasereceiveDetail.PurchasereceiveDetailID = "prd-" + xid.New().String()
+					purchasereceiveDetail.OrganizationID = info.OrganizationID
+					purchasereceiveDetail.PurchasereceiveID = receiveID
+					purchasereceiveDetail.PurchaseorderItemID = oldPoItem.PurchaseorderItemID
+					purchasereceiveDetail.PurchasereceiveItemID = receiveItemID
+					purchasereceiveDetail.LocationID = nextLocation.LocationID
+					purchasereceiveDetail.ItemID = item.ItemID
+					purchasereceiveDetail.Quantity = quantityToReceive
+					purchasereceiveDetail.Status = 1
+					purchasereceiveDetail.Created = time.Now()
+					purchasereceiveDetail.CreatedBy = info.Email
+					purchasereceiveDetail.Updated = time.Now()
+					purchasereceiveDetail.UpdatedBy = info.Email
+					err = repo.CreatePurchasereceiveDetail(purchasereceiveDetail)
+					if err != nil {
+						msg := "create purchase receive detail error" + err.Error()
+						return nil, errors.New(msg)
+					}
+					quantityToReceive = 0
+				} else {
+					err = warehouseRepo.ReceiveItem(nextLocation.LocationID, nextLocation.Available, info.Email)
+					if err != nil {
+						msg := "receive item to location error"
+						return nil, errors.New(msg)
+					}
+					var purchasereceiveDetail PurchasereceiveDetail
+					purchasereceiveDetail.PurchasereceiveDetailID = "prd-" + xid.New().String()
+					purchasereceiveDetail.OrganizationID = info.OrganizationID
+					purchasereceiveDetail.PurchasereceiveID = receiveID
+					purchasereceiveDetail.PurchaseorderItemID = oldPoItem.PurchaseorderItemID
+					purchasereceiveDetail.PurchasereceiveItemID = receiveItemID
+					purchasereceiveDetail.LocationID = nextLocation.LocationID
+					purchasereceiveDetail.ItemID = item.ItemID
+					purchasereceiveDetail.Quantity = nextLocation.Available
+					purchasereceiveDetail.Status = 1
+					purchasereceiveDetail.Created = time.Now()
+					purchasereceiveDetail.CreatedBy = info.Email
+					purchasereceiveDetail.Updated = time.Now()
+					purchasereceiveDetail.UpdatedBy = info.Email
+					err = repo.CreatePurchasereceiveDetail(purchasereceiveDetail)
+					if err != nil {
+						msg := "create purchase receive detail error"
+						return nil, errors.New(msg)
+					}
+					quantityToReceive = quantityToReceive - item.Quantity
+				}
+			}
+		}
+		if oldPoItem.Quantity < oldPoItem.QuantityReceived+item.Quantity {
+			msg := "receive quantity greater than Unreceived"
+			return nil, errors.New(msg)
+		}
+		var poItem PurchaseorderItem
+		poItem.PurchaseorderItemID = oldPoItem.PurchaseorderItemID
+		poItem.QuantityReceived = oldPoItem.QuantityReceived + item.Quantity
+		poItem.Updated = time.Now()
+		poItem.UpdatedBy = info.Email
+
+		err = repo.ReceivePurchaseorderItem(poItem)
+		if err != nil {
+			msg := "receive purchaseorder item error: " + err.Error()
+			return nil, errors.New(msg)
+		}
+		var prItem PurchasereceiveItem
+		prItem.OrganizationID = info.OrganizationID
+		prItem.PurchasereceiveID = receiveID
+		prItem.PurchaseorderItemID = oldPoItem.PurchaseorderItemID
+		prItem.PurchasereceiveItemID = receiveItemID
+		prItem.ItemID = oldPoItem.ItemID
+		prItem.Quantity = item.Quantity
+		prItem.Status = 1
+		prItem.CreatedBy = info.Email
+		prItem.Created = time.Now()
+		prItem.Updated = time.Now()
+		prItem.UpdatedBy = info.Email
+
+		err = repo.CreatePurchasereceiveItem(prItem)
+		if err != nil {
+			msg := "create purchase receive item error: " + err.Error()
+			return nil, errors.New(msg)
+		}
+		err = itemRepo.UpdateItemStock(item.ItemID, itemInfo.StockOnHand+float64(item.Quantity), info.Email)
+		if err != nil {
+			msg := "update item stock error: " + err.Error()
+			return nil, errors.New(msg)
+		}
+	}
+	var purchasereceive Purchasereceive
+	purchasereceive.PurchaseorderID = purchaseorderID
+	purchasereceive.PurchasereceiveID = receiveID
+	purchasereceive.PurchasereceiveNumber = info.PurchasereceiveNumber
+	purchasereceive.PurchasereceiveDate = info.PurchasereceiveDate
+	purchasereceive.OrganizationID = info.OrganizationID
+	purchasereceive.Notes = info.Notes
+	purchasereceive.Status = 1
+	purchasereceive.Created = time.Now()
+	purchasereceive.CreatedBy = info.Email
+	purchasereceive.Updated = time.Now()
+	purchasereceive.UpdatedBy = info.Email
+	err = repo.CreatePurchasereceive(purchasereceive)
+	if err != nil {
+		msg := "create purchase receive error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	po, err := repo.GetPurchaseorderByID(info.OrganizationID, purchaseorderID)
+	if err != nil {
+		msg := "get purchase order error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	receivedCount, err := repo.GetPurchaseorderReceivedCount(info.OrganizationID, purchaseorderID)
+	fmt.Println(info.OrganizationID, purchaseorderID)
+	if err != nil {
+		msg := "get purchase order received count error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	receivedStatus := 1
+	if po.ItemCount == receivedCount {
+		receivedStatus = 3
+	} else {
+		receivedStatus = 2
+	}
+	err = repo.UpdatePurchaseorderReceiveStatus(purchaseorderID, receivedStatus, info.Email)
+	if err != nil {
+		msg := "update purchase order receive status error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if po.BillingStatus == 3 && receivedStatus == 3 {
+		err = repo.UpdatePurchaseorderStatus(purchaseorderID, 3, info.Email)
+		if err != nil {
+			msg := "update purchase order status error: " + err.Error()
+			return nil, errors.New(msg)
+		}
+	} else {
+		err = repo.UpdatePurchaseorderStatus(purchaseorderID, 2, info.Email)
+		if err != nil {
+			msg := "update purchase order status error: " + err.Error()
+			return nil, errors.New(msg)
+		}
+	}
+	var newEvent history.NewHistoryCreated
+	newEvent.HistoryType = "purchaseorder"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = info.User
+	newEvent.ReferenceID = purchaseorderID
+	newEvent.Description = "Purchase Receive Created"
+	newEvent.OrganizationID = info.OrganizationID
+	newEvent.Email = info.Email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return nil, errors.New(msg)
+	}
+	tx.Commit()
+	return &receiveID, err
 }

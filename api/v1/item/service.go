@@ -79,8 +79,10 @@ func (s *itemService) NewItem(info ItemNew) (*string, error) {
 	item.OpenningStock = info.OpenningStock
 	item.OpenningStockRate = info.OpenningStockRate
 	item.ReorderStock = info.ReorderStock
+	item.StockOnHand = info.OpenningStock
 	item.DefaultVendorID = info.DefaultVendorID
 	item.Description = info.Description
+	item.TrackLocation = info.TrackLocation
 	item.Status = info.Status
 	item.Created = time.Now()
 	item.CreatedBy = info.Email
@@ -165,12 +167,8 @@ func (s *itemService) UpdateItem(itemID string, info ItemNew) (*ItemResponse, er
 			return nil, err
 		}
 	}
-	oldItem, err := repo.GetItemByID(itemID)
+	_, err = repo.GetItemByID(itemID, info.OrganizationID)
 	if err != nil {
-		msg := "Item not exist"
-		return nil, errors.New(msg)
-	}
-	if oldItem.OrganizationID != info.OrganizationID {
 		msg := "Item not exist"
 		return nil, errors.New(msg)
 	}
@@ -191,8 +189,10 @@ func (s *itemService) UpdateItem(itemID string, info ItemNew) (*ItemResponse, er
 	item.OpenningStock = info.OpenningStock
 	item.OpenningStockRate = info.OpenningStockRate
 	item.ReorderStock = info.ReorderStock
+	item.StockOnHand = info.OpenningStock
 	item.DefaultVendorID = info.DefaultVendorID
 	item.Description = info.Description
+	item.TrackLocation = info.TrackLocation
 	item.Status = info.Status
 	item.Updated = time.Now()
 	item.UpdatedBy = info.User
@@ -200,7 +200,7 @@ func (s *itemService) UpdateItem(itemID string, info ItemNew) (*ItemResponse, er
 	if err != nil {
 		return nil, err
 	}
-	res, err := repo.GetItemByID(itemID)
+	res, err := repo.GetItemByID(itemID, info.OrganizationID)
 	if err != nil {
 		return nil, err
 	}
@@ -226,12 +226,12 @@ func (s *itemService) UpdateItem(itemID string, info ItemNew) (*ItemResponse, er
 func (s *itemService) GetItemByID(organizationID, id string) (*ItemResponse, error) {
 	db := database.RDB()
 	query := NewItemQuery(db)
-	unit, err := query.GetItemByID(organizationID, id)
+	item, err := query.GetItemByID(organizationID, id)
 	if err != nil {
 		msg := "get item error: " + err.Error()
 		return nil, errors.New(msg)
 	}
-	return unit, nil
+	return item, nil
 }
 
 func (s *itemService) DeleteItem(itemID, organizationID, email, user string) error {
@@ -242,12 +242,8 @@ func (s *itemService) DeleteItem(itemID, organizationID, email, user string) err
 	}
 	defer tx.Rollback()
 	repo := NewItemRepository(tx)
-	oldItem, err := repo.GetItemByID(itemID)
+	_, err = repo.GetItemByID(itemID, organizationID)
 	if err != nil {
-		msg := "Item not exist"
-		return errors.New(msg)
-	}
-	if oldItem.OrganizationID != organizationID {
 		msg := "Item not exist"
 		return errors.New(msg)
 	}
@@ -308,12 +304,8 @@ func (s *itemService) NewBarcode(info BarcodeNew) (*string, error) {
 		msg := "barcode conflict"
 		return nil, errors.New(msg)
 	}
-	item, err := repo.GetItemByID(info.ItemID)
+	_, err = repo.GetItemByID(info.ItemID, info.OrganizationID)
 	if err != nil {
-		msg := "Item not exist"
-		return nil, errors.New(msg)
-	}
-	if item.OrganizationID != info.OrganizationID {
 		msg := "Item not exist"
 		return nil, errors.New(msg)
 	}
@@ -355,12 +347,8 @@ func (s *itemService) UpdateBarcode(barcodeID string, info BarcodeNew) (*Barcode
 		msg := "barcode conflict"
 		return nil, errors.New(msg)
 	}
-	item, err := repo.GetItemByID(info.ItemID)
+	_, err = repo.GetItemByID(info.ItemID, info.OrganizationID)
 	if err != nil {
-		msg := "Item not exist"
-		return nil, errors.New(msg)
-	}
-	if item.OrganizationID != info.OrganizationID {
 		msg := "Item not exist"
 		return nil, errors.New(msg)
 	}

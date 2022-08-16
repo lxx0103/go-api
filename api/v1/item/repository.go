@@ -46,8 +46,10 @@ func (r itemRepository) CreateItem(info Item) error {
 			openning_stock,
 			openning_stock_rate,
 			reorder_stock,
+			stock_on_hand,
 			default_vendor_id,
 			description,
+			track_location,
 			status,
 			created,
 			created_by,
@@ -55,12 +57,12 @@ func (r itemRepository) CreateItem(info Item) error {
 			updated_by
 		)
 		VALUES
-		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, info.OrganizationID, info.ItemID, info.SKU, info.Name, info.UnitID, info.ManufacturerID, info.BrandID, info.WeightUnit, info.Weight, info.DimensionUnit, info.Length, info.Width, info.Height, info.SellingPrice, info.CostPrice, info.OpenningStock, info.OpenningStockRate, info.ReorderStock, info.DefaultVendorID, info.Description, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.ItemID, info.SKU, info.Name, info.UnitID, info.ManufacturerID, info.BrandID, info.WeightUnit, info.Weight, info.DimensionUnit, info.Length, info.Width, info.Height, info.SellingPrice, info.CostPrice, info.OpenningStock, info.OpenningStockRate, info.ReorderStock, info.StockOnHand, info.DefaultVendorID, info.Description, info.TrackLocation, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	return err
 }
 
-func (r *itemRepository) GetItemByID(itemID string) (*ItemResponse, error) {
+func (r *itemRepository) GetItemByID(itemID, organiztionID string) (*ItemResponse, error) {
 	var res ItemResponse
 	row := r.tx.QueryRow(`
 		SELECT
@@ -82,12 +84,14 @@ func (r *itemRepository) GetItemByID(itemID string) (*ItemResponse, error) {
 		openning_stock,
 		openning_stock_rate,
 		reorder_stock,
+		stock_on_hand,
 		default_vendor_id,
 		description,
+		track_location,
 		status
-		FROM i_items WHERE item_id = ? AND status > 0 LIMIT 1
-	`, itemID)
-	err := row.Scan(&res.ItemID, &res.OrganizationID, &res.SKU, &res.Name, &res.UnitID, &res.ManufacturerID, &res.BrandID, &res.WeightUnit, &res.Weight, &res.DimensionUnit, &res.Length, &res.Width, &res.Height, &res.SellingPrice, &res.CostPrice, &res.OpenningStock, &res.OpenningStockRate, &res.ReorderStock, &res.DefaultVendorID, &res.Description, &res.Status)
+		FROM i_items WHERE item_id = ? AND organization_id = ? AND status > 0 LIMIT 1
+	`, itemID, organiztionID)
+	err := row.Scan(&res.ItemID, &res.OrganizationID, &res.SKU, &res.Name, &res.UnitID, &res.ManufacturerID, &res.BrandID, &res.WeightUnit, &res.Weight, &res.DimensionUnit, &res.Length, &res.Width, &res.Height, &res.SellingPrice, &res.CostPrice, &res.OpenningStock, &res.OpenningStockRate, &res.ReorderStock, &res.StockOnHand, &res.DefaultVendorID, &res.Description, &res.TrackLocation, &res.Status)
 	return &res, err
 }
 
@@ -110,13 +114,15 @@ func (r *itemRepository) UpdateItem(id string, info Item) error {
 		openning_stock = ?,
 		openning_stock_rate = ?,
 		reorder_stock = ?,
+		stock_on_hand = ?,
 		default_vendor_id = ?,
 		description = ?,
+		track_location = ?,
 		status = ?,
 		updated = ?,
 		updated_by = ?
 		WHERE item_id = ?
-	`, info.SKU, info.Name, info.UnitID, info.ManufacturerID, info.BrandID, info.WeightUnit, info.Weight, info.DimensionUnit, info.Length, info.Width, info.Height, info.SellingPrice, info.CostPrice, info.OpenningStock, info.OpenningStockRate, info.ReorderStock, info.DefaultVendorID, info.Description, info.Status, info.Updated, info.UpdatedBy, id)
+	`, info.SKU, info.Name, info.UnitID, info.ManufacturerID, info.BrandID, info.WeightUnit, info.Weight, info.DimensionUnit, info.Length, info.Width, info.Height, info.SellingPrice, info.CostPrice, info.OpenningStock, info.OpenningStockRate, info.ReorderStock, info.StockOnHand, info.DefaultVendorID, info.Description, info.TrackLocation, info.Status, info.Updated, info.UpdatedBy, id)
 	return err
 }
 
@@ -204,7 +210,6 @@ func (r *itemRepository) UpdateBarcode(id string, info Barcode) error {
 }
 
 func (r *itemRepository) DeleteBarcode(id, byUser string) error {
-	fmt.Println(id)
 	_, err := r.tx.Exec(`
 		Update i_barcodes SET
 		status = -1,
@@ -212,5 +217,16 @@ func (r *itemRepository) DeleteBarcode(id, byUser string) error {
 		updated_by = ?
 		WHERE barcode_id = ?
 	`, time.Now(), byUser, id)
+	return err
+}
+
+func (r *itemRepository) UpdateItemStock(id string, stock float64, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update i_items SET
+		stock_on_hand = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE item_id = ?
+	`, stock, time.Now(), byUser, id)
 	return err
 }

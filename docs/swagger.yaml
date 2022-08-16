@@ -227,6 +227,10 @@ definitions:
         type: string
       status:
         type: integer
+      stock_on_hand:
+        type: number
+      track_location:
+        type: integer
       unit_id:
         type: string
       updated:
@@ -285,6 +289,11 @@ definitions:
         - 1
         - 2
         type: integer
+      track_location:
+        enum:
+        - 1
+        - 2
+        type: integer
       unit_id:
         maxLength: 64
         minLength: 6
@@ -301,6 +310,7 @@ definitions:
     - name
     - sku
     - status
+    - track_location
     - unit_id
     type: object
   item.ItemResponse:
@@ -342,6 +352,10 @@ definitions:
       sku:
         type: string
       status:
+        type: integer
+      stock_on_hand:
+        type: number
+      track_location:
         type: integer
       unit_id:
         type: string
@@ -536,6 +550,34 @@ definitions:
         type: string
       vendor_name:
         type: string
+    type: object
+  purchaseorder.PurchasereceiveItemNew:
+    properties:
+      item_id:
+        type: string
+      quantity:
+        type: integer
+    required:
+    - quantity
+    type: object
+  purchaseorder.PurchasereceiveNew:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/purchaseorder.PurchasereceiveItemNew'
+        type: array
+      notes:
+        type: string
+      purchasereceive_date:
+        type: string
+      purchasereceive_number:
+        maxLength: 64
+        minLength: 6
+        type: string
+    required:
+    - items
+    - purchasereceive_date
+    - purchasereceive_number
     type: object
   response.ErrorRes:
     properties:
@@ -1493,9 +1535,15 @@ paths:
         name: page_size
         required: true
         type: integer
-      - description: 采购单名称
+      - description: 相关ID
         in: query
-        name: name
+        name: reference_id
+        required: true
+        type: string
+      - description: 历史类型
+        in: query
+        name: history_type
+        required: true
         type: string
       produces:
       - application/json
@@ -2273,6 +2321,37 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorRes'
       summary: 采购单产品列表
+      tags:
+      - 采购单管理
+  /purchaseorders/:id/receives:
+    post:
+      consumes:
+      - application/json
+      operationId: "408"
+      parameters:
+      - description: 采购单信息
+        in: body
+        name: purchasereceive_info
+        required: true
+        schema:
+          $ref: '#/definitions/purchaseorder.PurchasereceiveNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建收货单
       tags:
       - 采购单管理
   /roles:

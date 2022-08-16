@@ -48,11 +48,11 @@ type LocationResponse struct {
 	ItemID         string `db:"item_id" json:"item_id"`
 	ItemName       string `db:"item_name" json:"item_name"`
 	SKU            string `db:"sku" json:"sku"`
-	Capacity       int64  `db:"capacity" json:"capacity"`
-	Quantity       int64  `db:"quantity" json:"quantity"`
-	Available      int64  `db:"available" json:"available"`
-	CanPick        int64  `db:"can_pick" json:"can_pick"`
-	Alert          int64  `db:"alert" json:"alert"`
+	Capacity       int    `db:"capacity" json:"capacity"`
+	Quantity       int    `db:"quantity" json:"quantity"`
+	Available      int    `db:"available" json:"available"`
+	CanPick        int    `db:"can_pick" json:"can_pick"`
+	Alert          int    `db:"alert" json:"alert"`
 	Status         int    `db:"status" json:"status"`
 }
 
@@ -61,9 +61,9 @@ type LocationNew struct {
 	Level          string `json:"level" binding:"required"`
 	BayID          string `json:"bay_id" binding:"required"`
 	ItemID         string `json:"item_id" binding:"required"`
-	Capacity       int64  `json:"capacity" binding:"required"`
-	Quantity       int64  `json:"quantity" binding:"omitempty"`
-	Alert          int64  `json:"alert" binding:"omitempty"`
+	Capacity       int    `json:"capacity" binding:"required"`
+	Quantity       int    `json:"quantity" binding:"omitempty"`
+	Alert          int    `json:"alert" binding:"omitempty"`
 	Status         int    `json:"status" binding:"required,oneof=1 2"`
 	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
 	User           string `json:"user" swaggerignore:"true"`
