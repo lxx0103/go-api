@@ -220,7 +220,7 @@ func (r *itemRepository) DeleteBarcode(id, byUser string) error {
 	return err
 }
 
-func (r *itemRepository) UpdateItemStock(id string, stock float64, byUser string) error {
+func (r *itemRepository) UpdateItemStock(id string, stock int, byUser string) error {
 	_, err := r.tx.Exec(`
 		Update i_items SET
 		stock_on_hand = ?,
@@ -228,5 +228,63 @@ func (r *itemRepository) UpdateItemStock(id string, stock float64, byUser string
 		updated_by = ?
 		WHERE item_id = ?
 	`, stock, time.Now(), byUser, id)
+	return err
+}
+
+func (r itemRepository) CreateItemBatch(info ItemBatch) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO i_item_batches 
+		(
+			organization_id,
+			item_id,
+			batch_id,
+			type,
+			reference_id,
+			quantity,
+			balance,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.ItemID, info.BatchID, info.Type, info.ReferenceID, info.Quantity, info.Balance, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}
+
+func (r *itemRepository) getItemOpenningBatch(itemID, organiztionID string) (*ItemBatchResponse, error) {
+	var res ItemBatchResponse
+	row := r.tx.QueryRow(`
+		SELECT
+		b.organization_id,
+		b.item_id,
+		i.SKU,
+		i.name as item_name,
+		b.batch_id,
+		b.type,
+		b.reference_id,
+		b.quantity,
+		b.balance,
+		b.status
+		FROM i_item_batches b
+		LEFT JOIN i_items i
+		ON b.item_id = i.item_id WHERE b.item_id = ? AND b.reference_id = ? AND b.organization_id = ? AND b.status > 0 LIMIT 1
+	`, itemID, itemID, organiztionID)
+	err := row.Scan(&res.OrganizationID, &res.ItemID, &res.SKU, &res.ItemName, &res.BatchID, &res.Type, &res.ReferenceID, &res.Quantity, &res.Balance, &res.Status)
+	return &res, err
+}
+
+func (r *itemRepository) UpdateItemBatch(id string, itemBatch ItemBatch) error {
+	_, err := r.tx.Exec(`
+		Update i_item_batches SET
+		quantity = ?,
+		balance = ?,
+		status = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE batch_id = ?
+	`, itemBatch.Quantity, itemBatch.Balance, itemBatch.Status, time.Now(), itemBatch.UpdatedBy, id)
 	return err
 }

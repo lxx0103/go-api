@@ -575,7 +575,7 @@ func (s *purchaseorderService) NewPurchasereceive(purchaseorderID string, info P
 			msg := "create purchase receive item error: " + err.Error()
 			return nil, errors.New(msg)
 		}
-		err = itemRepo.UpdateItemStock(item.ItemID, itemInfo.StockOnHand+float64(item.Quantity), info.Email)
+		err = itemRepo.UpdateItemStock(item.ItemID, itemInfo.StockOnHand+item.Quantity, info.Email)
 		if err != nil {
 			msg := "update item stock error: " + err.Error()
 			return nil, errors.New(msg)

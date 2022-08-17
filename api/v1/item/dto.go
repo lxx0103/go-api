@@ -18,9 +18,9 @@ type ItemNew struct {
 	Height            float64 `json:"height" binding:"omitempty"`
 	SellingPrice      float64 `json:"selling_price" binding:"omitempty"`
 	CostPrice         float64 `json:"cost_price" binding:"omitempty"`
-	OpenningStock     float64 `json:"openning_stock" binding:"omitempty"`
+	OpenningStock     int     `json:"openning_stock" binding:"omitempty"`
 	OpenningStockRate float64 `json:"openning_stock_rate" binding:"omitempty"`
-	ReorderStock      float64 `json:"reorder_stock" binding:"omitempty"`
+	ReorderStock      int     `json:"reorder_stock" binding:"omitempty"`
 	DefaultVendorID   string  `json:"default_vendor_id" binding:"omitempty"`
 	Description       string  `json:"description" binding:"omitempty"`
 	TrackLocation     int     `json:"track_location" binding:"required,oneof=1 2"`
@@ -55,10 +55,10 @@ type ItemResponse struct {
 	Height            float64 `db:"height" json:"height"`
 	SellingPrice      float64 `db:"selling_price" json:"selling_price"`
 	CostPrice         float64 `db:"cost_price" json:"cost_price"`
-	OpenningStock     float64 `db:"openning_stock" json:"openning_stock"`
+	OpenningStock     int     `db:"openning_stock" json:"openning_stock"`
 	OpenningStockRate float64 `db:"openning_stock_rate" json:"openning_stock_rate"`
-	ReorderStock      float64 `db:"reorder_stock" json:"reorder_stock"`
-	StockOnHand       float64 `db:"stock_on_hand" json:"stock_on_hand"`
+	ReorderStock      int     `db:"reorder_stock" json:"reorder_stock"`
+	StockOnHand       int     `db:"stock_on_hand" json:"stock_on_hand"`
 	DefaultVendorID   string  `db:"default_vendor_id" json:"default_vendor_id"`
 	Description       string  `db:"description" json:"description"`
 	TrackLocation     int     `db:"track_location" json:"track_location"`
@@ -98,4 +98,17 @@ type BarcodeNew struct {
 }
 type BarcodeID struct {
 	ID string `uri:"id" binding:"required,min=1"`
+}
+
+type ItemBatchResponse struct {
+	OrganizationID string `db:"organization_id" json:"organization_id"`
+	ItemID         string `db:"item_id" json:"item_id"`
+	SKU            string `db:"sku" json:"sku"`
+	ItemName       string `db:"item_name" json:"item_name"`
+	BatchID        string `db:"batch_id" json:"batch_id"`
+	Type           string `db:"type" json:"type"`
+	ReferenceID    string `db:"reference_id" json:"reference_id"`
+	Quantity       int    `db:"quantity" json:"quantity"`
+	Balance        int    `db:"balance" json:"balance"`
+	Status         int    `db:"status" json:"status"`
 }

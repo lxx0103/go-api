@@ -7,6 +7,7 @@ import (
 	"go-api/api/v1/setting"
 	"go-api/core/database"
 	"go-api/core/queue"
+	"strconv"
 	"time"
 
 	"github.com/rs/xid"
@@ -94,6 +95,7 @@ func (s *itemService) NewItem(info ItemNew) (*string, error) {
 		msg := "create itemerror: " + err.Error()
 		return nil, errors.New(msg)
 	}
+	rabbit, _ := queue.GetConn()
 	var newEvent history.NewHistoryCreated
 	newEvent.HistoryType = "item"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
@@ -102,12 +104,27 @@ func (s *itemService) NewItem(info ItemNew) (*string, error) {
 	newEvent.Description = "Item Created"
 	newEvent.OrganizationID = info.OrganizationID
 	newEvent.Email = info.Email
-	rabbit, _ := queue.GetConn()
 	msg, _ := json.Marshal(newEvent)
 	err = rabbit.Publish("NewHistoryCreated", msg)
 	if err != nil {
 		msg := "create event NewHistoryCreated error"
 		return nil, errors.New(msg)
+	}
+	if item.OpenningStock > 0 {
+		var newBatchEvent NewBatchCreated
+		newBatchEvent.Type = "NewItem"
+		newBatchEvent.Quantity = item.OpenningStock
+		newBatchEvent.Balance = item.OpenningStock
+		newBatchEvent.ReferenceID = item.ItemID
+		newBatchEvent.ItemID = item.ItemID
+		newBatchEvent.OrganizationID = info.OrganizationID
+		newBatchEvent.Email = info.Email
+		msg2, _ := json.Marshal(newBatchEvent)
+		err = rabbit.Publish("NewBatchCreated", msg2)
+		if err != nil {
+			msg := "create event NewBatchCreated error"
+			return nil, errors.New(msg)
+		}
 	}
 	tx.Commit()
 	return &item.ItemID, err
@@ -167,10 +184,37 @@ func (s *itemService) UpdateItem(itemID string, info ItemNew) (*ItemResponse, er
 			return nil, err
 		}
 	}
-	_, err = repo.GetItemByID(itemID, info.OrganizationID)
+	oldItem, err := repo.GetItemByID(itemID, info.OrganizationID)
 	if err != nil {
 		msg := "Item not exist"
 		return nil, errors.New(msg)
+	}
+	if oldItem.OpenningStock != 0 {
+		openningBatch, err := repo.getItemOpenningBatch(itemID, info.OrganizationID)
+		if err != nil {
+			msg := "get Item Openning Batch error" + err.Error()
+			return nil, errors.New(msg)
+		}
+		newBalance := openningBatch.Balance - oldItem.OpenningStock + info.OpenningStock
+		if newBalance < 0 {
+			msg := "openning stock already sold, minimum openning stock should be " + strconv.Itoa(openningBatch.Quantity-openningBatch.Balance)
+			return nil, errors.New(msg)
+		}
+		var itemBatch ItemBatch
+		itemBatch.Quantity = info.OpenningStock
+		itemBatch.Balance = newBalance
+		itemBatch.UpdatedBy = info.Email
+		itemBatch.Updated = time.Now()
+		if newBalance == 0 {
+			itemBatch.Status = 2
+		} else {
+			itemBatch.Status = 1
+		}
+		err = repo.UpdateItemBatch(openningBatch.BatchID, itemBatch)
+		if err != nil {
+			msg := "update item batch error"
+			return nil, errors.New(msg)
+		}
 	}
 	var item Item
 	item.SKU = info.SKU
@@ -189,7 +233,7 @@ func (s *itemService) UpdateItem(itemID string, info ItemNew) (*ItemResponse, er
 	item.OpenningStock = info.OpenningStock
 	item.OpenningStockRate = info.OpenningStockRate
 	item.ReorderStock = info.ReorderStock
-	item.StockOnHand = info.OpenningStock
+	item.StockOnHand = oldItem.StockOnHand - oldItem.OpenningStock + info.OpenningStock
 	item.DefaultVendorID = info.DefaultVendorID
 	item.Description = info.Description
 	item.TrackLocation = info.TrackLocation
@@ -242,10 +286,32 @@ func (s *itemService) DeleteItem(itemID, organizationID, email, user string) err
 	}
 	defer tx.Rollback()
 	repo := NewItemRepository(tx)
-	_, err = repo.GetItemByID(itemID, organizationID)
+	oldItem, err := repo.GetItemByID(itemID, organizationID)
 	if err != nil {
 		msg := "Item not exist"
 		return errors.New(msg)
+	}
+	if oldItem.OpenningStock != 0 {
+		openningBatch, err := repo.getItemOpenningBatch(itemID, organizationID)
+		if err != nil {
+			msg := "get Item Openning Batch error" + err.Error()
+			return errors.New(msg)
+		}
+		if openningBatch.Quantity != openningBatch.Balance {
+			msg := "openning stock already sold, can not delete"
+			return errors.New(msg)
+		}
+		var itemBatch ItemBatch
+		itemBatch.Quantity = openningBatch.Quantity
+		itemBatch.Balance = openningBatch.Balance
+		itemBatch.Status = -1
+		itemBatch.UpdatedBy = email
+		itemBatch.Updated = time.Now()
+		err = repo.UpdateItemBatch(openningBatch.BatchID, itemBatch)
+		if err != nil {
+			msg := "update item batch error"
+			return errors.New(msg)
+		}
 	}
 	err = repo.DeleteItem(itemID, email)
 	if err != nil {
