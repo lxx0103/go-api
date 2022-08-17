@@ -110,21 +110,19 @@ func (s *itemService) NewItem(info ItemNew) (*string, error) {
 		msg := "create event NewHistoryCreated error"
 		return nil, errors.New(msg)
 	}
-	if item.OpenningStock > 0 {
-		var newBatchEvent NewBatchCreated
-		newBatchEvent.Type = "NewItem"
-		newBatchEvent.Quantity = item.OpenningStock
-		newBatchEvent.Balance = item.OpenningStock
-		newBatchEvent.ReferenceID = item.ItemID
-		newBatchEvent.ItemID = item.ItemID
-		newBatchEvent.OrganizationID = info.OrganizationID
-		newBatchEvent.Email = info.Email
-		msg2, _ := json.Marshal(newBatchEvent)
-		err = rabbit.Publish("NewBatchCreated", msg2)
-		if err != nil {
-			msg := "create event NewBatchCreated error"
-			return nil, errors.New(msg)
-		}
+	var newBatchEvent NewBatchCreated
+	newBatchEvent.Type = "NewItem"
+	newBatchEvent.Quantity = item.OpenningStock
+	newBatchEvent.Balance = item.OpenningStock
+	newBatchEvent.ReferenceID = item.ItemID
+	newBatchEvent.ItemID = item.ItemID
+	newBatchEvent.OrganizationID = info.OrganizationID
+	newBatchEvent.Email = info.Email
+	msg2, _ := json.Marshal(newBatchEvent)
+	err = rabbit.Publish("NewBatchCreated", msg2)
+	if err != nil {
+		msg := "create event NewBatchCreated error"
+		return nil, errors.New(msg)
 	}
 	tx.Commit()
 	return &item.ItemID, err

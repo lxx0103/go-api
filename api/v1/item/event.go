@@ -27,7 +27,6 @@ func Subscribe(conn *queue.Conn) {
 }
 
 func CreateBatch(d amqp.Delivery) bool {
-	fmt.Println("asdfasdfasdf")
 	if d.Body == nil {
 		return false
 	}

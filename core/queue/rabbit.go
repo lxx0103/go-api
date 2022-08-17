@@ -67,7 +67,6 @@ func (conn Conn) StartConsumer(queueName, routingKey string, handler func(d amqp
 	// bind the queue to the routing key
 	err = conn.Channel.QueueBind(queueName, routingKey, conn.Exchange, false, nil)
 	if err != nil {
-		fmt.Println("b")
 		return err
 	}
 	err = conn.Channel.Qos(4, 0, false)

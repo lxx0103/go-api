@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"errors"
-	"fmt"
 
 	"go-api/core/response"
 	"go-api/service"
@@ -16,9 +15,6 @@ func RbacCheck() gin.HandlerFunc {
 		role_id := claims.RoleID
 		path := c.FullPath()
 		method := c.Request.Method
-		fmt.Println(role_id)
-		fmt.Println(path)
-		fmt.Println(method)
 		checked := service.NewRbacService().CheckPrivilege(role_id, path, method)
 		if !checked {
 			response.ResponseUnauthorized(c, "AuthError", errors.New("NO PRIVILEGE"))

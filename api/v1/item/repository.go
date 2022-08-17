@@ -2,7 +2,6 @@ package item
 
 import (
 	"database/sql"
-	"fmt"
 	"time"
 )
 
@@ -127,7 +126,6 @@ func (r *itemRepository) UpdateItem(id string, info Item) error {
 }
 
 func (r *itemRepository) DeleteItem(id, byUser string) error {
-	fmt.Println(id)
 	_, err := r.tx.Exec(`
 		Update i_items SET
 		status = -1,

@@ -2,7 +2,6 @@ package warehouse
 
 import (
 	"database/sql"
-	"fmt"
 	"time"
 )
 
@@ -79,7 +78,6 @@ func (r *warehouseRepository) UpdateBay(id string, info Bay) error {
 }
 
 func (r *warehouseRepository) DeleteBay(id, byUser string) error {
-	fmt.Println(id)
 	_, err := r.tx.Exec(`
 		Update w_bays SET
 		status = -1,
@@ -180,7 +178,6 @@ func (r *warehouseRepository) UpdateLocation(id string, info Location) error {
 }
 
 func (r *warehouseRepository) DeleteLocation(id, byUser string) error {
-	fmt.Println(id)
 	_, err := r.tx.Exec(`
 		Update w_locations SET
 		status = -1,
@@ -202,7 +199,6 @@ func (r *warehouseRepository) GetNextLocation(itemID, organizationID string) (*L
 	var location LocationResponse
 	row := r.tx.QueryRow("SELECT location_id,available FROM w_locations WHERE organization_id = ? AND item_id = ? AND available > 0  AND status > 0  limit 1", organizationID, itemID)
 	err := row.Scan(&location.LocationID, &location.Available)
-	fmt.Println(itemID, organizationID)
 	return &location, err
 }
 

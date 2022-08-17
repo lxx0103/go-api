@@ -3,7 +3,6 @@ package purchaseorder
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"go-api/api/v1/history"
 	"go-api/api/v1/item"
 	"go-api/api/v1/setting"
@@ -456,33 +455,34 @@ func (s *purchaseorderService) NewPurchasereceive(purchaseorderID string, info P
 		msg := "purchase receive number exists"
 		return nil, errors.New(msg)
 	}
+	var msgs [][]byte
 	receiveID := "rec-" + xid.New().String()
 	itemRepo := item.NewItemRepository(tx)
-	for _, item := range info.Items {
-		oldPoItem, err := repo.GetPurchaseorderItemByID(info.OrganizationID, purchaseorderID, item.ItemID)
+	for _, itemRow := range info.Items {
+		oldPoItem, err := repo.GetPurchaseorderItemByID(info.OrganizationID, purchaseorderID, itemRow.ItemID)
 		if err != nil {
 			msg := "purchase order item not exist"
 			return nil, errors.New(msg)
 		}
-		itemInfo, err := itemRepo.GetItemByID(item.ItemID, info.OrganizationID)
+		itemInfo, err := itemRepo.GetItemByID(itemRow.ItemID, info.OrganizationID)
 		if err != nil {
 			return nil, err
 		}
 		receiveItemID := "rei-" + xid.New().String()
 		if itemInfo.TrackLocation == 1 {
 			warehouseRepo := warehouse.NewWarehouseRepository(tx)
-			canReceived, err := warehouseRepo.GetItemAvailable(item.ItemID, info.OrganizationID)
+			canReceived, err := warehouseRepo.GetItemAvailable(itemRow.ItemID, info.OrganizationID)
 			if err != nil {
 				msg := "get available location error"
 				return nil, errors.New(msg)
 			}
-			if canReceived < item.Quantity {
+			if canReceived < itemRow.Quantity {
 				msg := "no enough space to receive item"
 				return nil, errors.New(msg)
 			}
-			quantityToReceive := item.Quantity
+			quantityToReceive := itemRow.Quantity
 			for quantityToReceive > 0 {
-				nextLocation, err := warehouseRepo.GetNextLocation(item.ItemID, info.OrganizationID)
+				nextLocation, err := warehouseRepo.GetNextLocation(itemRow.ItemID, info.OrganizationID)
 				if err != nil {
 					msg := "get next location error" + err.Error()
 					return nil, errors.New(msg)
@@ -500,7 +500,7 @@ func (s *purchaseorderService) NewPurchasereceive(purchaseorderID string, info P
 					purchasereceiveDetail.PurchaseorderItemID = oldPoItem.PurchaseorderItemID
 					purchasereceiveDetail.PurchasereceiveItemID = receiveItemID
 					purchasereceiveDetail.LocationID = nextLocation.LocationID
-					purchasereceiveDetail.ItemID = item.ItemID
+					purchasereceiveDetail.ItemID = itemRow.ItemID
 					purchasereceiveDetail.Quantity = quantityToReceive
 					purchasereceiveDetail.Status = 1
 					purchasereceiveDetail.Created = time.Now()
@@ -526,7 +526,7 @@ func (s *purchaseorderService) NewPurchasereceive(purchaseorderID string, info P
 					purchasereceiveDetail.PurchaseorderItemID = oldPoItem.PurchaseorderItemID
 					purchasereceiveDetail.PurchasereceiveItemID = receiveItemID
 					purchasereceiveDetail.LocationID = nextLocation.LocationID
-					purchasereceiveDetail.ItemID = item.ItemID
+					purchasereceiveDetail.ItemID = itemRow.ItemID
 					purchasereceiveDetail.Quantity = nextLocation.Available
 					purchasereceiveDetail.Status = 1
 					purchasereceiveDetail.Created = time.Now()
@@ -538,17 +538,17 @@ func (s *purchaseorderService) NewPurchasereceive(purchaseorderID string, info P
 						msg := "create purchase receive detail error"
 						return nil, errors.New(msg)
 					}
-					quantityToReceive = quantityToReceive - item.Quantity
+					quantityToReceive = quantityToReceive - itemRow.Quantity
 				}
 			}
 		}
-		if oldPoItem.Quantity < oldPoItem.QuantityReceived+item.Quantity {
+		if oldPoItem.Quantity < oldPoItem.QuantityReceived+itemRow.Quantity {
 			msg := "receive quantity greater than Unreceived"
 			return nil, errors.New(msg)
 		}
 		var poItem PurchaseorderItem
 		poItem.PurchaseorderItemID = oldPoItem.PurchaseorderItemID
-		poItem.QuantityReceived = oldPoItem.QuantityReceived + item.Quantity
+		poItem.QuantityReceived = oldPoItem.QuantityReceived + itemRow.Quantity
 		poItem.Updated = time.Now()
 		poItem.UpdatedBy = info.Email
 
@@ -563,7 +563,7 @@ func (s *purchaseorderService) NewPurchasereceive(purchaseorderID string, info P
 		prItem.PurchaseorderItemID = oldPoItem.PurchaseorderItemID
 		prItem.PurchasereceiveItemID = receiveItemID
 		prItem.ItemID = oldPoItem.ItemID
-		prItem.Quantity = item.Quantity
+		prItem.Quantity = itemRow.Quantity
 		prItem.Status = 1
 		prItem.CreatedBy = info.Email
 		prItem.Created = time.Now()
@@ -575,11 +575,22 @@ func (s *purchaseorderService) NewPurchasereceive(purchaseorderID string, info P
 			msg := "create purchase receive item error: " + err.Error()
 			return nil, errors.New(msg)
 		}
-		err = itemRepo.UpdateItemStock(item.ItemID, itemInfo.StockOnHand+item.Quantity, info.Email)
+		err = itemRepo.UpdateItemStock(itemRow.ItemID, itemInfo.StockOnHand+itemRow.Quantity, info.Email)
 		if err != nil {
 			msg := "update item stock error: " + err.Error()
 			return nil, errors.New(msg)
 		}
+
+		var newBatchEvent item.NewBatchCreated
+		newBatchEvent.Type = "NewReceive"
+		newBatchEvent.Quantity = itemRow.Quantity
+		newBatchEvent.Balance = itemRow.Quantity
+		newBatchEvent.ReferenceID = receiveItemID
+		newBatchEvent.ItemID = itemRow.ItemID
+		newBatchEvent.OrganizationID = info.OrganizationID
+		newBatchEvent.Email = info.Email
+		msg, _ := json.Marshal(newBatchEvent)
+		msgs = append(msgs, msg)
 	}
 	var purchasereceive Purchasereceive
 	purchasereceive.PurchaseorderID = purchaseorderID
@@ -604,7 +615,6 @@ func (s *purchaseorderService) NewPurchasereceive(purchaseorderID string, info P
 		return nil, errors.New(msg)
 	}
 	receivedCount, err := repo.GetPurchaseorderReceivedCount(info.OrganizationID, purchaseorderID)
-	fmt.Println(info.OrganizationID, purchaseorderID)
 	if err != nil {
 		msg := "get purchase order received count error: " + err.Error()
 		return nil, errors.New(msg)
@@ -633,6 +643,7 @@ func (s *purchaseorderService) NewPurchasereceive(purchaseorderID string, info P
 			return nil, errors.New(msg)
 		}
 	}
+	tx.Commit()
 	var newEvent history.NewHistoryCreated
 	newEvent.HistoryType = "purchaseorder"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
@@ -648,6 +659,12 @@ func (s *purchaseorderService) NewPurchasereceive(purchaseorderID string, info P
 		msg := "create event NewHistoryCreated error"
 		return nil, errors.New(msg)
 	}
-	tx.Commit()
+	for _, msgRow := range msgs {
+		err = rabbit.Publish("NewBatchCreated", msgRow)
+		if err != nil {
+			msg := "create event NewBatchCreated error"
+			return nil, errors.New(msg)
+		}
+	}
 	return &receiveID, err
 }
