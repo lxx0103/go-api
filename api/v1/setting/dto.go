@@ -127,3 +127,29 @@ type VendorNew struct {
 type VendorID struct {
 	ID string `uri:"id" binding:"required,min=1"`
 }
+
+type TaxNew struct {
+	Name           string  `json:"name" binding:"required,min=1,max=64"`
+	TaxValue       float64 `json:"tax_value" binding:"required,max=100"`
+	Status         int     `json:"status" binding:"required,oneof=1 2"`
+	OrganizationID string  `json:"organiztion_id" swaggerignore:"true"`
+	User           string  `json:"user" swaggerignore:"true"`
+}
+
+type TaxID struct {
+	ID string `uri:"id" binding:"required,min=1"`
+}
+
+type TaxFilter struct {
+	Name           string `form:"name" binding:"omitempty,max=64,min=1"`
+	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
+	request.PageInfo
+}
+
+type TaxResponse struct {
+	TaxID          string  `db:"tax_id" json:"tax_id"`
+	OrganizationID string  `db:"organization_id" json:"organization_id"`
+	Name           string  `db:"name" json:"name"`
+	TaxValue       float64 `db:"tax_value" json:"tax_value"`
+	Status         int     `db:"status" json:"status"`
+}

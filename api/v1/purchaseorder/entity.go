@@ -14,6 +14,7 @@ type Purchaseorder struct {
 	Subtotal             float64   `db:"subtotal" json:"subtotal"`
 	DiscountType         int       `db:"discount_type" json:"discount_type"`
 	DiscountValue        float64   `db:"discount_value" json:"discount_value"`
+	TaxTotal             float64   `db:"tax_total" json:"tax_total"`
 	ShippingFee          float64   `db:"shipping_fee" json:"shipping_fee"`
 	Total                float64   `db:"total" json:"total"`
 	Notes                string    `db:"notes" json:"notes"`
@@ -34,6 +35,9 @@ type PurchaseorderItem struct {
 	ItemID              string    `db:"item_id" json:"item_id"`
 	Quantity            int       `db:"quantity" json:"quantity"`
 	Rate                float64   `db:"rate" json:"rate"`
+	TaxID               string    `db:"tax_id" json:"tax_id"`
+	TaxValue            float64   `db:"tax_value" json:"tax_value"`
+	TaxAmount           float64   `db:"tax_amount" json:"tax_amount"`
 	Amount              float64   `db:"amount" json:"amount"`
 	QuantityReceived    int       `db:"quantity_received" json:"quantity_received"`
 	QuantityBilled      int       `db:"quantity_billed" json:"quantity_billed"`

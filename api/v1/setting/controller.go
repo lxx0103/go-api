@@ -586,3 +586,148 @@ func DeleteVendor(c *gin.Context) {
 	}
 	response.Response(c, "OK")
 }
+
+// @Summary 税率列表
+// @Id 321
+// @Tags 税率管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数（5/10/15/20）"
+// @Param name query string false "税率名称"
+// @Success 200 object response.ListRes{data=[]TaxResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /taxes [GET]
+func GetTaxList(c *gin.Context) {
+	var filter TaxFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	filter.OrganizationID = claims.OrganizationID
+	settingService := NewSettingService()
+	count, list, err := settingService.GetTaxList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageID, filter.PageSize, count, list)
+}
+
+// @Summary 新建税率
+// @Id 322
+// @Tags 税率管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param tax_info body TaxNew true "税率信息"
+// @Success 200 object response.SuccessRes{data=TaxResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /taxes [POST]
+func NewTax(c *gin.Context) {
+	var info TaxNew
+	if err := c.ShouldBindJSON(&info); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	info.User = claims.Email
+	info.OrganizationID = claims.OrganizationID
+	settingService := NewSettingService()
+	new, err := settingService.NewTax(info)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
+
+// @Summary 根据ID更新税率
+// @Id 323
+// @Tags 税率管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "税率ID"
+// @Param tax_info body TaxNew true "税率信息"
+// @Success 200 object response.SuccessRes{data=Tax} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /taxes/:id [PUT]
+func UpdateTax(c *gin.Context) {
+	var uri TaxID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	var info TaxNew
+	if err := c.ShouldBindJSON(&info); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	info.User = claims.Email
+	info.OrganizationID = claims.OrganizationID
+	settingService := NewSettingService()
+	new, err := settingService.UpdateTax(uri.ID, info)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
+
+// @Summary 根据ID获取税率
+// @Id 324
+// @Tags 税率管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "税率ID"
+// @Success 200 object response.SuccessRes{data=TaxResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /taxes/:id [GET]
+func GetTaxByID(c *gin.Context) {
+	var uri TaxID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	settingService := NewSettingService()
+	tax, err := settingService.GetTaxByID(claims.OrganizationID, uri.ID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, tax)
+
+}
+
+// @Summary 根据ID删除税率
+// @Id 325
+// @Tags 税率管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "税率ID"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /taxes/:id [DELETE]
+func DeleteTax(c *gin.Context) {
+	var uri TaxID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	settingService := NewSettingService()
+	err := settingService.DeleteTax(uri.ID, claims.OrganizationID, claims.Email)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, "OK")
+}

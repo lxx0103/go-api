@@ -34,6 +34,9 @@ func (r purchaseorderRepository) CreatePurchaseorderItem(info PurchaseorderItem)
 			quantity,
 			rate,
 			amount,
+			tax_id,
+			tax_value,
+			tax_amount,
 			quantity_received,
 			quantity_billed,
 			status,
@@ -43,8 +46,8 @@ func (r purchaseorderRepository) CreatePurchaseorderItem(info PurchaseorderItem)
 			updated_by
 		)
 		VALUES
-		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, info.OrganizationID, info.PurchaseorderItemID, info.PurchaseorderID, info.ItemID, info.Quantity, info.Rate, info.Amount, info.QuantityReceived, info.QuantityBilled, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.PurchaseorderItemID, info.PurchaseorderID, info.ItemID, info.Quantity, info.Rate, info.Amount, info.TaxID, info.TaxValue, info.TaxAmount, info.QuantityReceived, info.QuantityBilled, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	return err
 }
 
@@ -53,12 +56,15 @@ func (r purchaseorderRepository) UpdatePurchaseorderItem(id string, info Purchas
 		UPDATE p_purchaseorder_items set
 		quantity = ?,
 		rate = ?,
+		tax_id = ?,
+		tax_value = ?,
+		tax_amount = ?,
 		amount = ?,
 		status = ?,
 		updated = ?,
 		updated_by =?
 		WHERE purchaseorder_item_id = ?
-	`, info.Quantity, info.Rate, info.Amount, info.Status, info.Updated, info.UpdatedBy, id)
+	`, info.Quantity, info.Rate, info.TaxID, info.TaxValue, info.TaxAmount, info.Amount, info.Status, info.Updated, info.UpdatedBy, id)
 	return err
 }
 
@@ -76,6 +82,7 @@ func (r purchaseorderRepository) CreatePurchaseorder(info Purchaseorder) error {
 			sub_total,
 			discount_type,
 			discount_value,
+			tax_total,
 			shipping_fee,
 			total,
 			notes,
@@ -88,8 +95,8 @@ func (r purchaseorderRepository) CreatePurchaseorder(info Purchaseorder) error {
 			updated_by
 		)
 		VALUES
-		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, info.OrganizationID, info.PurchaseorderID, info.PurchaseorderNumber, info.PurchaseorderDate, info.ExpectedDeliveryDate, info.VendorID, info.ItemCount, info.Subtotal, info.DiscountType, info.DiscountValue, info.ShippingFee, info.Total, info.Notes, info.ReceiveStatus, info.BillingStatus, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.PurchaseorderID, info.PurchaseorderNumber, info.PurchaseorderDate, info.ExpectedDeliveryDate, info.VendorID, info.ItemCount, info.Subtotal, info.DiscountType, info.DiscountValue, info.TaxTotal, info.ShippingFee, info.Total, info.Notes, info.ReceiveStatus, info.BillingStatus, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	return err
 }
 
@@ -104,6 +111,7 @@ func (r *purchaseorderRepository) GetPurchaseorderByID(organizationID, purchaseo
 		expected_delivery_date,
 		vendor_id,
 		item_count,
+		tax_total,
 		sub_total,
 		discount_type,
 		discount_value,
@@ -115,7 +123,7 @@ func (r *purchaseorderRepository) GetPurchaseorderByID(organizationID, purchaseo
 		status
 		FROM p_purchaseorders WHERE organization_id = ? AND purchaseorder_id = ? AND status > 0 LIMIT 1
 	`, organizationID, purchaseorderID)
-	err := row.Scan(&res.PurchaseorderID, &res.OrganizationID, &res.PurchaseorderNumber, &res.PurchaseorderDate, &res.ExpectedDeliveryDate, &res.VendorID, &res.ItemCount, &res.Subtotal, &res.DiscountType, &res.DiscountValue, &res.ShippingFee, &res.Total, &res.Notes, &res.ReceiveStatus, &res.BillingStatus, &res.Status)
+	err := row.Scan(&res.PurchaseorderID, &res.OrganizationID, &res.PurchaseorderNumber, &res.PurchaseorderDate, &res.ExpectedDeliveryDate, &res.VendorID, &res.ItemCount, &res.TaxTotal, &res.Subtotal, &res.DiscountType, &res.DiscountValue, &res.ShippingFee, &res.Total, &res.Notes, &res.ReceiveStatus, &res.BillingStatus, &res.Status)
 	return &res, err
 }
 
@@ -131,6 +139,9 @@ func (r *purchaseorderRepository) GetPurchaseorderItemByID(organizationID, purch
 		i.sku as sku,
 		p.quantity,
 		p.rate,
+		p.tax_id,
+		p.tax_value,
+		p.tax_amount,
 		p.amount,
 		p.quantity_received,
 		p.status
@@ -139,7 +150,7 @@ func (r *purchaseorderRepository) GetPurchaseorderItemByID(organizationID, purch
 		ON p.item_id = i.item_id
 		WHERE p.organization_id = ? AND p.purchaseorder_id = ? AND p.item_id = ? AND p.status > 0 LIMIT 1
 	`, organizationID, purchaseorderID, itemID)
-	err := row.Scan(&res.OrganizationID, &res.PurchaseorderItemID, &res.PurchaseorderID, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity, &res.Rate, &res.Amount, &res.QuantityReceived, &res.Status)
+	err := row.Scan(&res.OrganizationID, &res.PurchaseorderItemID, &res.PurchaseorderID, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity, &res.Rate, &res.TaxID, &res.TaxValue, &res.TaxAmount, &res.Amount, &res.QuantityReceived, &res.Status)
 	return &res, err
 }
 
@@ -152,6 +163,7 @@ func (r *purchaseorderRepository) UpdatePurchaseorder(id string, info Purchaseor
 		vendor_id = ?,
 		item_count = ?,
 		sub_total = ?,
+		tax_total = ?,
 		discount_type = ?,
 		discount_value = ?,
 		shipping_fee = ?,
@@ -163,7 +175,7 @@ func (r *purchaseorderRepository) UpdatePurchaseorder(id string, info Purchaseor
 		updated = ?,
 		updated_by = ?
 		WHERE purchaseorder_id = ?
-	`, info.PurchaseorderNumber, info.PurchaseorderDate, info.ExpectedDeliveryDate, info.VendorID, info.ItemCount, info.Subtotal, info.DiscountType, info.DiscountValue, info.ShippingFee, info.Total, info.Notes, info.ReceiveStatus, info.BillingStatus, info.Status, info.Updated, info.UpdatedBy, id)
+	`, info.PurchaseorderNumber, info.PurchaseorderDate, info.ExpectedDeliveryDate, info.VendorID, info.ItemCount, info.Subtotal, info.TaxTotal, info.DiscountType, info.DiscountValue, info.ShippingFee, info.Total, info.Notes, info.ReceiveStatus, info.BillingStatus, info.Status, info.Updated, info.UpdatedBy, id)
 	return err
 }
 
@@ -200,6 +212,9 @@ func (r *purchaseorderRepository) GetPurchaseorderItemByIDAll(organizationID, pu
 		i.sku as sku,
 		p.quantity,
 		p.rate,
+		p.tax_id,
+		p.tax_value,
+		p.tax_amount,
 		p.amount,
 		p.quantity_received,
 		p.quantity_billed,
@@ -209,7 +224,7 @@ func (r *purchaseorderRepository) GetPurchaseorderItemByIDAll(organizationID, pu
 		ON p.item_id = i.item_id
 		WHERE p.purchaseorder_item_id = ? AND p.organization_id = ? AND p.purchaseorder_id = ? LIMIT 1
 	`, purchaseorderItemID, organizationID, purchaseorderID)
-	err := row.Scan(&res.OrganizationID, &res.PurchaseorderItemID, &res.PurchaseorderID, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity, &res.Rate, &res.Amount, &res.QuantityReceived, &res.QuantityBilled, &res.Status)
+	err := row.Scan(&res.OrganizationID, &res.PurchaseorderItemID, &res.PurchaseorderID, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity, &res.Rate, &res.TaxID, &res.TaxValue, &res.TaxAmount, &res.Amount, &res.QuantityReceived, &res.QuantityBilled, &res.Status)
 	return &res, err
 }
 

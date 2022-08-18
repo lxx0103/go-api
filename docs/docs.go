@@ -2545,6 +2545,277 @@ var doc = `{
                 }
             }
         },
+        "/taxes": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "税率管理"
+                ],
+                "summary": "税率列表",
+                "operationId": "321",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "税率名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/setting.TaxResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "税率管理"
+                ],
+                "summary": "新建税率",
+                "operationId": "322",
+                "parameters": [
+                    {
+                        "description": "税率信息",
+                        "name": "tax_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/setting.TaxNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/setting.TaxResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/taxes/:id": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "税率管理"
+                ],
+                "summary": "根据ID获取税率",
+                "operationId": "324",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "税率ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/setting.TaxResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "税率管理"
+                ],
+                "summary": "根据ID更新税率",
+                "operationId": "323",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "税率ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "税率信息",
+                        "name": "tax_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/setting.TaxNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/setting.Tax"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "税率管理"
+                ],
+                "summary": "根据ID删除税率",
+                "operationId": "325",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "税率ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/units": {
             "get": {
                 "consumes": [
@@ -3405,7 +3676,7 @@ var doc = `{
                     "type": "string"
                 },
                 "openning_stock": {
-                    "type": "number"
+                    "type": "integer"
                 },
                 "openning_stock_rate": {
                     "type": "number"
@@ -3414,7 +3685,7 @@ var doc = `{
                     "type": "string"
                 },
                 "reorder_stock": {
-                    "type": "number"
+                    "type": "integer"
                 },
                 "selling_price": {
                     "type": "number"
@@ -3426,7 +3697,7 @@ var doc = `{
                     "type": "integer"
                 },
                 "stock_on_hand": {
-                    "type": "number"
+                    "type": "integer"
                 },
                 "track_location": {
                     "type": "integer"
@@ -3497,13 +3768,13 @@ var doc = `{
                     "minLength": 6
                 },
                 "openning_stock": {
-                    "type": "number"
+                    "type": "integer"
                 },
                 "openning_stock_rate": {
                     "type": "number"
                 },
                 "reorder_stock": {
-                    "type": "number"
+                    "type": "integer"
                 },
                 "selling_price": {
                     "type": "number"
@@ -3585,7 +3856,7 @@ var doc = `{
                     "type": "string"
                 },
                 "openning_stock": {
-                    "type": "number"
+                    "type": "integer"
                 },
                 "openning_stock_rate": {
                     "type": "number"
@@ -3594,7 +3865,7 @@ var doc = `{
                     "type": "string"
                 },
                 "reorder_stock": {
-                    "type": "number"
+                    "type": "integer"
                 },
                 "selling_price": {
                     "type": "number"
@@ -3606,7 +3877,7 @@ var doc = `{
                     "type": "integer"
                 },
                 "stock_on_hand": {
-                    "type": "number"
+                    "type": "integer"
                 },
                 "track_location": {
                     "type": "integer"
@@ -3715,6 +3986,9 @@ var doc = `{
                 "subtotal": {
                     "type": "number"
                 },
+                "tax_total": {
+                    "type": "number"
+                },
                 "total": {
                     "type": "number"
                 },
@@ -3748,6 +4022,9 @@ var doc = `{
                 },
                 "rate": {
                     "type": "number"
+                },
+                "tax_id": {
+                    "type": "string"
                 }
             }
         },
@@ -3789,6 +4066,15 @@ var doc = `{
                 },
                 "status": {
                     "type": "integer"
+                },
+                "tax_amount": {
+                    "type": "number"
+                },
+                "tax_id": {
+                    "type": "string"
+                },
+                "tax_value": {
+                    "type": "number"
                 }
             }
         },
@@ -3883,6 +4169,9 @@ var doc = `{
                     "type": "integer"
                 },
                 "sub_total": {
+                    "type": "number"
+                },
+                "tax_total": {
                     "type": "number"
                 },
                 "total": {
@@ -4106,6 +4395,87 @@ var doc = `{
                 },
                 "status": {
                     "type": "integer"
+                }
+            }
+        },
+        "setting.Tax": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "tax_id": {
+                    "type": "string"
+                },
+                "tax_value": {
+                    "type": "number"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "setting.TaxNew": {
+            "type": "object",
+            "required": [
+                "name",
+                "status",
+                "tax_value"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                },
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
+                },
+                "tax_value": {
+                    "type": "number",
+                    "maximum": 100
+                }
+            }
+        },
+        "setting.TaxResponse": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "tax_id": {
+                    "type": "string"
+                },
+                "tax_value": {
+                    "type": "number"
                 }
             }
         },

@@ -298,3 +298,73 @@ func (r *settingRepository) DeleteVendor(id, byUser string) error {
 	`, time.Now(), byUser, id)
 	return err
 }
+
+// Tax
+
+func (r *settingRepository) GetTaxByID(taxID, organizationID string) (*TaxResponse, error) {
+	var res TaxResponse
+	row := r.tx.QueryRow(`
+	SELECT 
+	tax_id,
+	organization_id,
+	name,
+	tax_value,
+	status
+	FROM s_taxes 
+	WHERE tax_id = ? AND organization_id = ? AND status > 0 LIMIT 1`, taxID, organizationID)
+	err := row.Scan(&res.TaxID, &res.OrganizationID, &res.Name, &res.TaxValue, &res.Status)
+	return &res, err
+}
+
+func (r *settingRepository) CheckTaxConfict(taxID, organizationID, name string) (bool, error) {
+	var existed int
+	row := r.tx.QueryRow("SELECT count(1) FROM s_taxes WHERE organization_id = ? AND tax_id != ? AND name = ? AND status > 0", organizationID, taxID, name)
+	err := row.Scan(&existed)
+	if err != nil {
+		return true, err
+	}
+	return existed != 0, nil
+}
+
+func (r *settingRepository) CreateTax(info Tax) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO s_taxes
+		(
+			tax_id,
+			organization_id,
+			name,
+			tax_value,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.TaxID, info.OrganizationID, info.Name, info.TaxValue, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}
+
+func (r *settingRepository) UpdateTax(id string, info Tax) error {
+	_, err := r.tx.Exec(`
+		Update s_taxes SET
+		name = ?,
+		tax_value = ?,
+		status = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE tax_id = ?
+	`, info.Name, info.TaxValue, info.Status, info.Updated, info.UpdatedBy, id)
+	return err
+}
+
+func (r *settingRepository) DeleteTax(id, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update s_taxes SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE tax_id = ?
+	`, time.Now(), byUser, id)
+	return err
+}

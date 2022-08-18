@@ -47,14 +47,24 @@ func (s *purchaseorderService) NewPurchaseorder(info PurchaseorderNew) (*string,
 	}
 	itemCount := 0
 	itemTotal := 0.0
+	taxTotal := 0.0
 	itemService := item.NewItemService()
 	for _, item := range info.Items {
 		_, err = itemService.GetItemByID(info.OrganizationID, item.ItemID)
 		if err != nil {
 			return nil, err
 		}
+		taxValue := 0.0
+		if item.TaxID != "" {
+			tax, err := settingService.GetTaxByID(info.OrganizationID, item.TaxID)
+			if err != nil {
+				return nil, err
+			}
+			taxValue = tax.TaxValue
+		}
 		itemCount += item.Quantity
 		itemTotal += item.Rate * float64(item.Quantity)
+		taxTotal += item.Rate * float64(item.Quantity) * taxValue / 100
 		var poItem PurchaseorderItem
 		poItem.OrganizationID = info.OrganizationID
 		poItem.PurchaseorderID = poID
@@ -62,6 +72,9 @@ func (s *purchaseorderService) NewPurchaseorder(info PurchaseorderNew) (*string,
 		poItem.ItemID = item.ItemID
 		poItem.Quantity = item.Quantity
 		poItem.Rate = item.Rate
+		poItem.TaxID = item.TaxID
+		poItem.TaxValue = taxValue
+		poItem.TaxAmount = float64(item.Quantity) * item.Rate * taxValue / 100
 		poItem.Amount = float64(item.Quantity) * item.Rate
 		poItem.QuantityReceived = 0
 		poItem.QuantityBilled = 0
@@ -86,6 +99,7 @@ func (s *purchaseorderService) NewPurchaseorder(info PurchaseorderNew) (*string,
 	purchaseorder.VendorID = info.VendorID
 	purchaseorder.ItemCount = itemCount
 	purchaseorder.Subtotal = itemTotal
+	purchaseorder.TaxTotal = taxTotal
 	purchaseorder.DiscountType = info.DiscountType
 	purchaseorder.DiscountValue = info.DiscountValue
 	purchaseorder.ShippingFee = info.ShippingFee
@@ -94,15 +108,15 @@ func (s *purchaseorderService) NewPurchaseorder(info PurchaseorderNew) (*string,
 			msg := "discount value error"
 			return nil, errors.New(msg)
 		}
-		purchaseorder.Total = itemTotal*(1-info.DiscountValue/100) + info.ShippingFee
+		purchaseorder.Total = (itemTotal+taxTotal)*(1-info.DiscountValue/100) + info.ShippingFee
 	} else if info.DiscountType == 2 {
-		if info.DiscountValue > (itemTotal + info.ShippingFee) {
+		if info.DiscountValue > (itemTotal + taxTotal + info.ShippingFee) {
 			msg := "discount value error"
 			return nil, errors.New(msg)
 		}
-		purchaseorder.Total = itemTotal - info.DiscountValue + info.ShippingFee
+		purchaseorder.Total = itemTotal - info.DiscountValue + info.ShippingFee + taxTotal
 	} else {
-		purchaseorder.Total = itemTotal + info.ShippingFee
+		purchaseorder.Total = itemTotal + info.ShippingFee + taxTotal
 	}
 	purchaseorder.Notes = info.Notes
 	purchaseorder.Status = 1        //Draft
@@ -187,11 +201,20 @@ func (s *purchaseorderService) UpdatePurchaseorder(purchaseorderID string, info 
 	quantityBilled := 0
 	quantityReceived := 0
 	itemTotal := 0.0
+	taxTotal := 0.0
 	itemService := item.NewItemService()
 	for _, item := range info.Items {
 		_, err = itemService.GetItemByID(info.OrganizationID, item.ItemID)
 		if err != nil {
 			return nil, err
+		}
+		taxValue := 0.0
+		if item.TaxID != "" {
+			tax, err := settingService.GetTaxByID(info.OrganizationID, item.TaxID)
+			if err != nil {
+				return nil, err
+			}
+			taxValue = tax.TaxValue
 		}
 		if item.PurchaseorderItemID != "" {
 			oldItem, err := repo.GetPurchaseorderItemByIDAll(info.OrganizationID, purchaseorderID, item.PurchaseorderItemID)
@@ -212,7 +235,10 @@ func (s *purchaseorderService) UpdatePurchaseorder(purchaseorderID string, info 
 			var poItem PurchaseorderItem
 			poItem.Quantity = item.Quantity
 			poItem.Rate = item.Rate
+			poItem.TaxID = item.TaxID
+			poItem.TaxValue = taxValue
 			poItem.Amount = float64(item.Quantity) * item.Rate
+			poItem.TaxAmount = float64(item.Quantity) * item.Rate * taxValue / 100
 			poItem.Status = 1
 			poItem.Updated = time.Now()
 			poItem.UpdatedBy = info.User
@@ -229,7 +255,10 @@ func (s *purchaseorderService) UpdatePurchaseorder(purchaseorderID string, info 
 			poItem.ItemID = item.ItemID
 			poItem.Quantity = item.Quantity
 			poItem.Rate = item.Rate
+			poItem.TaxID = item.TaxID
+			poItem.TaxValue = taxValue
 			poItem.Amount = float64(item.Quantity) * item.Rate
+			poItem.TaxAmount = float64(item.Quantity) * item.Rate * taxValue / 100
 			poItem.QuantityReceived = 0
 			poItem.QuantityBilled = 0
 			poItem.Status = 1
@@ -245,6 +274,7 @@ func (s *purchaseorderService) UpdatePurchaseorder(purchaseorderID string, info 
 		}
 		itemCount += item.Quantity
 		itemTotal += item.Rate * float64(item.Quantity)
+		taxTotal += item.Rate * float64(item.Quantity) * taxValue / 100
 	}
 	itemDeletedError, err := repo.CheckPOItem(purchaseorderID, info.OrganizationID)
 	if err != nil {
@@ -262,6 +292,7 @@ func (s *purchaseorderService) UpdatePurchaseorder(purchaseorderID string, info 
 	purchaseorder.VendorID = info.VendorID
 	purchaseorder.ItemCount = itemCount
 	purchaseorder.Subtotal = itemTotal
+	purchaseorder.TaxTotal = taxTotal
 	purchaseorder.DiscountType = info.DiscountType
 	purchaseorder.DiscountValue = info.DiscountValue
 	purchaseorder.ShippingFee = info.ShippingFee
@@ -270,15 +301,15 @@ func (s *purchaseorderService) UpdatePurchaseorder(purchaseorderID string, info 
 			msg := "discount value error"
 			return nil, errors.New(msg)
 		}
-		purchaseorder.Total = itemTotal*(1-info.DiscountValue/100) + info.ShippingFee
+		purchaseorder.Total = (itemTotal+taxTotal)*(1-info.DiscountValue/100) + info.ShippingFee
 	} else if info.DiscountType == 2 {
-		if info.DiscountValue > (itemTotal + info.ShippingFee) {
+		if info.DiscountValue > (itemTotal + taxTotal + info.ShippingFee) {
 			msg := "discount value error"
 			return nil, errors.New(msg)
 		}
-		purchaseorder.Total = itemTotal - info.DiscountValue + info.ShippingFee
+		purchaseorder.Total = itemTotal + taxTotal - info.DiscountValue + info.ShippingFee
 	} else {
-		purchaseorder.Total = itemTotal + info.ShippingFee
+		purchaseorder.Total = itemTotal + taxTotal + info.ShippingFee
 	}
 	purchaseorder.Notes = info.Notes
 	if quantityBilled > 0 {

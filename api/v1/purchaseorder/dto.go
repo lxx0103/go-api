@@ -24,6 +24,7 @@ type PurchaseorderItemNew struct {
 	ItemID              string  `json:"item_id" binding:"required"`
 	Quantity            int     `json:"quantity" binding:"required"`
 	Rate                float64 `json:"rate" binding:"required"`
+	TaxID               string  `json:"tax_id" binding:"omitempty"`
 }
 
 type PurchaseorderFilter struct {
@@ -42,6 +43,7 @@ type PurchaseorderResponse struct {
 	VendorName           string  `db:"vendor_name" json:"vendor_name"`
 	ItemCount            float64 `db:"item_count" json:"item_count"`
 	Subtotal             float64 `db:"sub_total" json:"sub_total"`
+	TaxTotal             float64 `db:"tax_total" json:"tax_total"`
 	DiscountType         int     `db:"discount_type" json:"discount_type"`
 	DiscountValue        float64 `db:"discount_value" json:"discount_value"`
 	ShippingFee          float64 `db:"shipping_fee" json:"shipping_fee"`
@@ -61,6 +63,9 @@ type PurchaseorderItemResponse struct {
 	SKU                 string  `db:"sku" json:"sku"`
 	Quantity            int     `db:"quantity" json:"quantity"`
 	Rate                float64 `db:"rate" json:"rate"`
+	TaxID               string  `db:"tax_id" json:"tax_id"`
+	TaxValue            float64 `db:"tax_value" json:"tax_value"`
+	TaxAmount           float64 `db:"tax_amount" json:"tax_amount"`
 	Amount              float64 `db:"amount" json:"amount"`
 	QuantityReceived    int     `db:"quantity_received" json:"quantity_received"`
 	QuantityBilled      int     `db:"quantity_billed" json:"quantity_billed"`

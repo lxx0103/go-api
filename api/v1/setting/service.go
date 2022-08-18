@@ -548,3 +548,125 @@ func (s *settingService) DeleteVendor(vendorID, organizationID, user string) err
 	tx.Commit()
 	return nil
 }
+
+//tax
+
+func (s *settingService) GetTaxByID(organizationID, id string) (*TaxResponse, error) {
+	db := database.RDB()
+	query := NewSettingQuery(db)
+	tax, err := query.GetTaxByID(organizationID, id)
+	if err != nil {
+		msg := "get tax error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	return tax, nil
+}
+
+func (s *settingService) NewTax(info TaxNew) (*TaxResponse, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	isConflict, err := repo.CheckTaxConfict("", info.OrganizationID, info.Name)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "Tax name conflict"
+		return nil, errors.New(msg)
+	}
+	var tax Tax
+	tax.TaxID = "tax-" + xid.New().String()
+	tax.OrganizationID = info.OrganizationID
+	tax.Name = info.Name
+	tax.TaxValue = info.TaxValue
+	tax.Status = info.Status
+	tax.Created = time.Now()
+	tax.CreatedBy = info.User
+	tax.Updated = time.Now()
+	tax.UpdatedBy = info.User
+	err = repo.CreateTax(tax)
+	if err != nil {
+		return nil, err
+	}
+	res, err := repo.GetTaxByID(tax.TaxID, info.OrganizationID)
+	tx.Commit()
+	return res, err
+}
+
+func (s *settingService) GetTaxList(filter TaxFilter) (int, *[]TaxResponse, error) {
+	db := database.RDB()
+	query := NewSettingQuery(db)
+	count, err := query.GetTaxCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := query.GetTaxList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *settingService) UpdateTax(taxID string, info TaxNew) (*TaxResponse, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	isConflict, err := repo.CheckTaxConfict(taxID, info.OrganizationID, info.Name)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "tax name conflict"
+		return nil, errors.New(msg)
+	}
+	_, err = repo.GetTaxByID(taxID, info.OrganizationID)
+	if err != nil {
+		msg := "Tax not exist"
+		return nil, errors.New(msg)
+	}
+	var tax Tax
+	tax.Name = info.Name
+	tax.TaxValue = info.TaxValue
+	tax.UpdatedBy = info.User
+	tax.Updated = time.Now()
+	tax.Status = info.Status
+	err = repo.UpdateTax(taxID, tax)
+	if err != nil {
+		msg := "update tax error"
+		return nil, errors.New(msg)
+	}
+	res, err := repo.GetTaxByID(taxID, info.OrganizationID)
+	tx.Commit()
+	return res, err
+}
+
+func (s *settingService) DeleteTax(taxID, organizationID, user string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	_, err = repo.GetTaxByID(taxID, organizationID)
+	if err != nil {
+		msg := "Tax not exist"
+		return errors.New(msg)
+	}
+	err = repo.DeleteTax(taxID, user)
+	if err != nil {
+		return err
+	}
+	tx.Commit()
+	return nil
+}

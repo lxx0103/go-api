@@ -62,3 +62,16 @@ type Vendor struct {
 	Updated           time.Time `db:"updated" json:"updated"`
 	UpdatedBy         string    `db:"updated_by" json:"updated_by"`
 }
+
+type Tax struct {
+	ID             int64     `db:"id" json:"id"`
+	TaxID          string    `db:"tax_id" json:"tax_id"`
+	OrganizationID string    `db:"organization_id" json:"organization_id"`
+	Name           string    `db:"name" json:"name"`
+	TaxValue       float64   `db:"tax_value" json:"tax_value"`
+	Status         int       `db:"status" json:"status"`
+	Created        time.Time `db:"created" json:"created"`
+	CreatedBy      string    `db:"created_by" json:"created_by"`
+	Updated        time.Time `db:"updated" json:"updated"`
+	UpdatedBy      string    `db:"updated_by" json:"updated_by"`
+}
