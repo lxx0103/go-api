@@ -777,6 +777,8 @@ definitions:
         type: integer
       unit_id:
         type: string
+      unit_type:
+        type: string
       updated:
         type: string
       updated_by:
@@ -2805,6 +2807,10 @@ paths:
       - description: 单位名称
         in: query
         name: name
+        type: string
+      - description: 单位类型（weight/length/custom)
+        in: query
+        name: unit_type
         type: string
       produces:
       - application/json

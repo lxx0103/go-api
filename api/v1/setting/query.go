@@ -30,6 +30,9 @@ func (r *settingQuery) GetUnitCount(filter UnitFilter) (int, error) {
 	if v := filter.Name; v != "" {
 		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
 	}
+	if v := filter.UnitType; v != "" {
+		where, args = append(where, "unit_type = ?"), append(args, v)
+	}
 	var count int
 	err := r.conn.Get(&count, `
 		SELECT count(1) as count
@@ -45,6 +48,9 @@ func (r *settingQuery) GetUnitList(filter UnitFilter) (*[]UnitResponse, error) {
 	}
 	if v := filter.OrganizationID; v != "" {
 		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	if v := filter.UnitType; v != "" {
+		where, args = append(where, "unit_type = ?"), append(args, v)
 	}
 	args = append(args, filter.PageID*filter.PageSize-filter.PageSize)
 	args = append(args, filter.PageSize)

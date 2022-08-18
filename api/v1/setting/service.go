@@ -47,11 +47,12 @@ func (s *settingService) NewUnit(info UnitNew) (*UnitResponse, error) {
 	unit.UnitID = "unit-" + xid.New().String()
 	unit.OrganizationID = info.OrganizationID
 	unit.Name = info.Name
+	unit.UnitType = "custom"
 	unit.Status = info.Status
 	unit.Created = time.Now()
-	unit.CreatedBy = info.Name
+	unit.CreatedBy = info.User
 	unit.Updated = time.Now()
-	unit.UpdatedBy = info.Name
+	unit.UpdatedBy = info.User
 	err = repo.CreateUnit(unit)
 	if err != nil {
 		return nil, err

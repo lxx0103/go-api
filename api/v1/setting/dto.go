@@ -4,6 +4,7 @@ import "go-api/core/request"
 
 type UnitFilter struct {
 	Name           string `form:"name" binding:"omitempty,max=64,min=1"`
+	UnitType       string `form:"unit_type" binding:"required,oneof=weight length custom"`
 	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
 	request.PageInfo
 }

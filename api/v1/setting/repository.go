@@ -24,7 +24,7 @@ func (r *settingRepository) GetUnitByID(unitID string) (*UnitResponse, error) {
 
 func (r *settingRepository) CheckUnitConfict(unitID, organizationID, name string) (bool, error) {
 	var existed int
-	row := r.tx.QueryRow("SELECT count(1) FROM s_units WHERE organization_id = ? AND unit_id != ? AND name = ? AND status > 0", organizationID, unitID, name)
+	row := r.tx.QueryRow("SELECT count(1) FROM s_units WHERE organization_id = ? AND unit_id != ? AND name = ? AND status > 0 AND unit_type = ?", organizationID, unitID, name, "custom")
 	err := row.Scan(&existed)
 	if err != nil {
 		return true, err
@@ -37,6 +37,7 @@ func (r *settingRepository) CreateUnit(info Unit) error {
 		INSERT INTO s_units
 		(
 			unit_id,
+			unit_type,
 			organization_id,
 			name,
 			status,
@@ -45,8 +46,8 @@ func (r *settingRepository) CreateUnit(info Unit) error {
 			updated,
 			updated_by
 		)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-	`, info.UnitID, info.OrganizationID, info.Name, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.UnitID, info.UnitType, info.OrganizationID, info.Name, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	return err
 }
 
@@ -68,8 +69,8 @@ func (r *settingRepository) DeleteUnit(id, byUser string) error {
 		status = -1,
 		updated = ?,
 		updated_by = ?
-		WHERE unit_id = ?
-	`, time.Now(), byUser, id)
+		WHERE unit_id = ? AND unit_type = ?
+	`, time.Now(), byUser, id, "custom")
 	return err
 }
 

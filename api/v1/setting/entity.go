@@ -4,6 +4,7 @@ import "time"
 
 type Unit struct {
 	ID             int64     `db:"id" json:"id"`
+	UnitType       string    `db:"unit_type" json:"unit_type"`
 	UnitID         string    `db:"unit_id" json:"unit_id"`
 	OrganizationID string    `db:"organization_id" json:"organization_id"`
 	Name           string    `db:"name" json:"name"`

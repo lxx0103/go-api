@@ -2849,6 +2849,12 @@ var doc = `{
                         "description": "单位名称",
                         "name": "name",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "单位类型（weight/length/custom)",
+                        "name": "unit_type",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -4501,6 +4507,9 @@ var doc = `{
                     "type": "integer"
                 },
                 "unit_id": {
+                    "type": "string"
+                },
+                "unit_type": {
                     "type": "string"
                 },
                 "updated": {
