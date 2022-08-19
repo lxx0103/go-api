@@ -104,7 +104,7 @@ func (s *settingService) UpdateUnit(unitID string, info UnitNew) (*UnitResponse,
 	}
 	var unit Unit
 	unit.Name = info.Name
-	unit.UpdatedBy = info.Name
+	unit.UpdatedBy = info.User
 	unit.Updated = time.Now()
 	unit.Status = info.Status
 	err = repo.UpdateUnit(unitID, unit)
@@ -176,9 +176,9 @@ func (s *settingService) NewManufacturer(info ManufacturerNew) (*ManufacturerRes
 	manufacturer.Name = info.Name
 	manufacturer.Status = info.Status
 	manufacturer.Created = time.Now()
-	manufacturer.CreatedBy = info.Name
+	manufacturer.CreatedBy = info.User
 	manufacturer.Updated = time.Now()
-	manufacturer.UpdatedBy = info.Name
+	manufacturer.UpdatedBy = info.User
 	err = repo.CreateManufacturer(manufacturer)
 	if err != nil {
 		return nil, err
@@ -230,7 +230,7 @@ func (s *settingService) UpdateManufacturer(manufacturerID string, info Manufact
 	}
 	var manufacturer Manufacturer
 	manufacturer.Name = info.Name
-	manufacturer.UpdatedBy = info.Name
+	manufacturer.UpdatedBy = info.User
 	manufacturer.Updated = time.Now()
 	manufacturer.Status = info.Status
 	err = repo.UpdateManufacturer(manufacturerID, manufacturer)
@@ -304,9 +304,9 @@ func (s *settingService) NewBrand(info BrandNew) (*BrandResponse, error) {
 	brand.Name = info.Name
 	brand.Status = info.Status
 	brand.Created = time.Now()
-	brand.CreatedBy = info.Name
+	brand.CreatedBy = info.User
 	brand.Updated = time.Now()
-	brand.UpdatedBy = info.Name
+	brand.UpdatedBy = info.User
 	err = repo.CreateBrand(brand)
 	if err != nil {
 		return nil, err
@@ -358,7 +358,7 @@ func (s *settingService) UpdateBrand(brandID string, info BrandNew) (*BrandRespo
 	}
 	var brand Brand
 	brand.Name = info.Name
-	brand.UpdatedBy = info.Name
+	brand.UpdatedBy = info.User
 	brand.Updated = time.Now()
 	brand.Status = info.Status
 	err = repo.UpdateBrand(brandID, brand)
@@ -445,9 +445,9 @@ func (s *settingService) NewVendor(info VendorNew) (*VendorResponse, error) {
 	vendor.Fax = info.Fax
 	vendor.Status = info.Status
 	vendor.Created = time.Now()
-	vendor.CreatedBy = info.Name
+	vendor.CreatedBy = info.User
 	vendor.Updated = time.Now()
-	vendor.UpdatedBy = info.Name
+	vendor.UpdatedBy = info.User
 	err = repo.CreateVendor(vendor)
 	if err != nil {
 		return nil, err
@@ -512,7 +512,7 @@ func (s *settingService) UpdateVendor(vendorID string, info VendorNew) (*VendorR
 	vendor.Zip = info.Zip
 	vendor.Phone = info.Phone
 	vendor.Fax = info.Fax
-	vendor.UpdatedBy = info.Name
+	vendor.UpdatedBy = info.User
 	vendor.Updated = time.Now()
 	vendor.Status = info.Status
 	err = repo.UpdateVendor(vendorID, vendor)
