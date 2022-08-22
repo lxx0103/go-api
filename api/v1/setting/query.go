@@ -239,3 +239,47 @@ func (r *settingQuery) GetTaxList(filter TaxFilter) (*[]TaxResponse, error) {
 	`, args...)
 	return &taxes, err
 }
+
+//Customer
+
+func (r *settingQuery) GetCustomerByID(organizationID, id string) (*CustomerResponse, error) {
+	var customer CustomerResponse
+	err := r.conn.Get(&customer, "SELECT customer_id, organization_id, name, contact_salutation, contact_first_name, contact_last_name, contact_email, contact_phone, country, state, city, address1, address2, zip, phone, fax, status FROM s_customers WHERE organization_id = ? AND customer_id = ? AND status > 0", organizationID, id)
+	return &customer, err
+}
+
+func (r *settingQuery) GetCustomerCount(filter CustomerFilter) (int, error) {
+	where, args := []string{"status > 0"}, []interface{}{}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	if v := filter.Name; v != "" {
+		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
+	}
+	var count int
+	err := r.conn.Get(&count, `
+		SELECT count(1) as count
+		FROM s_customers
+		WHERE `+strings.Join(where, " AND "), args...)
+	return count, err
+}
+
+func (r *settingQuery) GetCustomerList(filter CustomerFilter) (*[]CustomerResponse, error) {
+	where, args := []string{"status > 0"}, []interface{}{}
+	if v := filter.Name; v != "" {
+		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	args = append(args, filter.PageID*filter.PageSize-filter.PageSize)
+	args = append(args, filter.PageSize)
+	var customers []CustomerResponse
+	err := r.conn.Select(&customers, `
+		SELECT customer_id, organization_id, name, contact_salutation, contact_first_name, contact_last_name, contact_email, contact_phone, country, state, city, address1, address2, zip, phone, fax, status
+		FROM s_customers
+		WHERE `+strings.Join(where, " AND ")+`
+		LIMIT ?, ?
+	`, args...)
+	return &customers, err
+}

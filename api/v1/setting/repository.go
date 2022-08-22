@@ -369,3 +369,109 @@ func (r *settingRepository) DeleteTax(id, byUser string) error {
 	`, time.Now(), byUser, id)
 	return err
 }
+
+// Customer
+
+func (r *settingRepository) GetCustomerByID(customerID string) (*CustomerResponse, error) {
+	var res CustomerResponse
+	row := r.tx.QueryRow(`
+	SELECT 
+	customer_id,
+	organization_id,
+	name,
+	contact_salutation,
+	contact_first_name,
+	contact_last_name,
+	contact_email,
+	contact_phone,
+	country,
+	state,
+	city,
+	address1,
+	address2,
+	zip,
+	phone,
+	fax,
+	status
+	FROM s_customers 
+	WHERE customer_id = ? AND status > 0 LIMIT 1`, customerID)
+	err := row.Scan(&res.CustomerID, &res.OrganizationID, &res.Name, &res.ContactSalutation, &res.ContactFirstName, &res.ContactLastName, &res.ContactEmail, &res.ContactPhone, &res.Country, &res.State, &res.City, &res.Address1, &res.Address2, &res.Zip, &res.Phone, &res.Fax, &res.Status)
+	return &res, err
+}
+
+func (r *settingRepository) CheckCustomerConfict(customerID, organizationID, name string) (bool, error) {
+	var existed int
+	row := r.tx.QueryRow("SELECT count(1) FROM s_customers WHERE organization_id = ? AND customer_id != ? AND name = ? AND status > 0", organizationID, customerID, name)
+	err := row.Scan(&existed)
+	if err != nil {
+		return true, err
+	}
+	return existed != 0, nil
+}
+
+func (r *settingRepository) CreateCustomer(info Customer) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO s_customers
+		(
+			customer_id,
+			organization_id,
+			name,
+			contact_salutation,
+			contact_first_name,
+			contact_last_name,
+			contact_email,
+			contact_phone,
+			country,
+			state,
+			city,
+			address1,
+			address2,
+			zip,
+			phone,
+			fax,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.CustomerID, info.OrganizationID, info.Name, info.ContactSalutation, info.ContactFirstName, info.ContactLastName, info.ContactEmail, info.ContactPhone, info.Country, info.State, info.City, info.Address1, info.Address2, info.Zip, info.Phone, info.Fax, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}
+
+func (r *settingRepository) UpdateCustomer(id string, info Customer) error {
+	_, err := r.tx.Exec(`
+		Update s_customers SET
+		name = ?,
+		contact_salutation = ?,
+		contact_first_name = ?,
+		contact_last_name = ?,
+		contact_email = ?,
+		contact_phone = ?,
+		country = ?,
+		state = ?,
+		city = ?,
+		address1 = ?,
+		address2 = ?,
+		zip = ?,
+		phone = ?,
+		fax = ?,
+		status = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE customer_id = ?
+	`, info.Name, info.ContactSalutation, info.ContactFirstName, info.ContactLastName, info.ContactEmail, info.ContactPhone, info.Country, info.State, info.City, info.Address1, info.Address2, info.Zip, info.Phone, info.Fax, info.Status, info.Updated, info.UpdatedBy, id)
+	return err
+}
+
+func (r *settingRepository) DeleteCustomer(id, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update s_customers SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE customer_id = ?
+	`, time.Now(), byUser, id)
+	return err
+}

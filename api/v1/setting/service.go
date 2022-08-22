@@ -671,3 +671,157 @@ func (s *settingService) DeleteTax(taxID, organizationID, user string) error {
 	tx.Commit()
 	return nil
 }
+
+//customer
+
+func (s *settingService) GetCustomerByID(organizationID, id string) (*CustomerResponse, error) {
+	db := database.RDB()
+	query := NewSettingQuery(db)
+	customer, err := query.GetCustomerByID(organizationID, id)
+	if err != nil {
+		msg := "get customer error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	return customer, nil
+}
+
+func (s *settingService) NewCustomer(info CustomerNew) (*CustomerResponse, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	isConflict, err := repo.CheckCustomerConfict("", info.OrganizationID, info.Name)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "Customer name conflict"
+		return nil, errors.New(msg)
+	}
+	var customer Customer
+	customer.CustomerID = "cus-" + xid.New().String()
+	customer.OrganizationID = info.OrganizationID
+	customer.Name = info.Name
+	customer.ContactSalutation = info.ContactSalutation
+	customer.ContactFirstName = info.ContactFirstName
+	customer.ContactLastName = info.ContactLastName
+	customer.ContactEmail = info.ContactEmail
+	customer.ContactPhone = info.ContactPhone
+	customer.Country = info.Country
+	customer.State = info.State
+	customer.City = info.City
+	customer.Address1 = info.Address1
+	customer.Address2 = info.Address2
+	customer.Zip = info.Zip
+	customer.Phone = info.Phone
+	customer.Fax = info.Fax
+	customer.Status = info.Status
+	customer.Created = time.Now()
+	customer.CreatedBy = info.User
+	customer.Updated = time.Now()
+	customer.UpdatedBy = info.User
+	err = repo.CreateCustomer(customer)
+	if err != nil {
+		return nil, err
+	}
+	res, err := repo.GetCustomerByID(customer.CustomerID)
+	tx.Commit()
+	return res, err
+}
+
+func (s *settingService) GetCustomerList(filter CustomerFilter) (int, *[]CustomerResponse, error) {
+	db := database.RDB()
+	query := NewSettingQuery(db)
+	count, err := query.GetCustomerCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := query.GetCustomerList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *settingService) UpdateCustomer(customerID string, info CustomerNew) (*CustomerResponse, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	isConflict, err := repo.CheckCustomerConfict(customerID, info.OrganizationID, info.Name)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "customer name conflict"
+		return nil, errors.New(msg)
+	}
+	oldCustomer, err := repo.GetCustomerByID(customerID)
+	if err != nil {
+		msg := "Customer not exist"
+		return nil, errors.New(msg)
+	}
+	if oldCustomer.OrganizationID != info.OrganizationID {
+		msg := "Customer not exist"
+		return nil, errors.New(msg)
+	}
+	var customer Customer
+	customer.Name = info.Name
+	customer.ContactSalutation = info.ContactSalutation
+	customer.ContactFirstName = info.ContactFirstName
+	customer.ContactLastName = info.ContactLastName
+	customer.ContactEmail = info.ContactEmail
+	customer.ContactPhone = info.ContactPhone
+	customer.Country = info.Country
+	customer.State = info.State
+	customer.City = info.City
+	customer.Address1 = info.Address1
+	customer.Address2 = info.Address2
+	customer.Zip = info.Zip
+	customer.Phone = info.Phone
+	customer.Fax = info.Fax
+	customer.UpdatedBy = info.User
+	customer.Updated = time.Now()
+	customer.Status = info.Status
+	err = repo.UpdateCustomer(customerID, customer)
+	if err != nil {
+		msg := "update customer error"
+		return nil, errors.New(msg)
+	}
+	res, err := repo.GetCustomerByID(customerID)
+	tx.Commit()
+	return res, err
+}
+
+func (s *settingService) DeleteCustomer(customerID, organizationID, user string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	oldCustomer, err := repo.GetCustomerByID(customerID)
+	if err != nil {
+		msg := "Customer not exist"
+		return errors.New(msg)
+	}
+	if oldCustomer.OrganizationID != organizationID {
+		msg := "Customer not exist"
+		return errors.New(msg)
+	}
+	err = repo.DeleteCustomer(customerID, user)
+	if err != nil {
+		return err
+	}
+	tx.Commit()
+	return nil
+}

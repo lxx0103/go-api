@@ -732,3 +732,148 @@ func DeleteTax(c *gin.Context) {
 	}
 	response.Response(c, "OK")
 }
+
+// @Summary 客户列表
+// @Id 326
+// @Tags 客户管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数（5/10/15/20）"
+// @Param name query string false "客户名称"
+// @Success 200 object response.ListRes{data=[]CustomerResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /customers [GET]
+func GetCustomerList(c *gin.Context) {
+	var filter CustomerFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	filter.OrganizationID = claims.OrganizationID
+	settingService := NewSettingService()
+	count, list, err := settingService.GetCustomerList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageID, filter.PageSize, count, list)
+}
+
+// @Summary 新建客户
+// @Id 327
+// @Tags 客户管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param customer_info body CustomerNew true "客户信息"
+// @Success 200 object response.SuccessRes{data=CustomerResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /customers [POST]
+func NewCustomer(c *gin.Context) {
+	var info CustomerNew
+	if err := c.ShouldBindJSON(&info); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	info.User = claims.Email
+	info.OrganizationID = claims.OrganizationID
+	settingService := NewSettingService()
+	new, err := settingService.NewCustomer(info)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
+
+// @Summary 根据ID更新客户
+// @Id 328
+// @Tags 客户管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "客户ID"
+// @Param customer_info body CustomerNew true "客户信息"
+// @Success 200 object response.SuccessRes{data=Customer} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /customers/:id [PUT]
+func UpdateCustomer(c *gin.Context) {
+	var uri CustomerID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	var info CustomerNew
+	if err := c.ShouldBindJSON(&info); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	info.User = claims.Email
+	info.OrganizationID = claims.OrganizationID
+	settingService := NewSettingService()
+	new, err := settingService.UpdateCustomer(uri.ID, info)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
+
+// @Summary 根据ID获取客户
+// @Id 329
+// @Tags 客户管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "客户ID"
+// @Success 200 object response.SuccessRes{data=CustomerResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /customers/:id [GET]
+func GetCustomerByID(c *gin.Context) {
+	var uri CustomerID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	settingService := NewSettingService()
+	customer, err := settingService.GetCustomerByID(claims.OrganizationID, uri.ID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, customer)
+
+}
+
+// @Summary 根据ID删除客户
+// @Id 330
+// @Tags 客户管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "客户ID"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /customers/:id [DELETE]
+func DeleteCustomer(c *gin.Context) {
+	var uri CustomerID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	settingService := NewSettingService()
+	err := settingService.DeleteCustomer(uri.ID, claims.OrganizationID, claims.Email)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, "OK")
+}

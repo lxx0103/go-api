@@ -32,4 +32,10 @@ func AuthRouter(g *gin.RouterGroup) {
 	g.PUT("/taxes/:id", UpdateTax)
 	g.GET("/taxes/:id", GetTaxByID)
 	g.DELETE("/taxes/:id", DeleteTax)
+
+	g.POST("/customers", NewCustomer)
+	g.GET("/customers", GetCustomerList)
+	g.PUT("/customers/:id", UpdateCustomer)
+	g.GET("/customers/:id", GetCustomerByID)
+	g.DELETE("/customers/:id", DeleteCustomer)
 }

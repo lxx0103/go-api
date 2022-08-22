@@ -659,6 +659,144 @@ definitions:
       status:
         type: integer
     type: object
+  setting.Customer:
+    properties:
+      address1:
+        type: string
+      address2:
+        type: string
+      city:
+        type: string
+      contact_email:
+        type: string
+      contact_first_name:
+        type: string
+      contact_last_name:
+        type: string
+      contact_phone:
+        type: string
+      contact_salutation:
+        type: string
+      country:
+        type: string
+      created:
+        type: string
+      created_by:
+        type: string
+      customer_id:
+        type: string
+      fax:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      organization_id:
+        type: string
+      phone:
+        type: string
+      state:
+        type: string
+      status:
+        type: integer
+      updated:
+        type: string
+      updated_by:
+        type: string
+      zip:
+        type: string
+    type: object
+  setting.CustomerNew:
+    properties:
+      address1:
+        maxLength: 255
+        type: string
+      address2:
+        maxLength: 255
+        type: string
+      city:
+        maxLength: 64
+        type: string
+      contact_email:
+        maxLength: 64
+        type: string
+      contact_first_name:
+        maxLength: 64
+        type: string
+      contact_last_name:
+        maxLength: 64
+        type: string
+      contact_phone:
+        maxLength: 64
+        type: string
+      contact_salutation:
+        maxLength: 64
+        type: string
+      country:
+        maxLength: 64
+        type: string
+      fax:
+        maxLength: 64
+        type: string
+      name:
+        maxLength: 64
+        minLength: 1
+        type: string
+      phone:
+        maxLength: 64
+        type: string
+      state:
+        maxLength: 64
+        type: string
+      status:
+        enum:
+        - 1
+        - 2
+        type: integer
+      zip:
+        maxLength: 64
+        type: string
+    required:
+    - name
+    - status
+    type: object
+  setting.CustomerResponse:
+    properties:
+      address1:
+        type: string
+      address2:
+        type: string
+      city:
+        type: string
+      contact_email:
+        type: string
+      contact_first_name:
+        type: string
+      contact_last_name:
+        type: string
+      contact_phone:
+        type: string
+      contact_salutation:
+        type: string
+      country:
+        type: string
+      customer_id:
+        type: string
+      fax:
+        type: string
+      name:
+        type: string
+      organization_id:
+        type: string
+      phone:
+        type: string
+      state:
+        type: string
+      status:
+        type: integer
+      zip:
+        type: string
+    type: object
   setting.Manufacturer:
     properties:
       created:
@@ -1588,6 +1726,171 @@ paths:
       summary: 根据ID更新品牌
       tags:
       - 品牌管理
+  /customers:
+    get:
+      consumes:
+      - application/json
+      operationId: "326"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 客户名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/setting.CustomerResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 客户列表
+      tags:
+      - 客户管理
+    post:
+      consumes:
+      - application/json
+      operationId: "327"
+      parameters:
+      - description: 客户信息
+        in: body
+        name: customer_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.CustomerNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.CustomerResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建客户
+      tags:
+      - 客户管理
+  /customers/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "330"
+      parameters:
+      - description: 客户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除客户
+      tags:
+      - 客户管理
+    get:
+      consumes:
+      - application/json
+      operationId: "329"
+      parameters:
+      - description: 客户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.CustomerResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取客户
+      tags:
+      - 客户管理
+    put:
+      consumes:
+      - application/json
+      operationId: "328"
+      parameters:
+      - description: 客户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 客户信息
+        in: body
+        name: customer_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.CustomerNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.Customer'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新客户
+      tags:
+      - 客户管理
   /historys:
     get:
       consumes:
