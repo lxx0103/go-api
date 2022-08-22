@@ -81,6 +81,9 @@ func (s *itemService) NewItem(info ItemNew) (*string, error) {
 	item.OpenningStockRate = info.OpenningStockRate
 	item.ReorderStock = info.ReorderStock
 	item.StockOnHand = info.OpenningStock
+	item.StockAvailable = info.OpenningStock
+	item.StockPicking = 0
+	item.StockPacking = 0
 	item.DefaultVendorID = info.DefaultVendorID
 	item.Description = info.Description
 	item.TrackLocation = info.TrackLocation
@@ -188,7 +191,7 @@ func (s *itemService) UpdateItem(itemID string, info ItemNew) (*ItemResponse, er
 		return nil, errors.New(msg)
 	}
 	if oldItem.OpenningStock != 0 {
-		openningBatch, err := repo.getItemOpenningBatch(itemID, info.OrganizationID)
+		openningBatch, err := repo.GetItemOpenningBatch(itemID, info.OrganizationID)
 		if err != nil {
 			msg := "get Item Openning Batch error" + err.Error()
 			return nil, errors.New(msg)
@@ -232,6 +235,7 @@ func (s *itemService) UpdateItem(itemID string, info ItemNew) (*ItemResponse, er
 	item.OpenningStockRate = info.OpenningStockRate
 	item.ReorderStock = info.ReorderStock
 	item.StockOnHand = oldItem.StockOnHand - oldItem.OpenningStock + info.OpenningStock
+	item.StockAvailable = oldItem.StockAvailable - oldItem.OpenningStock + info.OpenningStock
 	item.DefaultVendorID = info.DefaultVendorID
 	item.Description = info.Description
 	item.TrackLocation = info.TrackLocation
@@ -290,7 +294,7 @@ func (s *itemService) DeleteItem(itemID, organizationID, email, user string) err
 		return errors.New(msg)
 	}
 	if oldItem.OpenningStock != 0 {
-		openningBatch, err := repo.getItemOpenningBatch(itemID, organizationID)
+		openningBatch, err := repo.GetItemOpenningBatch(itemID, organizationID)
 		if err != nil {
 			msg := "get Item Openning Batch error" + err.Error()
 			return errors.New(msg)

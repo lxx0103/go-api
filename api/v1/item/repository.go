@@ -46,6 +46,9 @@ func (r itemRepository) CreateItem(info Item) error {
 			openning_stock_rate,
 			reorder_stock,
 			stock_on_hand,
+			stock_available,
+			stock_picking,
+			stock_packing,
 			default_vendor_id,
 			description,
 			track_location,
@@ -56,8 +59,8 @@ func (r itemRepository) CreateItem(info Item) error {
 			updated_by
 		)
 		VALUES
-		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, info.OrganizationID, info.ItemID, info.SKU, info.Name, info.UnitID, info.ManufacturerID, info.BrandID, info.WeightUnit, info.Weight, info.DimensionUnit, info.Length, info.Width, info.Height, info.SellingPrice, info.CostPrice, info.OpenningStock, info.OpenningStockRate, info.ReorderStock, info.StockOnHand, info.DefaultVendorID, info.Description, info.TrackLocation, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.ItemID, info.SKU, info.Name, info.UnitID, info.ManufacturerID, info.BrandID, info.WeightUnit, info.Weight, info.DimensionUnit, info.Length, info.Width, info.Height, info.SellingPrice, info.CostPrice, info.OpenningStock, info.OpenningStockRate, info.ReorderStock, info.StockOnHand, info.StockAvailable, info.StockPicking, info.StockPacking, info.DefaultVendorID, info.Description, info.TrackLocation, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	return err
 }
 
@@ -84,6 +87,9 @@ func (r *itemRepository) GetItemByID(itemID, organiztionID string) (*ItemRespons
 		openning_stock_rate,
 		reorder_stock,
 		stock_on_hand,
+		stock_available,
+		stock_picking,
+		stock_packing,
 		default_vendor_id,
 		description,
 		track_location,
@@ -114,6 +120,7 @@ func (r *itemRepository) UpdateItem(id string, info Item) error {
 		openning_stock_rate = ?,
 		reorder_stock = ?,
 		stock_on_hand = ?,
+		stock_available = ?,
 		default_vendor_id = ?,
 		description = ?,
 		track_location = ?,
@@ -121,7 +128,7 @@ func (r *itemRepository) UpdateItem(id string, info Item) error {
 		updated = ?,
 		updated_by = ?
 		WHERE item_id = ?
-	`, info.SKU, info.Name, info.UnitID, info.ManufacturerID, info.BrandID, info.WeightUnit, info.Weight, info.DimensionUnit, info.Length, info.Width, info.Height, info.SellingPrice, info.CostPrice, info.OpenningStock, info.OpenningStockRate, info.ReorderStock, info.StockOnHand, info.DefaultVendorID, info.Description, info.TrackLocation, info.Status, info.Updated, info.UpdatedBy, id)
+	`, info.SKU, info.Name, info.UnitID, info.ManufacturerID, info.BrandID, info.WeightUnit, info.Weight, info.DimensionUnit, info.Length, info.Width, info.Height, info.SellingPrice, info.CostPrice, info.OpenningStock, info.OpenningStockRate, info.ReorderStock, info.StockOnHand, info.StockAvailable, info.DefaultVendorID, info.Description, info.TrackLocation, info.Status, info.Updated, info.UpdatedBy, id)
 	return err
 }
 
@@ -221,11 +228,24 @@ func (r *itemRepository) DeleteBarcode(id, byUser string) error {
 func (r *itemRepository) UpdateItemStock(id string, stock int, byUser string) error {
 	_, err := r.tx.Exec(`
 		Update i_items SET
-		stock_on_hand = ?,
+		stock_available = stock_available + ?,
+		stock_on_hand = stock_on_hand + ?,
 		updated = ?,
 		updated_by = ?
 		WHERE item_id = ?
-	`, stock, time.Now(), byUser, id)
+	`, stock, stock, time.Now(), byUser, id)
+	return err
+}
+
+func (r *itemRepository) UpdateItemPickingStock(id string, stock int, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update i_items SET
+		stock_available = stock_available - ?,
+		stock_picking = stock_picking + ?,
+		updated = ?,
+		updated_by = ?
+		WHERE item_id = ?
+	`, stock, stock, time.Now(), byUser, id)
 	return err
 }
 
@@ -252,7 +272,7 @@ func (r itemRepository) CreateItemBatch(info ItemBatch) error {
 	return err
 }
 
-func (r *itemRepository) getItemOpenningBatch(itemID, organiztionID string) (*ItemBatchResponse, error) {
+func (r *itemRepository) GetItemOpenningBatch(itemID, organiztionID string) (*ItemBatchResponse, error) {
 	var res ItemBatchResponse
 	row := r.tx.QueryRow(`
 		SELECT
@@ -263,6 +283,7 @@ func (r *itemRepository) getItemOpenningBatch(itemID, organiztionID string) (*It
 		b.batch_id,
 		b.type,
 		b.reference_id,
+		b.location_id,
 		b.quantity,
 		b.balance,
 		b.status
@@ -270,7 +291,7 @@ func (r *itemRepository) getItemOpenningBatch(itemID, organiztionID string) (*It
 		LEFT JOIN i_items i
 		ON b.item_id = i.item_id WHERE b.item_id = ? AND b.reference_id = ? AND b.organization_id = ? AND b.status > 0 LIMIT 1
 	`, itemID, itemID, organiztionID)
-	err := row.Scan(&res.OrganizationID, &res.ItemID, &res.SKU, &res.ItemName, &res.BatchID, &res.Type, &res.ReferenceID, &res.Quantity, &res.Balance, &res.Status)
+	err := row.Scan(&res.OrganizationID, &res.ItemID, &res.SKU, &res.ItemName, &res.BatchID, &res.Type, &res.ReferenceID, &res.LocationID, &res.Quantity, &res.Balance, &res.Status)
 	return &res, err
 }
 
@@ -284,5 +305,41 @@ func (r *itemRepository) UpdateItemBatch(id string, itemBatch ItemBatch) error {
 		updated_by = ?
 		WHERE batch_id = ?
 	`, itemBatch.Quantity, itemBatch.Balance, itemBatch.Status, time.Now(), itemBatch.UpdatedBy, id)
+	return err
+}
+
+func (r *itemRepository) GetItemNextBatch(itemID, organiztionID string) (*ItemBatchResponse, error) {
+	var res ItemBatchResponse
+	row := r.tx.QueryRow(`
+		SELECT
+		b.organization_id,
+		b.item_id,
+		i.SKU,
+		i.name as item_name,
+		b.batch_id,
+		b.type,
+		b.reference_id,
+		b.location_id,
+		b.quantity,
+		b.balance,
+		b.status
+		FROM i_item_batches b
+		LEFT JOIN i_items i
+		ON b.item_id = i.item_id WHERE b.item_id = ?  AND b.organization_id = ? AND b.balance > 0 AND b.status > 0 
+		ORDER BY i.created asc
+		LIMIT 1
+	`, itemID, organiztionID)
+	err := row.Scan(&res.OrganizationID, &res.ItemID, &res.SKU, &res.ItemName, &res.BatchID, &res.Type, &res.ReferenceID, &res.LocationID, &res.Quantity, &res.Balance, &res.Status)
+	return &res, err
+}
+
+func (r *itemRepository) PickItem(id string, quantity int, email string) error {
+	_, err := r.tx.Exec(`
+		Update i_item_batches SET
+		balance = balance - ?,
+		updated = ?,
+		updated_by = ?
+		WHERE batch_id = ?
+	`, quantity, time.Now(), email, id)
 	return err
 }

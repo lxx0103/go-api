@@ -17,6 +17,7 @@ type NewBatchCreated struct {
 	Balance        int    `json:"balance" binding:"required"`
 	ItemID         string `json:"item_id" binding:"required"`
 	ReferenceID    string `json:"reference_id" binding:"required"`
+	LocationID     string `json:"location_id" binding:"required"`
 	OrganizationID string `json:"organiztion_id" binding:"required"`
 	User           string `json:"user"  binding:"required,max=64"`
 	Email          string `json:"email" binding:"required,max=255"`

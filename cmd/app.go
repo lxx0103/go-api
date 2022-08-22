@@ -6,6 +6,7 @@ import (
 	"go-api/api/v1/item"
 	"go-api/api/v1/organization"
 	"go-api/api/v1/purchaseorder"
+	"go-api/api/v1/salesorder"
 	"go-api/api/v1/setting"
 	"go-api/api/v1/warehouse"
 	"go-api/core/config"
@@ -23,6 +24,6 @@ func Run(args []string) {
 	event.Subscribe(auth.Subscribe, history.Subscribe, item.Subscribe)
 	r := router.InitRouter()
 	router.InitPublicRouter(r, auth.Routers, organization.Routers)
-	router.InitAuthRouter(r, auth.AuthRouter, setting.AuthRouter, item.AuthRouter, purchaseorder.AuthRouter, warehouse.AuthRouter, history.AuthRouter)
+	router.InitAuthRouter(r, auth.AuthRouter, setting.AuthRouter, item.AuthRouter, purchaseorder.AuthRouter, warehouse.AuthRouter, history.AuthRouter, salesorder.AuthRouter)
 	router.RunServer(r)
 }

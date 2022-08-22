@@ -543,6 +543,19 @@ func (s *purchaseorderService) NewPurchasereceive(purchaseorderID string, info P
 						msg := "create purchase receive detail error" + err.Error()
 						return nil, errors.New(msg)
 					}
+
+					var newBatchEvent item.NewBatchCreated
+					newBatchEvent.Type = "NewReceive"
+					newBatchEvent.Quantity = quantityToReceive
+					newBatchEvent.Balance = quantityToReceive
+					newBatchEvent.ReferenceID = receiveItemID
+					newBatchEvent.ItemID = itemRow.ItemID
+					newBatchEvent.LocationID = nextLocation.LocationID
+					newBatchEvent.OrganizationID = info.OrganizationID
+					newBatchEvent.Email = info.Email
+					msg, _ := json.Marshal(newBatchEvent)
+					msgs = append(msgs, msg)
+
 					quantityToReceive = 0
 				} else {
 					err = warehouseRepo.ReceiveItem(nextLocation.LocationID, nextLocation.Available, info.Email)
@@ -569,7 +582,20 @@ func (s *purchaseorderService) NewPurchasereceive(purchaseorderID string, info P
 						msg := "create purchase receive detail error"
 						return nil, errors.New(msg)
 					}
-					quantityToReceive = quantityToReceive - itemRow.Quantity
+
+					var newBatchEvent item.NewBatchCreated
+					newBatchEvent.Type = "NewReceive"
+					newBatchEvent.Quantity = nextLocation.Available
+					newBatchEvent.Balance = nextLocation.Available
+					newBatchEvent.ReferenceID = receiveItemID
+					newBatchEvent.ItemID = itemRow.ItemID
+					newBatchEvent.LocationID = nextLocation.LocationID
+					newBatchEvent.OrganizationID = info.OrganizationID
+					newBatchEvent.Email = info.Email
+					msg, _ := json.Marshal(newBatchEvent)
+					msgs = append(msgs, msg)
+
+					quantityToReceive = quantityToReceive - nextLocation.Available
 				}
 			}
 		}
@@ -606,22 +632,11 @@ func (s *purchaseorderService) NewPurchasereceive(purchaseorderID string, info P
 			msg := "create purchase receive item error: " + err.Error()
 			return nil, errors.New(msg)
 		}
-		err = itemRepo.UpdateItemStock(itemRow.ItemID, itemInfo.StockOnHand+itemRow.Quantity, info.Email)
+		err = itemRepo.UpdateItemStock(itemRow.ItemID, itemRow.Quantity, info.Email)
 		if err != nil {
 			msg := "update item stock error: " + err.Error()
 			return nil, errors.New(msg)
 		}
-
-		var newBatchEvent item.NewBatchCreated
-		newBatchEvent.Type = "NewReceive"
-		newBatchEvent.Quantity = itemRow.Quantity
-		newBatchEvent.Balance = itemRow.Quantity
-		newBatchEvent.ReferenceID = receiveItemID
-		newBatchEvent.ItemID = itemRow.ItemID
-		newBatchEvent.OrganizationID = info.OrganizationID
-		newBatchEvent.Email = info.Email
-		msg, _ := json.Marshal(newBatchEvent)
-		msgs = append(msgs, msg)
 	}
 	var purchasereceive Purchasereceive
 	purchasereceive.PurchaseorderID = purchaseorderID

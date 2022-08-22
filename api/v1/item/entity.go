@@ -62,6 +62,9 @@ type Item struct {
 	OpenningStockRate float64   `db:"openning_stock_rate" json:"openning_stock_rate"`
 	ReorderStock      int       `db:"reorder_stock" json:"reorder_stock"`
 	StockOnHand       int       `db:"stock_on_hand" json:"stock_on_hand"`
+	StockAvailable    int       `db:"stock_available" json:"stock_available"`
+	StockPicking      int       `db:"stock_picking" json:"stock_picking"`
+	StockPacking      int       `db:"stock_packing" json:"stock_packing"`
 	DefaultVendorID   string    `db:"default_vendor_id" json:"default_vendor_id"`
 	Description       string    `db:"description" json:"description"`
 	TrackLocation     int       `db:"track_location" json:"track_location"`
@@ -105,6 +108,7 @@ type ItemBatch struct {
 	BatchID        string    `db:"batch_id" json:"batch_id"`
 	Type           string    `db:"type" json:"type"`
 	ReferenceID    string    `db:"reference_id" json:"reference_id"`
+	LocationID     string    `db:"location_id" json:"location_id"`
 	Quantity       int       `db:"quantity" json:"quantity"`
 	Balance        int       `db:"balance" json:"balance"`
 	Status         int       `db:"status" json:"status"`

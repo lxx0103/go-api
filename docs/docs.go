@@ -2758,6 +2758,432 @@ var doc = `{
                 }
             }
         },
+        "/salesorders": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "销售单列表",
+                "operationId": "602",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "销售单名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/salesorder.SalesorderResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "新建销售单",
+                "operationId": "601",
+                "parameters": [
+                    {
+                        "description": "销售单信息",
+                        "name": "salesorder_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/salesorder.SalesorderNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/salesorders/:id": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "根据ID获取销售单",
+                "operationId": "604",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "销售单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/salesorder.SalesorderResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "根据ID更新销售单",
+                "operationId": "603",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "销售单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "销售单信息",
+                        "name": "salesorder_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/salesorder.SalesorderNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/salesorder.Salesorder"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "根据ID删除销售单",
+                "operationId": "605",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "销售单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/salesorders/:id/confirmed": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "更新销售单为ISSUED",
+                "operationId": "607",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "销售单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/salesorders/:id/items": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "销售单产品列表",
+                "operationId": "606",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "销售单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/salesorder.SalesorderItemResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/salesorders/:id/pickings": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "新建拣货单",
+                "operationId": "608",
+                "parameters": [
+                    {
+                        "description": "销售单信息",
+                        "name": "purchasereceive_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/salesorder.PickingorderNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/signin": {
             "post": {
                 "consumes": [
@@ -3973,7 +4399,16 @@ var doc = `{
                 "status": {
                     "type": "integer"
                 },
+                "stock_available": {
+                    "type": "integer"
+                },
                 "stock_on_hand": {
+                    "type": "integer"
+                },
+                "stock_packing": {
+                    "type": "integer"
+                },
+                "stock_picking": {
                     "type": "integer"
                 },
                 "track_location": {
@@ -4153,7 +4588,16 @@ var doc = `{
                 "status": {
                     "type": "integer"
                 },
+                "stock_available": {
+                    "type": "integer"
+                },
                 "stock_on_hand": {
+                    "type": "integer"
+                },
+                "stock_packing": {
+                    "type": "integer"
+                },
+                "stock_picking": {
                     "type": "integer"
                 },
                 "track_location": {
@@ -4533,6 +4977,318 @@ var doc = `{
             "type": "object",
             "properties": {
                 "data": {}
+            }
+        },
+        "salesorder.PickingorderItemNew": {
+            "type": "object",
+            "required": [
+                "quantity"
+            ],
+            "properties": {
+                "item_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
+        "salesorder.PickingorderNew": {
+            "type": "object",
+            "required": [
+                "items",
+                "pickingorder_date",
+                "pickingorder_number"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/salesorder.PickingorderItemNew"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "pickingorder_date": {
+                    "type": "string"
+                },
+                "pickingorder_number": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 6
+                }
+            }
+        },
+        "salesorder.Salesorder": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "customer_id": {
+                    "type": "string"
+                },
+                "discount_type": {
+                    "type": "integer"
+                },
+                "discount_value": {
+                    "type": "number"
+                },
+                "expected_shipment_date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "invoice_status": {
+                    "type": "integer"
+                },
+                "item_count": {
+                    "type": "integer"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "packing_status": {
+                    "type": "integer"
+                },
+                "picking_status": {
+                    "type": "integer"
+                },
+                "salesorder_date": {
+                    "type": "string"
+                },
+                "salesorder_id": {
+                    "type": "string"
+                },
+                "salesorder_number": {
+                    "type": "string"
+                },
+                "shipping_fee": {
+                    "type": "number"
+                },
+                "shipping_status": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "subtotal": {
+                    "type": "number"
+                },
+                "tax_total": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "salesorder.SalesorderItemNew": {
+            "type": "object",
+            "required": [
+                "item_id",
+                "quantity",
+                "rate"
+            ],
+            "properties": {
+                "item_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "rate": {
+                    "type": "number"
+                },
+                "salesorder_item_id": {
+                    "type": "string"
+                },
+                "tax_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "salesorder.SalesorderItemResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "quantity_invoiced": {
+                    "type": "integer"
+                },
+                "quantity_packed": {
+                    "type": "integer"
+                },
+                "quantity_picked": {
+                    "type": "integer"
+                },
+                "quantity_shipped": {
+                    "type": "integer"
+                },
+                "rate": {
+                    "type": "number"
+                },
+                "salesorder_id": {
+                    "type": "string"
+                },
+                "salesorder_item_id": {
+                    "type": "string"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "tax_amount": {
+                    "type": "number"
+                },
+                "tax_id": {
+                    "type": "string"
+                },
+                "tax_value": {
+                    "type": "number"
+                }
+            }
+        },
+        "salesorder.SalesorderNew": {
+            "type": "object",
+            "required": [
+                "customer_id",
+                "expected_shipment_date",
+                "items",
+                "salesorder_date",
+                "salesorder_number"
+            ],
+            "properties": {
+                "customer_id": {
+                    "type": "string"
+                },
+                "discount_type": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
+                },
+                "discount_value": {
+                    "type": "number"
+                },
+                "expected_shipment_date": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/salesorder.SalesorderItemNew"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "salesorder_date": {
+                    "type": "string"
+                },
+                "salesorder_number": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 6
+                },
+                "shipping_fee": {
+                    "type": "number"
+                }
+            }
+        },
+        "salesorder.SalesorderResponse": {
+            "type": "object",
+            "properties": {
+                "customer_id": {
+                    "type": "string"
+                },
+                "customer_name": {
+                    "type": "string"
+                },
+                "discount_type": {
+                    "type": "integer"
+                },
+                "discount_value": {
+                    "type": "number"
+                },
+                "expected_shipment_date": {
+                    "type": "string"
+                },
+                "invoice_status": {
+                    "type": "integer"
+                },
+                "item_count": {
+                    "type": "number"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "packing_status": {
+                    "type": "integer"
+                },
+                "picking_status": {
+                    "type": "integer"
+                },
+                "salesorder_date": {
+                    "type": "string"
+                },
+                "salesorder_id": {
+                    "type": "string"
+                },
+                "salesorder_number": {
+                    "type": "string"
+                },
+                "shipping_fee": {
+                    "type": "number"
+                },
+                "shipping_status": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "sub_total": {
+                    "type": "number"
+                },
+                "tax_total": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                }
             }
         },
         "setting.Brand": {

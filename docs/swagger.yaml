@@ -227,7 +227,13 @@ definitions:
         type: string
       status:
         type: integer
+      stock_available:
+        type: integer
       stock_on_hand:
+        type: integer
+      stock_packing:
+        type: integer
+      stock_picking:
         type: integer
       track_location:
         type: integer
@@ -353,7 +359,13 @@ definitions:
         type: string
       status:
         type: integer
+      stock_available:
+        type: integer
       stock_on_hand:
+        type: integer
+      stock_packing:
+        type: integer
+      stock_picking:
         type: integer
       track_location:
         type: integer
@@ -611,6 +623,216 @@ definitions:
   response.SuccessRes:
     properties:
       data: {}
+    type: object
+  salesorder.PickingorderItemNew:
+    properties:
+      item_id:
+        type: string
+      quantity:
+        type: integer
+    required:
+    - quantity
+    type: object
+  salesorder.PickingorderNew:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/salesorder.PickingorderItemNew'
+        type: array
+      notes:
+        type: string
+      pickingorder_date:
+        type: string
+      pickingorder_number:
+        maxLength: 64
+        minLength: 6
+        type: string
+    required:
+    - items
+    - pickingorder_date
+    - pickingorder_number
+    type: object
+  salesorder.Salesorder:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      customer_id:
+        type: string
+      discount_type:
+        type: integer
+      discount_value:
+        type: number
+      expected_shipment_date:
+        type: string
+      id:
+        type: integer
+      invoice_status:
+        type: integer
+      item_count:
+        type: integer
+      notes:
+        type: string
+      organization_id:
+        type: string
+      packing_status:
+        type: integer
+      picking_status:
+        type: integer
+      salesorder_date:
+        type: string
+      salesorder_id:
+        type: string
+      salesorder_number:
+        type: string
+      shipping_fee:
+        type: number
+      shipping_status:
+        type: integer
+      status:
+        type: integer
+      subtotal:
+        type: number
+      tax_total:
+        type: number
+      total:
+        type: number
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  salesorder.SalesorderItemNew:
+    properties:
+      item_id:
+        type: string
+      quantity:
+        type: integer
+      rate:
+        type: number
+      salesorder_item_id:
+        type: string
+      tax_id:
+        type: string
+    required:
+    - item_id
+    - quantity
+    - rate
+    type: object
+  salesorder.SalesorderItemResponse:
+    properties:
+      amount:
+        type: number
+      item_id:
+        type: string
+      item_name:
+        type: string
+      organization_id:
+        type: string
+      quantity:
+        type: integer
+      quantity_invoiced:
+        type: integer
+      quantity_packed:
+        type: integer
+      quantity_picked:
+        type: integer
+      quantity_shipped:
+        type: integer
+      rate:
+        type: number
+      salesorder_id:
+        type: string
+      salesorder_item_id:
+        type: string
+      sku:
+        type: string
+      status:
+        type: integer
+      tax_amount:
+        type: number
+      tax_id:
+        type: string
+      tax_value:
+        type: number
+    type: object
+  salesorder.SalesorderNew:
+    properties:
+      customer_id:
+        type: string
+      discount_type:
+        enum:
+        - 1
+        - 2
+        type: integer
+      discount_value:
+        type: number
+      expected_shipment_date:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/salesorder.SalesorderItemNew'
+        type: array
+      notes:
+        type: string
+      salesorder_date:
+        type: string
+      salesorder_number:
+        maxLength: 64
+        minLength: 6
+        type: string
+      shipping_fee:
+        type: number
+    required:
+    - customer_id
+    - expected_shipment_date
+    - items
+    - salesorder_date
+    - salesorder_number
+    type: object
+  salesorder.SalesorderResponse:
+    properties:
+      customer_id:
+        type: string
+      customer_name:
+        type: string
+      discount_type:
+        type: integer
+      discount_value:
+        type: number
+      expected_shipment_date:
+        type: string
+      invoice_status:
+        type: integer
+      item_count:
+        type: number
+      notes:
+        type: string
+      organization_id:
+        type: string
+      packing_status:
+        type: integer
+      picking_status:
+        type: integer
+      salesorder_date:
+        type: string
+      salesorder_id:
+        type: string
+      salesorder_number:
+        type: string
+      shipping_fee:
+        type: number
+      shipping_status:
+        type: integer
+      status:
+        type: integer
+      sub_total:
+        type: number
+      tax_total:
+        type: number
+      total:
+        type: number
     type: object
   setting.Brand:
     properties:
@@ -2891,6 +3113,264 @@ paths:
       summary: 根据ID更新角色
       tags:
       - 角色管理
+  /salesorders:
+    get:
+      consumes:
+      - application/json
+      operationId: "602"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 销售单名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/salesorder.SalesorderResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 销售单列表
+      tags:
+      - 销售单管理
+    post:
+      consumes:
+      - application/json
+      operationId: "601"
+      parameters:
+      - description: 销售单信息
+        in: body
+        name: salesorder_info
+        required: true
+        schema:
+          $ref: '#/definitions/salesorder.SalesorderNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建销售单
+      tags:
+      - 销售单管理
+  /salesorders/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "605"
+      parameters:
+      - description: 销售单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除销售单
+      tags:
+      - 销售单管理
+    get:
+      consumes:
+      - application/json
+      operationId: "604"
+      parameters:
+      - description: 销售单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/salesorder.SalesorderResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取销售单
+      tags:
+      - 销售单管理
+    put:
+      consumes:
+      - application/json
+      operationId: "603"
+      parameters:
+      - description: 销售单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 销售单信息
+        in: body
+        name: salesorder_info
+        required: true
+        schema:
+          $ref: '#/definitions/salesorder.SalesorderNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/salesorder.Salesorder'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新销售单
+      tags:
+      - 销售单管理
+  /salesorders/:id/confirmed:
+    post:
+      consumes:
+      - application/json
+      operationId: "607"
+      parameters:
+      - description: 销售单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 更新销售单为ISSUED
+      tags:
+      - 销售单管理
+  /salesorders/:id/items:
+    get:
+      consumes:
+      - application/json
+      operationId: "606"
+      parameters:
+      - description: 销售单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/salesorder.SalesorderItemResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 销售单产品列表
+      tags:
+      - 销售单管理
+  /salesorders/:id/pickings:
+    post:
+      consumes:
+      - application/json
+      operationId: "608"
+      parameters:
+      - description: 销售单信息
+        in: body
+        name: purchasereceive_info
+        required: true
+        schema:
+          $ref: '#/definitions/salesorder.PickingorderNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建拣货单
+      tags:
+      - 销售单管理
   /signin:
     post:
       consumes:
