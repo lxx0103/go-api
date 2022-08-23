@@ -94,3 +94,53 @@ type PickingorderItemNew struct {
 	ItemID   string `json:"item_id" binding:"omitempty"`
 	Quantity int    `json:"quantity" binding:"required"`
 }
+
+type PickingorderResponse struct {
+	OrganizationID     string `db:"organization_id" json:"organization_id"`
+	SalesorderID       string `db:"salesorder_id" json:"salesorder_id"`
+	SalesorderNumber   string `db:"salesorder_number" json:"salesorder_number"`
+	PickingorderID     string `db:"pickingorder_id" json:"pickingorder_id"`
+	PickingorderNumber string `db:"pickingorder_number" json:"pickingorder_number"`
+	PickingorderDate   string `db:"pickingorder_date" json:"pickingorder_date"`
+	Notes              string `db:"notes" json:"notes"`
+	Status             int    `db:"status" json:"status"`
+}
+
+type PickingorderFilter struct {
+	SalesorderID       string `form:"salesorder_id" binding:"omitempty,max=64"`
+	PickingorderNumber string `form:"pickingorder_number" binding:"omitempty,max=64,min=1"`
+	OrganizationID     string `json:"organiztion_id" swaggerignore:"true"`
+	request.PageInfo
+}
+
+type PickingorderID struct {
+	ID string `uri:"id" binding:"required,min=1"`
+}
+type PickingorderItemResponse struct {
+	ID                 int64  `db:"id" json:"id"`
+	OrganizationID     string `db:"organization_id" json:"organization_id"`
+	PickingorderID     string `db:"pickingorder_id" json:"pickingorder_id"`
+	SalesorderItemID   string `db:"salesorder_item_id" json:"salesorder_item_id"`
+	PickingorderItemID string `db:"pickingorder_item_id" json:"pickingorder_item_id"`
+	ItemID             string `db:"item_id" json:"item_id"`
+	ItemName           string `db:"item_name" json:"item_name"`
+	SKU                string `db:"sku" json:"sku"`
+	Quantity           int    `db:"quantity" json:"quantity"`
+	Status             int    `db:"status" json:"status"`
+}
+
+type PickingorderDetailResponse struct {
+	ID                   int64  `db:"id" json:"id"`
+	PickingorderDetailID string `db:"pickingorder_detail_id" json:"pickingorder_detail_id"`
+	OrganizationID       string `db:"organization_id" json:"organization_id"`
+	PickingorderID       string `db:"pickingorder_id" json:"pickingorder_id"`
+	SalesorderItemID     string `db:"salesorder_item_id" json:"salesorder_item_id"`
+	PickingorderItemID   string `db:"pickingorder_item_id" json:"pickingorder_item_id"`
+	LocationID           string `db:"location_id" json:"location_id"`
+	LocationCode         string `db:"location_code" json:"location_code"`
+	ItemID               string `db:"item_id" json:"item_id"`
+	ItemName             string `db:"item_name" json:"item_name"`
+	SKU                  string `db:"sku" json:"sku"`
+	Quantity             int    `db:"quantity" json:"quantity"`
+	Status               int    `db:"status" json:"status"`
+}

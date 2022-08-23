@@ -1125,10 +1125,10 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "采购单管理"
+                    "历史记录管理"
                 ],
-                "summary": "采购单列表",
-                "operationId": "601",
+                "summary": "历史记录列表",
+                "operationId": "701",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2046,6 +2046,184 @@ var doc = `{
                                     "properties": {
                                         "data": {
                                             "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/pickingorders": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "拣货单列表",
+                "operationId": "609",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "拣货单编码",
+                        "name": "pickingorder_number",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "销售订单ID",
+                        "name": "salesorder_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/salesorder.PickingorderResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/pickingorders/:id/details": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "拣货单详情列表",
+                "operationId": "611",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "拣货单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/salesorder.PickingorderDetailResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/pickingorders/:id/items": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "拣货单产品列表",
+                "operationId": "610",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "拣货单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/salesorder.PickingorderItemResponse"
+                                            }
                                         }
                                     }
                                 }
@@ -4378,12 +4556,6 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
-                "openning_stock": {
-                    "type": "integer"
-                },
-                "openning_stock_rate": {
-                    "type": "number"
-                },
                 "organization_id": {
                     "type": "string"
                 },
@@ -4479,12 +4651,6 @@ var doc = `{
                     "maxLength": 255,
                     "minLength": 6
                 },
-                "openning_stock": {
-                    "type": "integer"
-                },
-                "openning_stock_rate": {
-                    "type": "number"
-                },
                 "reorder_stock": {
                     "type": "integer"
                 },
@@ -4566,12 +4732,6 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
-                },
-                "openning_stock": {
-                    "type": "integer"
-                },
-                "openning_stock_rate": {
-                    "type": "number"
                 },
                 "organization_id": {
                     "type": "string"
@@ -4979,6 +5139,50 @@ var doc = `{
                 "data": {}
             }
         },
+        "salesorder.PickingorderDetailResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "location_code": {
+                    "type": "string"
+                },
+                "location_id": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "pickingorder_detail_id": {
+                    "type": "string"
+                },
+                "pickingorder_id": {
+                    "type": "string"
+                },
+                "pickingorder_item_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "salesorder_item_id": {
+                    "type": "string"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
         "salesorder.PickingorderItemNew": {
             "type": "object",
             "required": [
@@ -4989,6 +5193,41 @@ var doc = `{
                     "type": "string"
                 },
                 "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
+        "salesorder.PickingorderItemResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "pickingorder_id": {
+                    "type": "string"
+                },
+                "pickingorder_item_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "salesorder_item_id": {
+                    "type": "string"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "integer"
                 }
             }
@@ -5017,6 +5256,35 @@ var doc = `{
                     "type": "string",
                     "maxLength": 64,
                     "minLength": 6
+                }
+            }
+        },
+        "salesorder.PickingorderResponse": {
+            "type": "object",
+            "properties": {
+                "notes": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "pickingorder_date": {
+                    "type": "string"
+                },
+                "pickingorder_id": {
+                    "type": "string"
+                },
+                "pickingorder_number": {
+                    "type": "string"
+                },
+                "salesorder_id": {
+                    "type": "string"
+                },
+                "salesorder_number": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
                 }
             }
         },
@@ -6164,9 +6432,6 @@ var doc = `{
                 },
                 "level": {
                     "type": "string"
-                },
-                "quantity": {
-                    "type": "integer"
                 },
                 "status": {
                     "type": "integer",

@@ -213,10 +213,6 @@ definitions:
         type: string
       name:
         type: string
-      openning_stock:
-        type: integer
-      openning_stock_rate:
-        type: number
       organization_id:
         type: string
       reorder_stock:
@@ -278,10 +274,6 @@ definitions:
         maxLength: 255
         minLength: 6
         type: string
-      openning_stock:
-        type: integer
-      openning_stock_rate:
-        type: number
       reorder_stock:
         type: integer
       selling_price:
@@ -345,10 +337,6 @@ definitions:
         type: string
       name:
         type: string
-      openning_stock:
-        type: integer
-      openning_stock_rate:
-        type: number
       organization_id:
         type: string
       reorder_stock:
@@ -624,6 +612,35 @@ definitions:
     properties:
       data: {}
     type: object
+  salesorder.PickingorderDetailResponse:
+    properties:
+      id:
+        type: integer
+      item_id:
+        type: string
+      item_name:
+        type: string
+      location_code:
+        type: string
+      location_id:
+        type: string
+      organization_id:
+        type: string
+      pickingorder_detail_id:
+        type: string
+      pickingorder_id:
+        type: string
+      pickingorder_item_id:
+        type: string
+      quantity:
+        type: integer
+      salesorder_item_id:
+        type: string
+      sku:
+        type: string
+      status:
+        type: integer
+    type: object
   salesorder.PickingorderItemNew:
     properties:
       item_id:
@@ -632,6 +649,29 @@ definitions:
         type: integer
     required:
     - quantity
+    type: object
+  salesorder.PickingorderItemResponse:
+    properties:
+      id:
+        type: integer
+      item_id:
+        type: string
+      item_name:
+        type: string
+      organization_id:
+        type: string
+      pickingorder_id:
+        type: string
+      pickingorder_item_id:
+        type: string
+      quantity:
+        type: integer
+      salesorder_item_id:
+        type: string
+      sku:
+        type: string
+      status:
+        type: integer
     type: object
   salesorder.PickingorderNew:
     properties:
@@ -651,6 +691,25 @@ definitions:
     - items
     - pickingorder_date
     - pickingorder_number
+    type: object
+  salesorder.PickingorderResponse:
+    properties:
+      notes:
+        type: string
+      organization_id:
+        type: string
+      pickingorder_date:
+        type: string
+      pickingorder_id:
+        type: string
+      pickingorder_number:
+        type: string
+      salesorder_id:
+        type: string
+      salesorder_number:
+        type: string
+      status:
+        type: integer
     type: object
   salesorder.Salesorder:
     properties:
@@ -1425,8 +1484,6 @@ definitions:
         type: string
       level:
         type: string
-      quantity:
-        type: integer
       status:
         enum:
         - 1
@@ -2117,7 +2174,7 @@ paths:
     get:
       consumes:
       - application/json
-      operationId: "601"
+      operationId: "701"
       parameters:
       - description: 页码
         in: query
@@ -2157,9 +2214,9 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/response.ErrorRes'
-      summary: 采购单列表
+      summary: 历史记录列表
       tags:
-      - 采购单管理
+      - 历史记录管理
   /items:
     get:
       consumes:
@@ -2690,6 +2747,115 @@ paths:
       summary: 新建组织
       tags:
       - 组织管理
+  /pickingorders:
+    get:
+      consumes:
+      - application/json
+      operationId: "609"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 拣货单编码
+        in: query
+        name: pickingorder_number
+        type: string
+      - description: 销售订单ID
+        in: query
+        name: salesorder_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/salesorder.PickingorderResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 拣货单列表
+      tags:
+      - 销售单管理
+  /pickingorders/:id/details:
+    get:
+      consumes:
+      - application/json
+      operationId: "611"
+      parameters:
+      - description: 拣货单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/salesorder.PickingorderDetailResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 拣货单详情列表
+      tags:
+      - 销售单管理
+  /pickingorders/:id/items:
+    get:
+      consumes:
+      - application/json
+      operationId: "610"
+      parameters:
+      - description: 拣货单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/salesorder.PickingorderItemResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 拣货单产品列表
+      tags:
+      - 销售单管理
   /purchaseorders:
     get:
       consumes:

@@ -178,10 +178,6 @@ func (s *warehouseService) NewLocation(info LocationNew) (*string, error) {
 		msg := "location code conflict"
 		return nil, errors.New(msg)
 	}
-	if info.Capacity < info.Quantity {
-		msg := "capacity must be greater than quantity"
-		return nil, errors.New(msg)
-	}
 	_, err = repo.GetBayByID(info.BayID, info.OrganizationID)
 	if err != nil {
 		msg := "bay not exist"
@@ -200,9 +196,9 @@ func (s *warehouseService) NewLocation(info LocationNew) (*string, error) {
 	location.BayID = info.BayID
 	location.ItemID = info.ItemID
 	location.Capacity = info.Capacity
-	location.Quantity = info.Quantity
-	location.CanPick = info.Quantity
-	location.Available = info.Capacity - info.Quantity
+	location.Quantity = 0
+	location.CanPick = 0
+	location.Available = info.Capacity
 	location.Alert = info.Alert
 	location.Status = info.Status
 	location.Created = time.Now()
@@ -249,18 +245,14 @@ func (s *warehouseService) UpdateLocation(locationID string, info LocationNew) (
 		msg := "capacity must be greater than current quantity"
 		return nil, errors.New(msg)
 	}
-	if oldLocation.Quantity > 0 && info.Quantity != oldLocation.Quantity {
-		msg := "can not change quantity, please do ajustment"
-		return nil, errors.New(msg)
-	}
 	var location Location
 	location.Code = info.Code
 	location.BayID = info.BayID
 	location.Level = info.Level
 	location.ItemID = info.ItemID
 	location.Capacity = info.Capacity
-	location.Quantity = info.Quantity
-	location.Available = location.Capacity - location.Quantity
+	location.Available = location.Capacity - oldLocation.Quantity
+	location.Quantity = oldLocation.Quantity
 	location.Alert = info.Alert
 	location.Status = info.Status
 	location.Updated = time.Now()

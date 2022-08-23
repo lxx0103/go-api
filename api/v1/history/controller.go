@@ -7,9 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// @Summary 采购单列表
-// @Id 601
-// @Tags 采购单管理
+// @Summary 历史记录列表
+// @Id 701
+// @Tags 历史记录管理
 // @version 1.0
 // @Accept application/json
 // @Produce application/json

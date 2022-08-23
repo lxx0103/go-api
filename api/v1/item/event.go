@@ -12,15 +12,16 @@ import (
 )
 
 type NewBatchCreated struct {
-	Type           string `json:"type" binding:"required,min=6,max=64"`
-	Quantity       int    `json:"quantity" binding:"required"`
-	Balance        int    `json:"balance" binding:"required"`
-	ItemID         string `json:"item_id" binding:"required"`
-	ReferenceID    string `json:"reference_id" binding:"required"`
-	LocationID     string `json:"location_id" binding:"required"`
-	OrganizationID string `json:"organiztion_id" binding:"required"`
-	User           string `json:"user"  binding:"required,max=64"`
-	Email          string `json:"email" binding:"required,max=255"`
+	Type           string  `json:"type" binding:"required,min=6,max=64"`
+	Quantity       int     `json:"quantity" binding:"required"`
+	Rate           float64 `json:"rate" binding:"required"`
+	Balance        int     `json:"balance" binding:"required"`
+	ItemID         string  `json:"item_id" binding:"required"`
+	ReferenceID    string  `json:"reference_id" binding:"required"`
+	LocationID     string  `json:"location_id" binding:"required"`
+	OrganizationID string  `json:"organiztion_id" binding:"required"`
+	User           string  `json:"user"  binding:"required,max=64"`
+	Email          string  `json:"email" binding:"required,max=255"`
 }
 
 func Subscribe(conn *queue.Conn) {
@@ -51,7 +52,9 @@ func CreateBatch(d amqp.Delivery) bool {
 	batch.ItemID = info.ItemID
 	batch.Type = info.Type
 	batch.ReferenceID = info.ReferenceID
+	batch.LocationID = info.LocationID
 	batch.Quantity = info.Quantity
+	batch.Rate = info.Rate
 	batch.Balance = info.Balance
 	batch.Status = 1
 	batch.Created = time.Now()

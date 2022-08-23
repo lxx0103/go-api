@@ -38,7 +38,7 @@ func (r *organizationRepository) CreateOrganization(info Organization) (int64, e
 			updated,
 			updated_by
 		)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, info.OrganizationID, info.Name, info.Owner, info.OwnerEmail, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	if err != nil {
 		return 0, err

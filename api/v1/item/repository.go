@@ -42,8 +42,6 @@ func (r itemRepository) CreateItem(info Item) error {
 			height,
 			selling_price,
 			cost_price,
-			openning_stock,
-			openning_stock_rate,
 			reorder_stock,
 			stock_on_hand,
 			stock_available,
@@ -59,8 +57,8 @@ func (r itemRepository) CreateItem(info Item) error {
 			updated_by
 		)
 		VALUES
-		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, info.OrganizationID, info.ItemID, info.SKU, info.Name, info.UnitID, info.ManufacturerID, info.BrandID, info.WeightUnit, info.Weight, info.DimensionUnit, info.Length, info.Width, info.Height, info.SellingPrice, info.CostPrice, info.OpenningStock, info.OpenningStockRate, info.ReorderStock, info.StockOnHand, info.StockAvailable, info.StockPicking, info.StockPacking, info.DefaultVendorID, info.Description, info.TrackLocation, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.ItemID, info.SKU, info.Name, info.UnitID, info.ManufacturerID, info.BrandID, info.WeightUnit, info.Weight, info.DimensionUnit, info.Length, info.Width, info.Height, info.SellingPrice, info.CostPrice, info.ReorderStock, info.StockOnHand, info.StockAvailable, info.StockPicking, info.StockPacking, info.DefaultVendorID, info.Description, info.TrackLocation, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	return err
 }
 
@@ -83,8 +81,6 @@ func (r *itemRepository) GetItemByID(itemID, organiztionID string) (*ItemRespons
 		height,
 		selling_price,
 		cost_price,
-		openning_stock,
-		openning_stock_rate,
 		reorder_stock,
 		stock_on_hand,
 		stock_available,
@@ -96,7 +92,7 @@ func (r *itemRepository) GetItemByID(itemID, organiztionID string) (*ItemRespons
 		status
 		FROM i_items WHERE item_id = ? AND organization_id = ? AND status > 0 LIMIT 1
 	`, itemID, organiztionID)
-	err := row.Scan(&res.ItemID, &res.OrganizationID, &res.SKU, &res.Name, &res.UnitID, &res.ManufacturerID, &res.BrandID, &res.WeightUnit, &res.Weight, &res.DimensionUnit, &res.Length, &res.Width, &res.Height, &res.SellingPrice, &res.CostPrice, &res.OpenningStock, &res.OpenningStockRate, &res.ReorderStock, &res.StockOnHand, &res.DefaultVendorID, &res.Description, &res.TrackLocation, &res.Status)
+	err := row.Scan(&res.ItemID, &res.OrganizationID, &res.SKU, &res.Name, &res.UnitID, &res.ManufacturerID, &res.BrandID, &res.WeightUnit, &res.Weight, &res.DimensionUnit, &res.Length, &res.Width, &res.Height, &res.SellingPrice, &res.CostPrice, &res.ReorderStock, &res.StockOnHand, &res.StockAvailable, &res.StockPicking, &res.StockPacking, &res.DefaultVendorID, &res.Description, &res.TrackLocation, &res.Status)
 	return &res, err
 }
 
@@ -116,8 +112,6 @@ func (r *itemRepository) UpdateItem(id string, info Item) error {
 		height = ?,
 		selling_price = ?,
 		cost_price = ?,
-		openning_stock = ?,
-		openning_stock_rate = ?,
 		reorder_stock = ?,
 		stock_on_hand = ?,
 		stock_available = ?,
@@ -128,7 +122,7 @@ func (r *itemRepository) UpdateItem(id string, info Item) error {
 		updated = ?,
 		updated_by = ?
 		WHERE item_id = ?
-	`, info.SKU, info.Name, info.UnitID, info.ManufacturerID, info.BrandID, info.WeightUnit, info.Weight, info.DimensionUnit, info.Length, info.Width, info.Height, info.SellingPrice, info.CostPrice, info.OpenningStock, info.OpenningStockRate, info.ReorderStock, info.StockOnHand, info.StockAvailable, info.DefaultVendorID, info.Description, info.TrackLocation, info.Status, info.Updated, info.UpdatedBy, id)
+	`, info.SKU, info.Name, info.UnitID, info.ManufacturerID, info.BrandID, info.WeightUnit, info.Weight, info.DimensionUnit, info.Length, info.Width, info.Height, info.SellingPrice, info.CostPrice, info.ReorderStock, info.StockOnHand, info.StockAvailable, info.DefaultVendorID, info.Description, info.TrackLocation, info.Status, info.Updated, info.UpdatedBy, id)
 	return err
 }
 
@@ -258,7 +252,9 @@ func (r itemRepository) CreateItemBatch(info ItemBatch) error {
 			batch_id,
 			type,
 			reference_id,
+			location_id,
 			quantity,
+			rate,
 			balance,
 			status,
 			created,
@@ -267,8 +263,8 @@ func (r itemRepository) CreateItemBatch(info ItemBatch) error {
 			updated_by
 		)
 		VALUES
-		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, info.OrganizationID, info.ItemID, info.BatchID, info.Type, info.ReferenceID, info.Quantity, info.Balance, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.ItemID, info.BatchID, info.Type, info.ReferenceID, info.LocationID, info.Quantity, info.Rate, info.Balance, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	return err
 }
 

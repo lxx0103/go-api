@@ -48,7 +48,7 @@ func (r salesorderRepository) CreateSalesorderItem(info SalesorderItem) error {
 			updated_by
 		)
 		VALUES
-		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, info.OrganizationID, info.SalesorderItemID, info.SalesorderID, info.ItemID, info.Quantity, info.Rate, info.Amount, info.TaxID, info.TaxValue, info.TaxAmount, info.QuantityInvoiced, info.QuantityPicked, info.QuantityPacked, info.QuantityShipped, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	return err
 }

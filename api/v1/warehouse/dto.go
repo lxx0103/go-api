@@ -62,7 +62,6 @@ type LocationNew struct {
 	BayID          string `json:"bay_id" binding:"required"`
 	ItemID         string `json:"item_id" binding:"required"`
 	Capacity       int    `json:"capacity" binding:"required"`
-	Quantity       int    `json:"quantity" binding:"omitempty"`
 	Alert          int    `json:"alert" binding:"omitempty"`
 	Status         int    `json:"status" binding:"required,oneof=1 2"`
 	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`

@@ -239,3 +239,86 @@ func NewPickingorder(c *gin.Context) {
 	}
 	response.Response(c, new)
 }
+
+// @Summary 拣货单列表
+// @Id 609
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数（5/10/15/20）"
+// @Param pickingorder_number query string false "拣货单编码"
+// @Param salesorder_id query string false "销售订单ID"
+// @Success 200 object response.ListRes{data=[]PickingorderResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /pickingorders [GET]
+func GetPickingorderList(c *gin.Context) {
+	var filter PickingorderFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	filter.OrganizationID = claims.OrganizationID
+	salesorderService := NewSalesorderService()
+	count, list, err := salesorderService.GetPickingorderList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageID, filter.PageSize, count, list)
+}
+
+// @Summary 拣货单产品列表
+// @Id 610
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "拣货单ID"
+// @Success 200 object response.ListRes{data=[]PickingorderItemResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /pickingorders/:id/items [GET]
+func GetPickingorderItemList(c *gin.Context) {
+	var uri PickingorderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	salesorderService := NewSalesorderService()
+	list, err := salesorderService.GetPickingorderItemList(uri.ID, claims.OrganizationID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, list)
+}
+
+// @Summary 拣货单详情列表
+// @Id 611
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "拣货单ID"
+// @Success 200 object response.ListRes{data=[]PickingorderDetailResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /pickingorders/:id/details [GET]
+func GetPickingorderDetailList(c *gin.Context) {
+	var uri PickingorderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	salesorderService := NewSalesorderService()
+	list, err := salesorderService.GetPickingorderDetailList(uri.ID, claims.OrganizationID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, list)
+}

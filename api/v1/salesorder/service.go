@@ -569,7 +569,7 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 					pickingorderDetail.UpdatedBy = info.Email
 					err = repo.CreatePickingorderDetail(pickingorderDetail)
 					if err != nil {
-						msg := "create picking order detail error" + err.Error()
+						msg := "create picking order detail error1" + err.Error()
 						return nil, errors.New(msg)
 					}
 					quantityToPick = 0
@@ -595,7 +595,7 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 					pickingorderDetail.UpdatedBy = info.Email
 					err = repo.CreatePickingorderDetail(pickingorderDetail)
 					if err != nil {
-						msg := "create picking order detail error"
+						msg := "create picking order detail error" + err.Error()
 						return nil, errors.New(msg)
 					}
 					quantityToPick = quantityToPick - nextBatch.Balance
@@ -701,4 +701,42 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 		return nil, errors.New(msg)
 	}
 	return &pickingorderID, err
+}
+
+func (s *salesorderService) GetPickingorderList(filter PickingorderFilter) (int, *[]PickingorderResponse, error) {
+	db := database.RDB()
+	query := NewSalesorderQuery(db)
+	count, err := query.GetPickingorderCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := query.GetPickingorderList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *salesorderService) GetPickingorderItemList(salesorderID, organizationID string) (*[]PickingorderItemResponse, error) {
+	db := database.RDB()
+	query := NewSalesorderQuery(db)
+	_, err := query.GetPickingorderByID(organizationID, salesorderID)
+	if err != nil {
+		msg := "get pickingorder error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	list, err := query.GetPickingorderItemList(salesorderID)
+	return list, err
+}
+
+func (s *salesorderService) GetPickingorderDetailList(salesorderID, organizationID string) (*[]PickingorderDetailResponse, error) {
+	db := database.RDB()
+	query := NewSalesorderQuery(db)
+	_, err := query.GetPickingorderByID(organizationID, salesorderID)
+	if err != nil {
+		msg := "get pickingorder error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	list, err := query.GetPickingorderDetailList(salesorderID)
+	return list, err
 }

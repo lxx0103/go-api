@@ -31,7 +31,7 @@ func (r *authRepository) CreateUser(info User) (int64, error) {
 			updated,
 			updated_by
 		)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, info.UserID, info.OrganizationID, info.RoleID, info.UserName, info.Email, info.Password, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	if err != nil {
 		return 0, err

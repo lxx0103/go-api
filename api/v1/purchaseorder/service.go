@@ -552,6 +552,7 @@ func (s *purchaseorderService) NewPurchasereceive(purchaseorderID string, info P
 					newBatchEvent.ItemID = itemRow.ItemID
 					newBatchEvent.LocationID = nextLocation.LocationID
 					newBatchEvent.OrganizationID = info.OrganizationID
+					newBatchEvent.Rate = oldPoItem.Rate
 					newBatchEvent.Email = info.Email
 					msg, _ := json.Marshal(newBatchEvent)
 					msgs = append(msgs, msg)

@@ -134,3 +134,122 @@ func (r *salesorderQuery) GetSalesorderItemList(salesorderID string) (*[]Salesor
 	`, salesorderID)
 	return &salesorders, err
 }
+
+func (r *salesorderQuery) GetPickingorderCount(filter PickingorderFilter) (int, error) {
+	where, args := []string{"status > 0"}, []interface{}{}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	if v := filter.PickingorderNumber; v != "" {
+		where, args = append(where, "pickingorder_number like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.SalesorderID; v != "" {
+		where, args = append(where, "salesorder_id = ?"), append(args, v)
+	}
+	var count int
+	err := r.conn.Get(&count, `
+		SELECT count(1) as count
+		FROM s_pickingorders
+		WHERE `+strings.Join(where, " AND "), args...)
+	return count, err
+}
+
+func (r *salesorderQuery) GetPickingorderList(filter PickingorderFilter) (*[]PickingorderResponse, error) {
+	where, args := []string{"p.status > 0"}, []interface{}{}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "p.organization_id = ?"), append(args, v)
+	}
+	if v := filter.PickingorderNumber; v != "" {
+		where, args = append(where, "p.pickingorder_number like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.SalesorderID; v != "" {
+		where, args = append(where, "p.salesorder_id = ?"), append(args, v)
+	}
+	args = append(args, filter.PageID*filter.PageSize-filter.PageSize)
+	args = append(args, filter.PageSize)
+	var salesorders []PickingorderResponse
+	err := r.conn.Select(&salesorders, `
+		SELECT 
+		p.organization_id,
+		p.salesorder_id,
+		s.salesorder_number, 
+		p.pickingorder_id, 
+		p.pickingorder_number, 
+		p.pickingorder_date,
+		p.notes,
+		p.status
+		FROM s_pickingorders p
+		LEFT JOIN s_salesorders s
+		ON s.salesorder_id = p.salesorder_id
+		WHERE `+strings.Join(where, " AND ")+`
+		LIMIT ?, ?
+	`, args...)
+	return &salesorders, err
+}
+
+func (r *salesorderQuery) GetPickingorderByID(organizationID, id string) (*PickingorderResponse, error) {
+	var pickingorder PickingorderResponse
+	err := r.conn.Get(&pickingorder, `
+	SELECT 
+	p.organization_id,
+	p.salesorder_id,
+	s.salesorder_number, 
+	p.pickingorder_id, 
+	p.pickingorder_number, 
+	p.pickingorder_date,
+	p.notes,
+	p.status
+	FROM s_pickingorders p
+	LEFT JOIN s_salesorders s
+	ON s.salesorder_id = p.salesorder_id
+	WHERE p.organization_id = ? AND p.pickingorder_id = ? AND s.status > 0
+	`, organizationID, id)
+	return &pickingorder, err
+}
+
+func (r *salesorderQuery) GetPickingorderItemList(salesorderID string) (*[]PickingorderItemResponse, error) {
+	var pickingorderItems []PickingorderItemResponse
+	err := r.conn.Select(&pickingorderItems, `
+		SELECT
+		s.organization_id,
+		s.pickingorder_id,
+		s.salesorder_item_id,
+		s.pickingorder_item_id,
+		s.item_id,
+		i.name as item_name,
+		i.sku as sku,
+		s.quantity,
+		s.status
+		FROM s_pickingorder_items s
+		LEFT JOIN i_items i
+		ON s.item_id = i.item_id
+		WHERE s.pickingorder_id = ? AND s.status > 0 
+	`, salesorderID)
+	return &pickingorderItems, err
+}
+
+func (r *salesorderQuery) GetPickingorderDetailList(salesorderID string) (*[]PickingorderDetailResponse, error) {
+	var pickingorderDetails []PickingorderDetailResponse
+	err := r.conn.Select(&pickingorderDetails, `
+		SELECT
+		s.organization_id,
+		s.pickingorder_id,
+		s.salesorder_item_id,
+		s.pickingorder_item_id,
+		s.pickingorder_detail_id,
+		s.location_id,
+		IFNULL(l.code, "") as location_code,
+		s.item_id,
+		i.name as item_name,
+		i.sku as sku,
+		s.quantity,
+		s.status
+		FROM s_pickingorder_details s
+		LEFT JOIN i_items i
+		ON s.item_id = i.item_id
+		LEFT JOIN w_locations l
+		ON s.location_id = l.location_id
+		WHERE s.pickingorder_id = ? AND s.status > 0 
+	`, salesorderID)
+	return &pickingorderDetails, err
+}
