@@ -612,10 +612,30 @@ definitions:
     properties:
       data: {}
     type: object
+  salesorder.PickingorderBatch:
+    properties:
+      assigned:
+        type: string
+      notes:
+        type: string
+      pickingorder_date:
+        type: string
+      pickingorder_number:
+        maxLength: 64
+        minLength: 6
+        type: string
+      so_id:
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - pickingorder_date
+    - pickingorder_number
+    - so_id
+    type: object
   salesorder.PickingorderDetailResponse:
     properties:
-      id:
-        type: integer
       item_id:
         type: string
       item_name:
@@ -652,8 +672,6 @@ definitions:
     type: object
   salesorder.PickingorderItemResponse:
     properties:
-      id:
-        type: integer
       item_id:
         type: string
       item_name:
@@ -2790,6 +2808,36 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorRes'
       summary: 拣货单列表
+      tags:
+      - 销售单管理
+    post:
+      consumes:
+      - application/json
+      operationId: "612"
+      parameters:
+      - description: 销售单信息
+        in: body
+        name: purchasereceive_info
+        required: true
+        schema:
+          $ref: '#/definitions/salesorder.PickingorderBatch'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 批量拣货
       tags:
       - 销售单管理
   /pickingorders/:id/details:

@@ -214,3 +214,14 @@ func (r *warehouseRepository) ReceiveItem(locationID string, quantity int, byUse
 	`, quantity, quantity, quantity, time.Now(), byUser, locationID)
 	return err
 }
+
+func (r *warehouseRepository) UpdateLocationCanPick(locationID string, quantity int, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update w_locations SET
+		can_pick = can_pick - ?,
+		updated = ?,
+		updated_by = ?
+		WHERE location_id = ?
+	`, quantity, time.Now(), byUser, locationID)
+	return err
+}

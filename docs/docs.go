@@ -2131,6 +2131,56 @@ var doc = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "批量拣货",
+                "operationId": "612",
+                "parameters": [
+                    {
+                        "description": "销售单信息",
+                        "name": "purchasereceive_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/salesorder.PickingorderBatch"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
             }
         },
         "/pickingorders/:id/details": {
@@ -5139,12 +5189,40 @@ var doc = `{
                 "data": {}
             }
         },
+        "salesorder.PickingorderBatch": {
+            "type": "object",
+            "required": [
+                "pickingorder_date",
+                "pickingorder_number",
+                "so_id"
+            ],
+            "properties": {
+                "assigned": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "pickingorder_date": {
+                    "type": "string"
+                },
+                "pickingorder_number": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 6
+                },
+                "so_id": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "salesorder.PickingorderDetailResponse": {
             "type": "object",
             "properties": {
-                "id": {
-                    "type": "integer"
-                },
                 "item_id": {
                     "type": "string"
                 },
@@ -5200,9 +5278,6 @@ var doc = `{
         "salesorder.PickingorderItemResponse": {
             "type": "object",
             "properties": {
-                "id": {
-                    "type": "integer"
-                },
                 "item_id": {
                     "type": "string"
                 },

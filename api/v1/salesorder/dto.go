@@ -90,6 +90,17 @@ type PickingorderNew struct {
 	Email              string                `json:"email" swaggerignore:"true"`
 }
 
+type PickingorderBatch struct {
+	SOID               []string `json:"so_id" binding:"required,min=1"`
+	PickingorderNumber string   `json:"pickingorder_number" binding:"required,min=6,max=64"`
+	PickingorderDate   string   `json:"pickingorder_date" binding:"required,datetime=2006-01-02"`
+	Notes              string   `json:"notes" binding:"omitempty"`
+	Assigned           string   `json:"assigned" binding:"omitempty"`
+	OrganizationID     string   `json:"organiztion_id" swaggerignore:"true"`
+	User               string   `json:"user" swaggerignore:"true"`
+	Email              string   `json:"email" swaggerignore:"true"`
+}
+
 type PickingorderItemNew struct {
 	ItemID   string `json:"item_id" binding:"omitempty"`
 	Quantity int    `json:"quantity" binding:"required"`
@@ -117,7 +128,6 @@ type PickingorderID struct {
 	ID string `uri:"id" binding:"required,min=1"`
 }
 type PickingorderItemResponse struct {
-	ID                 int64  `db:"id" json:"id"`
 	OrganizationID     string `db:"organization_id" json:"organization_id"`
 	PickingorderID     string `db:"pickingorder_id" json:"pickingorder_id"`
 	SalesorderItemID   string `db:"salesorder_item_id" json:"salesorder_item_id"`
@@ -130,7 +140,6 @@ type PickingorderItemResponse struct {
 }
 
 type PickingorderDetailResponse struct {
-	ID                   int64  `db:"id" json:"id"`
 	PickingorderDetailID string `db:"pickingorder_detail_id" json:"pickingorder_detail_id"`
 	OrganizationID       string `db:"organization_id" json:"organization_id"`
 	PickingorderID       string `db:"pickingorder_id" json:"pickingorder_id"`

@@ -163,6 +163,46 @@ func (r *salesorderRepository) GetSalesorderItemByID(organizationID, salesorderI
 	return &res, err
 }
 
+func (r *salesorderRepository) GetSalesorderItemList(organizationID, salesorderID string) (*[]SalesorderItemResponse, error) {
+	var salesorders []SalesorderItemResponse
+	rows, err := r.tx.Query(`
+		SELECT
+		s.organization_id,
+		s.salesorder_item_id,
+		s.salesorder_id,
+		s.item_id,
+		i.name as item_name,
+		i.sku as sku,
+		s.quantity,
+		s.rate,
+		s.tax_id,
+		s.tax_value,
+		s.tax_amount,
+		s.amount,
+		s.quantity_invoiced,
+		s.quantity_picked,
+		s.quantity_packed,
+		s.quantity_shipped,
+		s.status
+		FROM s_salesorder_items s
+		LEFT JOIN i_items i
+		ON s.item_id = i.item_id
+		WHERE s.organization_id = ? AND s.salesorder_id = ? AND s.status > 0 
+	`, organizationID, salesorderID)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var res SalesorderItemResponse
+		err = rows.Scan(&res.OrganizationID, &res.SalesorderItemID, &res.SalesorderID, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity, &res.Rate, &res.TaxID, &res.TaxValue, &res.TaxAmount, &res.Amount, &res.QuantityInvoiced, &res.QuantityPicked, &res.QuantityPacked, &res.QuantityShipped, &res.Status)
+		salesorders = append(salesorders, res)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &salesorders, err
+}
+
 func (r *salesorderRepository) UpdateSalesorder(id string, info Salesorder) error {
 	_, err := r.tx.Exec(`
 		Update s_salesorders SET

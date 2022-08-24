@@ -322,3 +322,32 @@ func GetPickingorderDetailList(c *gin.Context) {
 	}
 	response.Response(c, list)
 }
+
+// @Summary 批量拣货
+// @Id 612
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param purchasereceive_info body PickingorderBatch true "销售单信息"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /pickingorders [POST]
+func BatchPickingorder(c *gin.Context) {
+	var batchPickingorder PickingorderBatch
+	if err := c.ShouldBindJSON(&batchPickingorder); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	batchPickingorder.OrganizationID = claims.OrganizationID
+	batchPickingorder.User = claims.UserName
+	batchPickingorder.Email = claims.Email
+	salesorderService := NewSalesorderService()
+	new, err := salesorderService.BatchPickingorder(batchPickingorder)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}

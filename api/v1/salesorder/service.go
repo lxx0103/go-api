@@ -6,8 +6,10 @@ import (
 	"go-api/api/v1/history"
 	"go-api/api/v1/item"
 	"go-api/api/v1/setting"
+	"go-api/api/v1/warehouse"
 	"go-api/core/database"
 	"go-api/core/queue"
+	"strings"
 	"time"
 
 	"github.com/rs/xid"
@@ -523,6 +525,7 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 	}
 	pickingorderID := "pic-" + xid.New().String()
 	itemRepo := item.NewItemRepository(tx)
+	warehouseRepo := warehouse.NewWarehouseRepository(tx)
 	for _, itemRow := range info.Items {
 		oldSoItem, err := repo.GetSalesorderItemByID(info.OrganizationID, salesorderID, itemRow.ItemID)
 		if err != nil {
@@ -572,6 +575,11 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 						msg := "create picking order detail error1" + err.Error()
 						return nil, errors.New(msg)
 					}
+					err = warehouseRepo.UpdateLocationCanPick(nextBatch.LocationID, quantityToPick, info.Email)
+					if err != nil {
+						msg := "update location canpick error: " + err.Error()
+						return nil, errors.New(msg)
+					}
 					quantityToPick = 0
 				} else {
 					err = itemRepo.PickItem(nextBatch.BatchID, nextBatch.Balance, info.Email)
@@ -596,6 +604,11 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 					err = repo.CreatePickingorderDetail(pickingorderDetail)
 					if err != nil {
 						msg := "create picking order detail error" + err.Error()
+						return nil, errors.New(msg)
+					}
+					err = warehouseRepo.UpdateLocationCanPick(nextBatch.LocationID, nextBatch.Balance, info.Email)
+					if err != nil {
+						msg := "update location canpick error: " + err.Error()
 						return nil, errors.New(msg)
 					}
 					quantityToPick = quantityToPick - nextBatch.Balance
@@ -739,4 +752,208 @@ func (s *salesorderService) GetPickingorderDetailList(salesorderID, organization
 	}
 	list, err := query.GetPickingorderDetailList(salesorderID)
 	return list, err
+}
+
+func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return nil, errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewSalesorderRepository(tx)
+	isConflict, err := repo.CheckPickingorderNumberConfict("", info.OrganizationID, info.PickingorderNumber)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "picking order number exists"
+		return nil, errors.New(msg)
+	}
+	pickingorderID := "pic-" + xid.New().String()
+	itemRepo := item.NewItemRepository(tx)
+	warehouseRepo := warehouse.NewWarehouseRepository(tx)
+	var msgs [][]byte
+	for _, soID := range info.SOID {
+		salesorder, err := repo.GetSalesorderByID(info.OrganizationID, soID)
+		if err != nil {
+			msg := "get salesorder error: " + err.Error()
+			return nil, errors.New(msg)
+		}
+		items, err := repo.GetSalesorderItemList(info.OrganizationID, soID)
+		if err != nil {
+			msg := "get salesorder items error: " + err.Error()
+			return nil, errors.New(msg)
+		}
+		for _, itemRow := range *items {
+			toPick := itemRow.Quantity - itemRow.QuantityPicked
+			itemInfo, err := itemRepo.GetItemByID(itemRow.ItemID, info.OrganizationID)
+			if err != nil {
+				msg := "item not exist"
+				return nil, errors.New(msg)
+			}
+			pickingorderItemID := "pii-" + xid.New().String()
+			if itemInfo.TrackLocation == 1 {
+				if itemInfo.StockAvailable < toPick {
+					msg := "no enough stock for item: " + itemInfo.Name + " in salesorder :" + salesorder.SalesorderNumber
+					return nil, errors.New(msg)
+				}
+				quantityToPick := toPick
+				for quantityToPick > 0 {
+					nextBatch, err := itemRepo.GetItemNextBatch(itemRow.ItemID, info.OrganizationID)
+					if err != nil {
+						msg := "get next batch error" + err.Error()
+						return nil, errors.New(msg)
+					}
+					if nextBatch.Balance >= quantityToPick {
+						err = itemRepo.PickItem(nextBatch.BatchID, quantityToPick, info.Email)
+						if err != nil {
+							msg := "pick item from batch error"
+							return nil, errors.New(msg)
+						}
+						var pickingorderDetail PickingorderDetail
+						pickingorderDetail.PickingorderDetailID = "pid-" + xid.New().String()
+						pickingorderDetail.OrganizationID = info.OrganizationID
+						pickingorderDetail.PickingorderID = pickingorderID
+						pickingorderDetail.SalesorderItemID = itemRow.SalesorderItemID
+						pickingorderDetail.PickingorderItemID = pickingorderItemID
+						pickingorderDetail.LocationID = nextBatch.LocationID
+						pickingorderDetail.ItemID = itemRow.ItemID
+						pickingorderDetail.Quantity = quantityToPick
+						pickingorderDetail.Status = 1
+						pickingorderDetail.Created = time.Now()
+						pickingorderDetail.CreatedBy = info.Email
+						pickingorderDetail.Updated = time.Now()
+						pickingorderDetail.UpdatedBy = info.Email
+						err = repo.CreatePickingorderDetail(pickingorderDetail)
+						if err != nil {
+							msg := "create picking order detail error1" + err.Error()
+							return nil, errors.New(msg)
+						}
+						err = warehouseRepo.UpdateLocationCanPick(nextBatch.LocationID, quantityToPick, info.Email)
+						if err != nil {
+							msg := "update location canpick error: " + err.Error()
+							return nil, errors.New(msg)
+						}
+						quantityToPick = 0
+					} else {
+						err = itemRepo.PickItem(nextBatch.BatchID, nextBatch.Balance, info.Email)
+						if err != nil {
+							msg := "pick item from batch error"
+							return nil, errors.New(msg)
+						}
+						var pickingorderDetail PickingorderDetail
+						pickingorderDetail.PickingorderDetailID = "pid-" + xid.New().String()
+						pickingorderDetail.OrganizationID = info.OrganizationID
+						pickingorderDetail.PickingorderID = pickingorderID
+						pickingorderDetail.SalesorderItemID = itemRow.SalesorderItemID
+						pickingorderDetail.PickingorderItemID = pickingorderItemID
+						pickingorderDetail.LocationID = nextBatch.LocationID
+						pickingorderDetail.ItemID = itemRow.ItemID
+						pickingorderDetail.Quantity = nextBatch.Balance
+						pickingorderDetail.Status = 1
+						pickingorderDetail.Created = time.Now()
+						pickingorderDetail.CreatedBy = info.Email
+						pickingorderDetail.Updated = time.Now()
+						pickingorderDetail.UpdatedBy = info.Email
+						err = repo.CreatePickingorderDetail(pickingorderDetail)
+						if err != nil {
+							msg := "create picking order detail error" + err.Error()
+							return nil, errors.New(msg)
+						}
+						err = warehouseRepo.UpdateLocationCanPick(nextBatch.LocationID, nextBatch.Balance, info.Email)
+						if err != nil {
+							msg := "update location canpick error: " + err.Error()
+							return nil, errors.New(msg)
+						}
+						quantityToPick = quantityToPick - nextBatch.Balance
+					}
+				}
+			}
+			var soItem SalesorderItem
+			soItem.SalesorderItemID = itemRow.SalesorderItemID
+			soItem.QuantityPicked = itemRow.Quantity
+			soItem.Updated = time.Now()
+			soItem.UpdatedBy = info.Email
+
+			err = repo.PickSalesorderItem(soItem)
+			if err != nil {
+				msg := "pick salesorder item error: " + err.Error()
+				return nil, errors.New(msg)
+			}
+			var poItem PickingorderItem
+			poItem.OrganizationID = info.OrganizationID
+			poItem.PickingorderID = pickingorderID
+			poItem.SalesorderItemID = itemRow.SalesorderItemID
+			poItem.PickingorderItemID = pickingorderItemID
+			poItem.ItemID = itemRow.ItemID
+			poItem.Quantity = toPick
+			poItem.Status = 1
+			poItem.CreatedBy = info.Email
+			poItem.Created = time.Now()
+			poItem.Updated = time.Now()
+			poItem.UpdatedBy = info.Email
+
+			err = repo.CreatePickingorderItem(poItem)
+			if err != nil {
+				msg := "create picking order item error: " + err.Error()
+				return nil, errors.New(msg)
+			}
+			err = itemRepo.UpdateItemPickingStock(itemRow.ItemID, toPick, info.Email)
+			if err != nil {
+				msg := "update item stock error: " + err.Error()
+				return nil, errors.New(msg)
+			}
+		}
+		picking_status := 3
+		err = repo.UpdateSalesorderPickingStatus(soID, picking_status, info.Email)
+		if err != nil {
+			msg := "update sales order picking status error: " + err.Error()
+			return nil, errors.New(msg)
+		}
+		err = repo.UpdateSalesorderStatus(soID, 2, info.Email)
+		if err != nil {
+			msg := "update sales order status error: " + err.Error()
+			return nil, errors.New(msg)
+		}
+		var newEvent history.NewHistoryCreated
+		newEvent.HistoryType = "salesorder"
+		newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+		newEvent.HistoryBy = info.User
+		newEvent.ReferenceID = soID
+		newEvent.Description = "Picking Order Created"
+		newEvent.OrganizationID = info.OrganizationID
+		newEvent.Email = info.Email
+		msg, _ := json.Marshal(newEvent)
+		msgs = append(msgs, msg)
+	}
+	var pickingorder Pickingorder
+	pickingorder.SalesorderID = strings.Join(info.SOID[:], ",")
+	pickingorder.PickingorderID = pickingorderID
+	pickingorder.PickingorderNumber = info.PickingorderNumber
+	pickingorder.PickingorderDate = info.PickingorderDate
+	pickingorder.OrganizationID = info.OrganizationID
+	pickingorder.Notes = info.Notes
+	pickingorder.Status = 1
+	pickingorder.Created = time.Now()
+	pickingorder.CreatedBy = info.Email
+	pickingorder.Updated = time.Now()
+	pickingorder.UpdatedBy = info.Email
+	err = repo.CreatePickingorder(pickingorder)
+	if err != nil {
+		msg := "create picking order error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	tx.Commit()
+	rabbit, _ := queue.GetConn()
+	for _, msgRow := range msgs {
+		err = rabbit.Publish("NewHistoryCreated", msgRow)
+		if err != nil {
+			msg := "create event NewHistoryCreated error"
+			return nil, errors.New(msg)
+		}
+	}
+	return &pickingorderID, err
 }
