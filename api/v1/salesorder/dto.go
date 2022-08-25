@@ -139,17 +139,31 @@ type PickingorderItemResponse struct {
 	Status             int    `db:"status" json:"status"`
 }
 
+type PickingorderLogResponse struct {
+	PickingorderLogID  string `db:"pickingorder_log_id" json:"pickingorder_log_id"`
+	OrganizationID     string `db:"organization_id" json:"organization_id"`
+	PickingorderID     string `db:"pickingorder_id" json:"pickingorder_id"`
+	SalesorderItemID   string `db:"salesorder_item_id" json:"salesorder_item_id"`
+	PickingorderItemID string `db:"pickingorder_item_id" json:"pickingorder_item_id"`
+	LocationID         string `db:"location_id" json:"location_id"`
+	LocationCode       string `db:"location_code" json:"location_code"`
+	ItemID             string `db:"item_id" json:"item_id"`
+	ItemName           string `db:"item_name" json:"item_name"`
+	SKU                string `db:"sku" json:"sku"`
+	Quantity           int    `db:"quantity" json:"quantity"`
+	Status             int    `db:"status" json:"status"`
+}
+
 type PickingorderDetailResponse struct {
 	PickingorderDetailID string `db:"pickingorder_detail_id" json:"pickingorder_detail_id"`
 	OrganizationID       string `db:"organization_id" json:"organization_id"`
 	PickingorderID       string `db:"pickingorder_id" json:"pickingorder_id"`
-	SalesorderItemID     string `db:"salesorder_item_id" json:"salesorder_item_id"`
-	PickingorderItemID   string `db:"pickingorder_item_id" json:"pickingorder_item_id"`
 	LocationID           string `db:"location_id" json:"location_id"`
 	LocationCode         string `db:"location_code" json:"location_code"`
 	ItemID               string `db:"item_id" json:"item_id"`
 	ItemName             string `db:"item_name" json:"item_name"`
 	SKU                  string `db:"sku" json:"sku"`
 	Quantity             int    `db:"quantity" json:"quantity"`
+	QuantityPicked       int    `db:"quantity_picked" json:"quantity_picked"`
 	Status               int    `db:"status" json:"status"`
 }

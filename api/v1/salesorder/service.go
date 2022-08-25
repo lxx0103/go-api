@@ -3,6 +3,7 @@ package salesorder
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"go-api/api/v1/history"
 	"go-api/api/v1/item"
 	"go-api/api/v1/setting"
@@ -556,23 +557,23 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 						msg := "pick item from batch error"
 						return nil, errors.New(msg)
 					}
-					var pickingorderDetail PickingorderDetail
-					pickingorderDetail.PickingorderDetailID = "pid-" + xid.New().String()
-					pickingorderDetail.OrganizationID = info.OrganizationID
-					pickingorderDetail.PickingorderID = pickingorderID
-					pickingorderDetail.SalesorderItemID = oldSoItem.SalesorderItemID
-					pickingorderDetail.PickingorderItemID = pickingorderItemID
-					pickingorderDetail.LocationID = nextBatch.LocationID
-					pickingorderDetail.ItemID = itemRow.ItemID
-					pickingorderDetail.Quantity = quantityToPick
-					pickingorderDetail.Status = 1
-					pickingorderDetail.Created = time.Now()
-					pickingorderDetail.CreatedBy = info.Email
-					pickingorderDetail.Updated = time.Now()
-					pickingorderDetail.UpdatedBy = info.Email
-					err = repo.CreatePickingorderDetail(pickingorderDetail)
+					var pickingorderLog PickingorderLog
+					pickingorderLog.PickingorderLogID = "pil-" + xid.New().String()
+					pickingorderLog.OrganizationID = info.OrganizationID
+					pickingorderLog.PickingorderID = pickingorderID
+					pickingorderLog.SalesorderItemID = oldSoItem.SalesorderItemID
+					pickingorderLog.PickingorderItemID = pickingorderItemID
+					pickingorderLog.LocationID = nextBatch.LocationID
+					pickingorderLog.ItemID = itemRow.ItemID
+					pickingorderLog.Quantity = quantityToPick
+					pickingorderLog.Status = 1
+					pickingorderLog.Created = time.Now()
+					pickingorderLog.CreatedBy = info.Email
+					pickingorderLog.Updated = time.Now()
+					pickingorderLog.UpdatedBy = info.Email
+					err = repo.CreatePickingorderLog(pickingorderLog)
 					if err != nil {
-						msg := "create picking order detail error1" + err.Error()
+						msg := "create picking order log error1" + err.Error()
 						return nil, errors.New(msg)
 					}
 					err = warehouseRepo.UpdateLocationCanPick(nextBatch.LocationID, quantityToPick, info.Email)
@@ -587,23 +588,23 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 						msg := "pick item from batch error"
 						return nil, errors.New(msg)
 					}
-					var pickingorderDetail PickingorderDetail
-					pickingorderDetail.PickingorderDetailID = "pid-" + xid.New().String()
-					pickingorderDetail.OrganizationID = info.OrganizationID
-					pickingorderDetail.PickingorderID = pickingorderID
-					pickingorderDetail.SalesorderItemID = oldSoItem.SalesorderItemID
-					pickingorderDetail.PickingorderItemID = pickingorderItemID
-					pickingorderDetail.LocationID = nextBatch.LocationID
-					pickingorderDetail.ItemID = itemRow.ItemID
-					pickingorderDetail.Quantity = nextBatch.Balance
-					pickingorderDetail.Status = 1
-					pickingorderDetail.Created = time.Now()
-					pickingorderDetail.CreatedBy = info.Email
-					pickingorderDetail.Updated = time.Now()
-					pickingorderDetail.UpdatedBy = info.Email
-					err = repo.CreatePickingorderDetail(pickingorderDetail)
+					var pickingorderLog PickingorderLog
+					pickingorderLog.PickingorderLogID = "pil-" + xid.New().String()
+					pickingorderLog.OrganizationID = info.OrganizationID
+					pickingorderLog.PickingorderID = pickingorderID
+					pickingorderLog.SalesorderItemID = oldSoItem.SalesorderItemID
+					pickingorderLog.PickingorderItemID = pickingorderItemID
+					pickingorderLog.LocationID = nextBatch.LocationID
+					pickingorderLog.ItemID = itemRow.ItemID
+					pickingorderLog.Quantity = nextBatch.Balance
+					pickingorderLog.Status = 1
+					pickingorderLog.Created = time.Now()
+					pickingorderLog.CreatedBy = info.Email
+					pickingorderLog.Updated = time.Now()
+					pickingorderLog.UpdatedBy = info.Email
+					err = repo.CreatePickingorderLog(pickingorderLog)
 					if err != nil {
-						msg := "create picking order detail error" + err.Error()
+						msg := "create picking order log error" + err.Error()
 						return nil, errors.New(msg)
 					}
 					err = warehouseRepo.UpdateLocationCanPick(nextBatch.LocationID, nextBatch.Balance, info.Email)
@@ -651,6 +652,32 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 		err = itemRepo.UpdateItemPickingStock(itemRow.ItemID, itemRow.Quantity, info.Email)
 		if err != nil {
 			msg := "update item stock error: " + err.Error()
+			return nil, errors.New(msg)
+		}
+	}
+	logs, err := repo.GetPickingorderLogSum(pickingorderID)
+	if err != nil {
+		msg := "get picking order logs  error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	fmt.Println(logs)
+	for _, logRow := range *logs {
+		var pickingorderDetail PickingorderDetail
+		pickingorderDetail.PickingorderDetailID = "pid-" + xid.New().String()
+		pickingorderDetail.OrganizationID = logRow.OrganizationID
+		pickingorderDetail.PickingorderID = logRow.PickingorderID
+		pickingorderDetail.ItemID = logRow.ItemID
+		pickingorderDetail.LocationID = logRow.LocationID
+		pickingorderDetail.Quantity = logRow.Quantity
+		pickingorderDetail.QuantityPicked = 0
+		pickingorderDetail.Status = 1
+		pickingorderDetail.CreatedBy = info.Email
+		pickingorderDetail.Created = time.Now()
+		pickingorderDetail.Updated = time.Now()
+		pickingorderDetail.UpdatedBy = info.Email
+		err = repo.CreatePickingorderDetail(pickingorderDetail)
+		if err != nil {
+			msg := "create picking order detail error: " + err.Error()
 			return nil, errors.New(msg)
 		}
 	}
@@ -742,15 +769,15 @@ func (s *salesorderService) GetPickingorderItemList(salesorderID, organizationID
 	return list, err
 }
 
-func (s *salesorderService) GetPickingorderDetailList(salesorderID, organizationID string) (*[]PickingorderDetailResponse, error) {
+func (s *salesorderService) GetPickingorderDetailList(pickingorderID, organizationID string) (*[]PickingorderDetailResponse, error) {
 	db := database.RDB()
 	query := NewSalesorderQuery(db)
-	_, err := query.GetPickingorderByID(organizationID, salesorderID)
+	_, err := query.GetPickingorderByID(organizationID, pickingorderID)
 	if err != nil {
 		msg := "get pickingorder error: " + err.Error()
 		return nil, errors.New(msg)
 	}
-	list, err := query.GetPickingorderDetailList(salesorderID)
+	list, err := query.GetPickingorderDetailList(pickingorderID)
 	return list, err
 }
 
@@ -813,21 +840,21 @@ func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, 
 							msg := "pick item from batch error"
 							return nil, errors.New(msg)
 						}
-						var pickingorderDetail PickingorderDetail
-						pickingorderDetail.PickingorderDetailID = "pid-" + xid.New().String()
-						pickingorderDetail.OrganizationID = info.OrganizationID
-						pickingorderDetail.PickingorderID = pickingorderID
-						pickingorderDetail.SalesorderItemID = itemRow.SalesorderItemID
-						pickingorderDetail.PickingorderItemID = pickingorderItemID
-						pickingorderDetail.LocationID = nextBatch.LocationID
-						pickingorderDetail.ItemID = itemRow.ItemID
-						pickingorderDetail.Quantity = quantityToPick
-						pickingorderDetail.Status = 1
-						pickingorderDetail.Created = time.Now()
-						pickingorderDetail.CreatedBy = info.Email
-						pickingorderDetail.Updated = time.Now()
-						pickingorderDetail.UpdatedBy = info.Email
-						err = repo.CreatePickingorderDetail(pickingorderDetail)
+						var pickingorderLog PickingorderLog
+						pickingorderLog.PickingorderLogID = "pil-" + xid.New().String()
+						pickingorderLog.OrganizationID = info.OrganizationID
+						pickingorderLog.PickingorderID = pickingorderID
+						pickingorderLog.SalesorderItemID = itemRow.SalesorderItemID
+						pickingorderLog.PickingorderItemID = pickingorderItemID
+						pickingorderLog.LocationID = nextBatch.LocationID
+						pickingorderLog.ItemID = itemRow.ItemID
+						pickingorderLog.Quantity = quantityToPick
+						pickingorderLog.Status = 1
+						pickingorderLog.Created = time.Now()
+						pickingorderLog.CreatedBy = info.Email
+						pickingorderLog.Updated = time.Now()
+						pickingorderLog.UpdatedBy = info.Email
+						err = repo.CreatePickingorderLog(pickingorderLog)
 						if err != nil {
 							msg := "create picking order detail error1" + err.Error()
 							return nil, errors.New(msg)
@@ -844,21 +871,21 @@ func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, 
 							msg := "pick item from batch error"
 							return nil, errors.New(msg)
 						}
-						var pickingorderDetail PickingorderDetail
-						pickingorderDetail.PickingorderDetailID = "pid-" + xid.New().String()
-						pickingorderDetail.OrganizationID = info.OrganizationID
-						pickingorderDetail.PickingorderID = pickingorderID
-						pickingorderDetail.SalesorderItemID = itemRow.SalesorderItemID
-						pickingorderDetail.PickingorderItemID = pickingorderItemID
-						pickingorderDetail.LocationID = nextBatch.LocationID
-						pickingorderDetail.ItemID = itemRow.ItemID
-						pickingorderDetail.Quantity = nextBatch.Balance
-						pickingorderDetail.Status = 1
-						pickingorderDetail.Created = time.Now()
-						pickingorderDetail.CreatedBy = info.Email
-						pickingorderDetail.Updated = time.Now()
-						pickingorderDetail.UpdatedBy = info.Email
-						err = repo.CreatePickingorderDetail(pickingorderDetail)
+						var pickingorderLog PickingorderLog
+						pickingorderLog.PickingorderLogID = "pil-" + xid.New().String()
+						pickingorderLog.OrganizationID = info.OrganizationID
+						pickingorderLog.PickingorderID = pickingorderID
+						pickingorderLog.SalesorderItemID = itemRow.SalesorderItemID
+						pickingorderLog.PickingorderItemID = pickingorderItemID
+						pickingorderLog.LocationID = nextBatch.LocationID
+						pickingorderLog.ItemID = itemRow.ItemID
+						pickingorderLog.Quantity = nextBatch.Balance
+						pickingorderLog.Status = 1
+						pickingorderLog.Created = time.Now()
+						pickingorderLog.CreatedBy = info.Email
+						pickingorderLog.Updated = time.Now()
+						pickingorderLog.UpdatedBy = info.Email
+						err = repo.CreatePickingorderLog(pickingorderLog)
 						if err != nil {
 							msg := "create picking order detail error" + err.Error()
 							return nil, errors.New(msg)
@@ -928,6 +955,33 @@ func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, 
 		newEvent.Email = info.Email
 		msg, _ := json.Marshal(newEvent)
 		msgs = append(msgs, msg)
+	}
+	fmt.Println(pickingorderID)
+	logs, err := repo.GetPickingorderLogSum(pickingorderID)
+	if err != nil {
+		msg := "get picking order logs  error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	fmt.Println(logs)
+	for _, logRow := range *logs {
+		var pickingorderDetail PickingorderDetail
+		pickingorderDetail.PickingorderDetailID = "pid-" + xid.New().String()
+		pickingorderDetail.OrganizationID = logRow.OrganizationID
+		pickingorderDetail.PickingorderID = logRow.PickingorderID
+		pickingorderDetail.ItemID = logRow.ItemID
+		pickingorderDetail.LocationID = logRow.LocationID
+		pickingorderDetail.Quantity = logRow.Quantity
+		pickingorderDetail.QuantityPicked = 0
+		pickingorderDetail.Status = 1
+		pickingorderDetail.CreatedBy = info.Email
+		pickingorderDetail.Created = time.Now()
+		pickingorderDetail.Updated = time.Now()
+		pickingorderDetail.UpdatedBy = info.Email
+		err = repo.CreatePickingorderDetail(pickingorderDetail)
+		if err != nil {
+			msg := "create picking order detail error: " + err.Error()
+			return nil, errors.New(msg)
+		}
 	}
 	var pickingorder Pickingorder
 	pickingorder.SalesorderID = strings.Join(info.SOID[:], ",")

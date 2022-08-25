@@ -82,16 +82,32 @@ type PickingorderItem struct {
 	UpdatedBy          string    `db:"updated_by" json:"updated_by"`
 }
 
+type PickingorderLog struct {
+	ID                 int64     `db:"id" json:"id"`
+	PickingorderLogID  string    `db:"pickingorder_log_id" json:"pickingorder_log_id"`
+	OrganizationID     string    `db:"organization_id" json:"organization_id"`
+	PickingorderID     string    `db:"pickingorder_id" json:"pickingorder_id"`
+	SalesorderItemID   string    `db:"salesorder_item_id" json:"salesorder_item_id"`
+	PickingorderItemID string    `db:"pickingorder_item_id" json:"pickingorder_item_id"`
+	LocationID         string    `db:"location_id" json:"location_id"`
+	ItemID             string    `db:"item_id" json:"item_id"`
+	Quantity           int       `db:"quantity" json:"quantity"`
+	Status             int       `db:"status" json:"status"`
+	Created            time.Time `db:"created" json:"created"`
+	CreatedBy          string    `db:"created_by" json:"created_by"`
+	Updated            time.Time `db:"updated" json:"updated"`
+	UpdatedBy          string    `db:"updated_by" json:"updated_by"`
+}
+
 type PickingorderDetail struct {
 	ID                   int64     `db:"id" json:"id"`
 	PickingorderDetailID string    `db:"pickingorder_detail_id" json:"pickingorder_detail_id"`
 	OrganizationID       string    `db:"organization_id" json:"organization_id"`
 	PickingorderID       string    `db:"pickingorder_id" json:"pickingorder_id"`
-	SalesorderItemID     string    `db:"salesorder_item_id" json:"salesorder_item_id"`
-	PickingorderItemID   string    `db:"pickingorder_item_id" json:"pickingorder_item_id"`
 	LocationID           string    `db:"location_id" json:"location_id"`
 	ItemID               string    `db:"item_id" json:"item_id"`
 	Quantity             int       `db:"quantity" json:"quantity"`
+	QuantityPicked       int       `db:"quantity_picked" json:"quantity_picked"`
 	Status               int       `db:"status" json:"status"`
 	Created              time.Time `db:"created" json:"created"`
 	CreatedBy            string    `db:"created_by" json:"created_by"`

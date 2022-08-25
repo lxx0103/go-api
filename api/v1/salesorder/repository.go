@@ -357,12 +357,12 @@ func (r salesorderRepository) CreatePickingorderItem(info PickingorderItem) erro
 	return err
 }
 
-func (r salesorderRepository) CreatePickingorderDetail(info PickingorderDetail) error {
+func (r salesorderRepository) CreatePickingorderLog(info PickingorderLog) error {
 	_, err := r.tx.Exec(`
-		INSERT INTO s_pickingorder_details 
+		INSERT INTO s_pickingorder_logs 
 		(
 			organization_id,
-			pickingorder_detail_id,
+			pickingorder_log_id,
 			pickingorder_item_id,
 			salesorder_item_id,
 			pickingorder_id,
@@ -377,7 +377,29 @@ func (r salesorderRepository) CreatePickingorderDetail(info PickingorderDetail) 
 		)
 		VALUES
 		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, info.OrganizationID, info.PickingorderDetailID, info.PickingorderItemID, info.SalesorderItemID, info.PickingorderID, info.LocationID, info.ItemID, info.Quantity, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	`, info.OrganizationID, info.PickingorderLogID, info.PickingorderItemID, info.SalesorderItemID, info.PickingorderID, info.LocationID, info.ItemID, info.Quantity, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}
+func (r salesorderRepository) CreatePickingorderDetail(info PickingorderDetail) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO s_pickingorder_details 
+		(
+			organization_id,
+			pickingorder_detail_id,
+			pickingorder_id,
+			location_id,
+			item_id,
+			quantity,
+			quantity_picked,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.PickingorderDetailID, info.PickingorderID, info.LocationID, info.ItemID, info.Quantity, info.QuantityPicked, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	return err
 }
 
@@ -407,4 +429,33 @@ func (r salesorderRepository) CreatePickingorder(info Pickingorder) error {
 		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, info.OrganizationID, info.SalesorderID, info.PickingorderID, info.PickingorderNumber, info.PickingorderDate, info.Notes, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	return err
+}
+
+func (r salesorderRepository) GetPickingorderLogSum(pickingorderID string) (*[]PickingorderLogResponse, error) {
+
+	var pickingorderLogs []PickingorderLogResponse
+	rows, err := r.tx.Query(`
+	SELECT
+	s.organization_id,
+	s.pickingorder_id,
+	s.location_id,
+	IFNULL(l.code, "") as location_code,
+	s.item_id,
+	i.name as item_name,
+	i.sku as sku,
+	sum(s.quantity) as quantity
+	FROM s_pickingorder_logs s
+	LEFT JOIN i_items i
+	ON s.item_id = i.item_id
+	LEFT JOIN w_locations l
+	ON s.location_id = l.location_id
+	WHERE s.pickingorder_id = ? AND s.status > 0 
+	GROUP BY s.organization_id, s.pickingorder_id,s.location_id, s.item_id 
+	`, pickingorderID)
+	for rows.Next() {
+		var res PickingorderLogResponse
+		rows.Scan(&res.OrganizationID, &res.PickingorderID, &res.LocationID, &res.LocationCode, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity)
+		pickingorderLogs = append(pickingorderLogs, res)
+	}
+	return &pickingorderLogs, err
 }

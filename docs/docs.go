@@ -5244,14 +5244,11 @@ var doc = `{
                 "pickingorder_id": {
                     "type": "string"
                 },
-                "pickingorder_item_id": {
-                    "type": "string"
-                },
                 "quantity": {
                     "type": "integer"
                 },
-                "salesorder_item_id": {
-                    "type": "string"
+                "quantity_picked": {
+                    "type": "integer"
                 },
                 "sku": {
                     "type": "string"

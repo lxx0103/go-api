@@ -172,7 +172,7 @@ func (r *salesorderQuery) GetPickingorderList(filter PickingorderFilter) (*[]Pic
 		SELECT 
 		p.organization_id,
 		p.salesorder_id,
-		s.salesorder_number, 
+		IFNULL(s.salesorder_number, "") as salesorder_number, 
 		p.pickingorder_id, 
 		p.pickingorder_number, 
 		p.pickingorder_date,
@@ -193,7 +193,7 @@ func (r *salesorderQuery) GetPickingorderByID(organizationID, id string) (*Picki
 	SELECT 
 	p.organization_id,
 	p.salesorder_id,
-	s.salesorder_number, 
+	IFNULL(s.salesorder_number, "") as salesorder_number, 
 	p.pickingorder_id, 
 	p.pickingorder_number, 
 	p.pickingorder_date,
@@ -202,7 +202,7 @@ func (r *salesorderQuery) GetPickingorderByID(organizationID, id string) (*Picki
 	FROM s_pickingorders p
 	LEFT JOIN s_salesorders s
 	ON s.salesorder_id = p.salesorder_id
-	WHERE p.organization_id = ? AND p.pickingorder_id = ? AND s.status > 0
+	WHERE p.organization_id = ? AND p.pickingorder_id = ? AND p.status > 0
 	`, organizationID, id)
 	return &pickingorder, err
 }
@@ -231,25 +231,24 @@ func (r *salesorderQuery) GetPickingorderItemList(salesorderID string) (*[]Picki
 func (r *salesorderQuery) GetPickingorderDetailList(salesorderID string) (*[]PickingorderDetailResponse, error) {
 	var pickingorderDetails []PickingorderDetailResponse
 	err := r.conn.Select(&pickingorderDetails, `
-		SELECT
-		s.organization_id,
-		s.pickingorder_id,
-		s.salesorder_item_id,
-		s.pickingorder_item_id,
-		s.pickingorder_detail_id,
-		s.location_id,
-		IFNULL(l.code, "") as location_code,
-		s.item_id,
-		i.name as item_name,
-		i.sku as sku,
-		s.quantity,
-		s.status
-		FROM s_pickingorder_details s
-		LEFT JOIN i_items i
-		ON s.item_id = i.item_id
-		LEFT JOIN w_locations l
-		ON s.location_id = l.location_id
-		WHERE s.pickingorder_id = ? AND s.status > 0 
+	SELECT
+	s.organization_id,
+	s.pickingorder_id,
+	s.pickingorder_detail_id,
+	s.location_id,
+	IFNULL(l.code, "") as location_code,
+	s.item_id,
+	i.name as item_name,
+	i.sku as sku,
+	s.quantity,
+	s.quantity_picked,
+	s.status
+	FROM s_pickingorder_details s
+	LEFT JOIN i_items i
+	ON s.item_id = i.item_id
+	LEFT JOIN w_locations l
+	ON s.location_id = l.location_id
+	WHERE s.pickingorder_id = ? AND s.status > 0 
 	`, salesorderID)
 	return &pickingorderDetails, err
 }
