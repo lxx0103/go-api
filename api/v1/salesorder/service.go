@@ -1011,3 +1011,86 @@ func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, 
 	}
 	return &pickingorderID, err
 }
+
+func (s *salesorderService) NewPickingFromLocation(pickingorderID string, info PickingFromLocationNew) (*string, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return nil, errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewSalesorderRepository(tx)
+	itemRepo := item.NewItemRepository(tx)
+	warehouseRepo := warehouse.NewWarehouseRepository(tx)
+	pickingorderDetail, err := repo.GetPickingorderDetailByLocationID(info.OrganizationID, pickingorderID, info.LocationID)
+	if err != nil {
+		msg := "picking order detail not exist" + err.Error()
+		return nil, errors.New(msg)
+	}
+	itemInfo, err := itemRepo.GetItemByID(pickingorderDetail.ItemID, info.OrganizationID)
+	if err != nil {
+		msg := "item not exist"
+		return nil, errors.New(msg)
+	}
+	if itemInfo.StockPicking < info.Quantity {
+		msg := "item pick too many"
+		return nil, errors.New(msg)
+	}
+	location, err := warehouseRepo.GetLocationByID(pickingorderDetail.LocationID, info.OrganizationID)
+	if err != nil {
+		msg := "location not exist"
+		return nil, errors.New(msg)
+	}
+	if location.Quantity-location.CanPick < info.Quantity {
+		msg := "location pick too many"
+		return nil, errors.New(msg)
+	}
+	err = repo.UpdatePickingorderPicked(pickingorderDetail.PickingorderDetailID, info.Quantity, info.Email)
+	if err != nil {
+		msg := "update picking order picked error"
+		return nil, errors.New(msg)
+	}
+	err = itemRepo.UpdateItemPackingStock(pickingorderDetail.ItemID, info.Quantity, info.Email)
+	if err != nil {
+		msg := "update item stock error"
+		return nil, errors.New(msg)
+	}
+	err = warehouseRepo.UpdateLocationPicked(info.LocationID, info.Quantity, info.Email)
+	if err != nil {
+		msg := "update location stock error"
+		return nil, errors.New(msg)
+	}
+	pickingorderStatus := 2
+	picked, err := repo.CheckPickingorderPicked(info.OrganizationID, pickingorderID)
+	if err != nil {
+		msg := "check picking order status error"
+		return nil, errors.New(msg)
+	}
+	if !picked {
+		pickingorderStatus = 3
+	}
+	err = repo.UpdatePickingorderStatus(pickingorderID, pickingorderStatus, info.Email)
+	if err != nil {
+		msg := "update picking order status error"
+		return nil, errors.New(msg)
+	}
+
+	tx.Commit()
+	var newEvent history.NewHistoryCreated
+	newEvent.HistoryType = "location"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = info.User
+	newEvent.ReferenceID = info.LocationID
+	newEvent.Description = "Item Picked From Location"
+	newEvent.OrganizationID = info.OrganizationID
+	newEvent.Email = info.Email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return nil, errors.New(msg)
+	}
+	return &pickingorderID, err
+}

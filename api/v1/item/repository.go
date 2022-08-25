@@ -243,6 +243,18 @@ func (r *itemRepository) UpdateItemPickingStock(id string, stock int, byUser str
 	return err
 }
 
+func (r *itemRepository) UpdateItemPackingStock(id string, stock int, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update i_items SET
+		stock_picking = stock_picking - ?,
+		stock_packing = stock_packing + ?,
+		updated = ?,
+		updated_by = ?
+		WHERE item_id = ?
+	`, stock, stock, time.Now(), byUser, id)
+	return err
+}
+
 func (r itemRepository) CreateItemBatch(info ItemBatch) error {
 	_, err := r.tx.Exec(`
 		INSERT INTO i_item_batches 

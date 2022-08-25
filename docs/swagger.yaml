@@ -612,6 +612,18 @@ definitions:
     properties:
       data: {}
     type: object
+  salesorder.PickingFromLocationNew:
+    properties:
+      location_id:
+        minLength: 1
+        type: string
+      quantity:
+        minimum: 1
+        type: integer
+    required:
+    - location_id
+    - quantity
+    type: object
   salesorder.PickingorderBatch:
     properties:
       assigned:
@@ -2900,6 +2912,37 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorRes'
       summary: 拣货单产品列表
+      tags:
+      - 销售单管理
+  /pickingorders/:id/pick:
+    post:
+      consumes:
+      - application/json
+      operationId: "613"
+      parameters:
+      - description: 销售单信息
+        in: body
+        name: purchasereceive_info
+        required: true
+        schema:
+          $ref: '#/definitions/salesorder.PickingFromLocationNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 从货位拣货
       tags:
       - 销售单管理
   /purchaseorders:

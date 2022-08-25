@@ -225,3 +225,15 @@ func (r *warehouseRepository) UpdateLocationCanPick(locationID string, quantity 
 	`, quantity, time.Now(), byUser, locationID)
 	return err
 }
+
+func (r *warehouseRepository) UpdateLocationPicked(locationID string, quantity int, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update w_locations SET
+		available = available + ?,
+		quantity = quantity - ?,
+		updated = ?,
+		updated_by = ?
+		WHERE location_id = ?
+	`, quantity, quantity, time.Now(), byUser, locationID)
+	return err
+}

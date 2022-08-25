@@ -167,3 +167,11 @@ type PickingorderDetailResponse struct {
 	QuantityPicked       int    `db:"quantity_picked" json:"quantity_picked"`
 	Status               int    `db:"status" json:"status"`
 }
+
+type PickingFromLocationNew struct {
+	LocationID     string `json:"location_id" binding:"required,min=1"`
+	Quantity       int    `json:"quantity" binding:"required,min=1"`
+	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
+	User           string `json:"user" swaggerignore:"true"`
+	Email          string `json:"email" swaggerignore:"true"`
+}

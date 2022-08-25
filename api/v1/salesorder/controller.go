@@ -351,3 +351,37 @@ func BatchPickingorder(c *gin.Context) {
 	}
 	response.Response(c, new)
 }
+
+// @Summary 从货位拣货
+// @Id 613
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param purchasereceive_info body PickingFromLocationNew true "销售单信息"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /pickingorders/:id/pick [POST]
+func NewPickingFromLocation(c *gin.Context) {
+	var uri PickingorderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	var pickingFromLocation PickingFromLocationNew
+	if err := c.ShouldBindJSON(&pickingFromLocation); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	pickingFromLocation.OrganizationID = claims.OrganizationID
+	pickingFromLocation.User = claims.UserName
+	pickingFromLocation.Email = claims.Email
+	salesorderService := NewSalesorderService()
+	new, err := salesorderService.NewPickingFromLocation(uri.ID, pickingFromLocation)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}

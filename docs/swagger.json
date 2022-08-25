@@ -2275,6 +2275,58 @@
                 }
             }
         },
+        "/pickingorders/:id/pick": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "从货位拣货",
+                "operationId": "613",
+                "parameters": [
+                    {
+                        "description": "销售单信息",
+                        "name": "purchasereceive_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/salesorder.PickingFromLocationNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/purchaseorders": {
             "get": {
                 "consumes": [
@@ -5173,6 +5225,23 @@
             "type": "object",
             "properties": {
                 "data": {}
+            }
+        },
+        "salesorder.PickingFromLocationNew": {
+            "type": "object",
+            "required": [
+                "location_id",
+                "quantity"
+            ],
+            "properties": {
+                "location_id": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "quantity": {
+                    "type": "integer",
+                    "minimum": 1
+                }
             }
         },
         "salesorder.PickingorderBatch": {
