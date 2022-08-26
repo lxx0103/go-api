@@ -2945,6 +2945,30 @@ paths:
       summary: 从货位拣货
       tags:
       - 销售单管理
+  /pickingorders/:id/picked:
+    post:
+      consumes:
+      - application/json
+      operationId: "614"
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 标记拣货单为已拣货
+      tags:
+      - 销售单管理
   /purchaseorders:
     get:
       consumes:

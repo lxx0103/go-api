@@ -385,3 +385,28 @@ func NewPickingFromLocation(c *gin.Context) {
 	}
 	response.Response(c, new)
 }
+
+// @Summary 标记拣货单为已拣货
+// @Id 614
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /pickingorders/:id/picked [POST]
+func MarkPickingorderPicked(c *gin.Context) {
+	var uri PickingorderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	salesorderService := NewSalesorderService()
+	err := salesorderService.UpdatePickingorderPicked(uri.ID, claims.OrganizationID, claims.UserName, claims.Email)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, "ok")
+}

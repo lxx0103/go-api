@@ -517,3 +517,60 @@ func (r *salesorderRepository) UpdatePickingorderStatus(id string, status int, b
 	`, status, time.Now(), byUser, id)
 	return err
 }
+
+func (r *salesorderRepository) GetPickingorderByID(organizationID, pickingorderID string) (*PickingorderResponse, error) {
+	var res PickingorderResponse
+	row := r.tx.QueryRow(`
+		SELECT 
+		p.organization_id,
+		p.salesorder_id,
+		IFNULL(s.salesorder_number, "") as salesorder_number, 
+		p.pickingorder_id, 
+		p.pickingorder_number, 
+		p.pickingorder_date,
+		p.notes,
+		p.status
+		FROM s_pickingorders p
+		LEFT JOIN s_salesorders s
+		ON s.salesorder_id = p.salesorder_id
+		WHERE p.organization_id = ? AND p.pickingorder_id = ? AND p.status > 0 LIMIT 1
+	`, organizationID, pickingorderID)
+	err := row.Scan(&res.OrganizationID, &res.SalesorderID, &res.SalesorderNumber, &res.PickingorderID, &res.PickingorderNumber, &res.PickingorderDate, &res.Notes, &res.Status)
+	return &res, err
+}
+
+func (r *salesorderRepository) GetPickingorderDetailList(organizationID, pickingorderID string) (*[]PickingorderDetailResponse, error) {
+	var pickingorderDetails []PickingorderDetailResponse
+	rows, err := r.tx.Query(`
+		SELECT
+		s.organization_id,
+		s.pickingorder_detail_id,
+		s.pickingorder_id,
+		s.location_id,
+		l.code as location_code,
+		s.item_id,
+		i.name as item_name,
+		i.sku,
+		s.quantity,
+		s.quantity_picked,
+		s.status
+		FROM s_pickingorder_details s
+		LEFT JOIN i_items i
+		ON s.item_id = i.item_id
+		LEFT JOIN w_locations l
+		ON s.location_id = l.location_id
+		WHERE s.organization_id = ? AND s.pickingorder_id = ? AND s.status > 0
+	`, organizationID, pickingorderID)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var res PickingorderDetailResponse
+		err = rows.Scan(&res.OrganizationID, &res.PickingorderDetailID, &res.PickingorderID, &res.LocationID, &res.LocationCode, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity, &res.QuantityPicked, &res.Status)
+		pickingorderDetails = append(pickingorderDetails, res)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &pickingorderDetails, err
+}
