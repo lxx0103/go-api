@@ -204,3 +204,26 @@ func (r *itemQuery) GetBarcodeByID(organizationID, barcodeID string) (*BarcodeRe
 	`, organizationID, barcodeID)
 	return &barcode, err
 }
+
+func (r *itemQuery) GetBarcodeByCode(organizationID, code string) (*BarcodeResponse, error) {
+	var barcode BarcodeResponse
+	err := r.conn.Get(&barcode, `
+		SELECT 
+		b.organization_id,
+		b.barcode_id, 
+		b.item_id,
+		i.name as item_name, 
+		b.code, 
+		i.sku, 
+		u.name as unit, 
+		b.quantity,
+		b.status
+		FROM i_barcodes b
+		LEFT JOIN i_items i
+		ON b.item_id = i.item_id
+		LEFT JOIN s_units u
+		ON i.unit_id = u.unit_id
+		WHERE b.organization_id = ? AND b.code = ? AND b.status > 0
+	`, organizationID, code)
+	return &barcode, err
+}

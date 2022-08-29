@@ -297,3 +297,30 @@ func DeleteBarcode(c *gin.Context) {
 	}
 	response.Response(c, "OK")
 }
+
+// @Summary 根据code获取条码
+// @Id 211
+// @Tags 条码管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param code path string true "条码code"
+// @Success 200 object response.SuccessRes{data=BarcodeResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /barcodes/:code [GET]
+func GetBarcodeByCode(c *gin.Context) {
+	var uri BarcodeCode
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	itemService := NewItemService()
+	barcode, err := itemService.GetBarcodeByCode(claims.OrganizationID, uri.Code)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, barcode)
+
+}

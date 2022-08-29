@@ -1,4 +1,4 @@
-package history
+package common
 
 import "time"
 
@@ -11,6 +11,17 @@ type History struct {
 	HistoryBy      string    `db:"history_by" json:"history_by"`
 	Description    string    `db:"description" json:"description"`
 	ReferenceID    string    `db:"reference_id" json:"reference_id"`
+	Status         int       `db:"status" json:"status"`
+	Created        time.Time `db:"created" json:"created"`
+	CreatedBy      string    `db:"created_by" json:"created_by"`
+	Updated        time.Time `db:"updated" json:"updated"`
+	UpdatedBy      string    `db:"updated_by" json:"updated_by"`
+}
+type OrderNumber struct {
+	ID             int64     `db:"id" json:"id"`
+	OrganizationID string    `db:"organization_id" json:"organization_id"`
+	NumberType     string    `db:"number_type" json:"number_type"`
+	NumberValue    int       `db:"number_value" json:"number_value"`
 	Status         int       `db:"status" json:"status"`
 	Created        time.Time `db:"created" json:"created"`
 	CreatedBy      string    `db:"created_by" json:"created_by"`

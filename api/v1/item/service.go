@@ -3,7 +3,7 @@ package item
 import (
 	"encoding/json"
 	"errors"
-	"go-api/api/v1/history"
+	"go-api/api/v1/common"
 	"go-api/api/v1/setting"
 	"go-api/core/database"
 	"go-api/core/queue"
@@ -96,7 +96,7 @@ func (s *itemService) NewItem(info ItemNew) (*string, error) {
 		return nil, errors.New(msg)
 	}
 	rabbit, _ := queue.GetConn()
-	var newEvent history.NewHistoryCreated
+	var newEvent common.NewHistoryCreated
 	newEvent.HistoryType = "item"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 	newEvent.HistoryBy = info.User
@@ -204,7 +204,7 @@ func (s *itemService) UpdateItem(itemID string, info ItemNew) (*ItemResponse, er
 	if err != nil {
 		return nil, err
 	}
-	var newEvent history.NewHistoryCreated
+	var newEvent common.NewHistoryCreated
 	newEvent.HistoryType = "item"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 	newEvent.HistoryBy = info.User
@@ -251,7 +251,7 @@ func (s *itemService) DeleteItem(itemID, organizationID, email, user string) err
 	if err != nil {
 		return err
 	}
-	var newEvent history.NewHistoryCreated
+	var newEvent common.NewHistoryCreated
 	newEvent.HistoryType = "item"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 	newEvent.HistoryBy = user
@@ -414,4 +414,15 @@ func (s *itemService) DeleteBarcode(barcodeID, organizationID, user string) erro
 	}
 	tx.Commit()
 	return nil
+}
+
+func (s *itemService) GetBarcodeByCode(organizationID, code string) (*BarcodeResponse, error) {
+	db := database.RDB()
+	query := NewItemQuery(db)
+	unit, err := query.GetBarcodeByCode(organizationID, code)
+	if err != nil {
+		msg := "get unit error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	return unit, nil
 }

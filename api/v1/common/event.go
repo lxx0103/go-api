@@ -1,4 +1,4 @@
-package history
+package common
 
 import (
 	"encoding/json"
@@ -43,7 +43,7 @@ func CreateNewHistory(d amqp.Delivery) bool {
 		return false
 	}
 	defer tx.Rollback()
-	repo := NewHistoryRepository(tx)
+	repo := NewCommonRepository(tx)
 	var history History
 	history.HistoryID = "his-" + xid.New().String()
 	history.OrganizationID = info.OrganizationID

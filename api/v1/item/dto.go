@@ -112,3 +112,7 @@ type ItemBatchResponse struct {
 	Balance        int    `db:"balance" json:"balance"`
 	Status         int    `db:"status" json:"status"`
 }
+
+type BarcodeCode struct {
+	Code string `uri:"code" binding:"required,min=1"`
+}

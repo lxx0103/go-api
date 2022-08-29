@@ -1,4 +1,4 @@
-package history
+package common
 
 import (
 	"strings"
@@ -6,17 +6,17 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type historyQuery struct {
+type commonQuery struct {
 	conn *sqlx.DB
 }
 
-func NewHistoryQuery(connection *sqlx.DB) *historyQuery {
-	return &historyQuery{
+func NewCommonQuery(connection *sqlx.DB) *commonQuery {
+	return &commonQuery{
 		conn: connection,
 	}
 }
 
-func (r *historyQuery) GetHistoryByID(organizationID, id string) (*HistoryResponse, error) {
+func (r *commonQuery) GetHistoryByID(organizationID, id string) (*HistoryResponse, error) {
 	var history HistoryResponse
 	err := r.conn.Get(&history, `
 	SELECT 
@@ -44,7 +44,7 @@ func (r *historyQuery) GetHistoryByID(organizationID, id string) (*HistoryRespon
 	return &history, err
 }
 
-func (r *historyQuery) GetHistoryCount(filter HistoryFilter) (int, error) {
+func (r *commonQuery) GetHistoryCount(filter HistoryFilter) (int, error) {
 	where, args := []string{"status > 0"}, []interface{}{}
 	if v := filter.OrganizationID; v != "" {
 		where, args = append(where, "organization_id = ?"), append(args, v)
@@ -63,7 +63,7 @@ func (r *historyQuery) GetHistoryCount(filter HistoryFilter) (int, error) {
 	return count, err
 }
 
-func (r *historyQuery) GetHistoryList(filter HistoryFilter) (*[]HistoryResponse, error) {
+func (r *commonQuery) GetHistoryList(filter HistoryFilter) (*[]HistoryResponse, error) {
 	where, args := []string{"status > 0"}, []interface{}{}
 	if v := filter.OrganizationID; v != "" {
 		where, args = append(where, "organization_id = ?"), append(args, v)

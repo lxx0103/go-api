@@ -44,7 +44,7 @@ func NewPurchaseorder(c *gin.Context) {
 // @Produce application/json
 // @Param page_id query int true "页码"
 // @Param page_size query int true "每页行数（5/10/15/20）"
-// @Param name query string false "采购单名称"
+// @Param purchaseorder_number query string false "采购单号码"
 // @Success 200 object response.ListRes{data=[]PurchaseorderResponse} 成功
 // @Failure 400 object response.ErrorRes 内部错误
 // @Router /purchaseorders [GET]
@@ -238,4 +238,86 @@ func NewPurchasereceive(c *gin.Context) {
 		return
 	}
 	response.Response(c, new)
+}
+
+// @Summary 收货单列表
+// @Id 409
+// @Tags 采购单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数（5/10/15/20）"
+// @Param purchasereceive_number query string false "采购单号码"
+// @Success 200 object response.ListRes{data=[]PurchasereceiveResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /purchasereceives [GET]
+func GetPurchasereceiveList(c *gin.Context) {
+	var filter PurchasereceiveFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	filter.OrganizationID = claims.OrganizationID
+	purchaseorderService := NewPurchaseorderService()
+	count, list, err := purchaseorderService.GetPurchasereceiveList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageID, filter.PageSize, count, list)
+}
+
+// @Summary 收货单商品列表
+// @Id 410
+// @Tags 采购单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "收货单ID"
+// @Success 200 object response.ListRes{data=[]PurchasereceiveItemResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /purchasereceives/:id/items [GET]
+func GetPurchasereceiveItemList(c *gin.Context) {
+	var uri PurchasereceiveID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	purchaseorderService := NewPurchaseorderService()
+	list, err := purchaseorderService.GetPurchaseReceiveItemList(uri.ID, claims.OrganizationID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, list)
+}
+
+// @Summary 收货单详情列表
+// @Id 411
+// @Tags 采购单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "收货单ID"
+// @Success 200 object response.ListRes{data=[]PurchasereceiveDetailResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /purchasereceives/:id/details [GET]
+func GetPurchasereceiveDetailList(c *gin.Context) {
+	var uri PurchasereceiveID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	purchaseorderService := NewPurchaseorderService()
+	list, err := purchaseorderService.GetPurchaseReceiveDetailList(uri.ID, claims.OrganizationID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, list)
 }

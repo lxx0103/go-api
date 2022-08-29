@@ -148,6 +148,56 @@ var doc = `{
                 }
             }
         },
+        "/barcodes/:code": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "条码管理"
+                ],
+                "summary": "根据code获取条码",
+                "operationId": "211",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "条码code",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/item.BarcodeResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/barcodes/:id": {
             "get": {
                 "consumes": [
@@ -1173,7 +1223,7 @@ var doc = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/history.HistoryResponse"
+                                                "$ref": "#/definitions/common.HistoryResponse"
                                             }
                                         }
                                     }
@@ -2009,6 +2059,56 @@ var doc = `{
                 }
             }
         },
+        "/nextnumber": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "通用"
+                ],
+                "summary": "获取下一个编码",
+                "operationId": "702",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "编码类型",
+                        "name": "number_type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/organizations": {
             "post": {
                 "consumes": [
@@ -2412,8 +2512,8 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "采购单名称",
-                        "name": "name",
+                        "description": "采购单号码",
+                        "name": "purchaseorder_number",
                         "in": "query"
                     }
                 ],
@@ -2793,6 +2893,178 @@ var doc = `{
                                     "properties": {
                                         "data": {
                                             "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/purchasereceives": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "收货单列表",
+                "operationId": "409",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "采购单号码",
+                        "name": "purchasereceive_number",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/purchaseorder.PurchasereceiveResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/purchasereceives/:id/details": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "收货单详情列表",
+                "operationId": "411",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "收货单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/purchaseorder.PurchasereceiveDetailResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/purchasereceives/:id/items": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "收货单商品列表",
+                "operationId": "410",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "收货单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/purchaseorder.PurchasereceiveItemResponse"
+                                            }
                                         }
                                     }
                                 }
@@ -4529,7 +4801,7 @@ var doc = `{
                 }
             }
         },
-        "history.HistoryResponse": {
+        "common.HistoryResponse": {
             "type": "object",
             "properties": {
                 "description": {
@@ -5209,6 +5481,47 @@ var doc = `{
                 }
             }
         },
+        "purchaseorder.PurchasereceiveDetailResponse": {
+            "type": "object",
+            "properties": {
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "location_code": {
+                    "type": "string"
+                },
+                "location_id": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "purchaseorder_item_id": {
+                    "type": "string"
+                },
+                "purchasereceive_detail_id": {
+                    "type": "string"
+                },
+                "purchasereceive_id": {
+                    "type": "string"
+                },
+                "purchasereceive_item_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
         "purchaseorder.PurchasereceiveItemNew": {
             "type": "object",
             "required": [
@@ -5219,6 +5532,38 @@ var doc = `{
                     "type": "string"
                 },
                 "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
+        "purchaseorder.PurchasereceiveItemResponse": {
+            "type": "object",
+            "properties": {
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "purchaseorder_item_id": {
+                    "type": "string"
+                },
+                "purchasereceive_id": {
+                    "type": "string"
+                },
+                "purchasereceive_item_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "integer"
                 }
             }
@@ -5247,6 +5592,38 @@ var doc = `{
                     "type": "string",
                     "maxLength": 64,
                     "minLength": 6
+                }
+            }
+        },
+        "purchaseorder.PurchasereceiveResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "purchaseorder_id": {
+                    "type": "string"
+                },
+                "purchaseorder_number": {
+                    "type": "string"
+                },
+                "purchasereceive_date": {
+                    "type": "string"
+                },
+                "purchasereceive_id": {
+                    "type": "string"
+                },
+                "purchasereceive_number": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
                 }
             }
         },

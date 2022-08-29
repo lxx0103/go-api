@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go-api/api/v1/history"
+	"go-api/api/v1/common"
 	"go-api/api/v1/item"
 	"go-api/api/v1/setting"
 	"go-api/api/v1/warehouse"
@@ -138,7 +138,7 @@ func (s *salesorderService) NewSalesorder(info SalesorderNew) (*string, error) {
 		msg := "create salesorder error: " + err.Error()
 		return nil, errors.New(msg)
 	}
-	var newEvent history.NewHistoryCreated
+	var newEvent common.NewHistoryCreated
 	newEvent.HistoryType = "salesorder"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 	newEvent.HistoryBy = info.User
@@ -385,7 +385,7 @@ func (s *salesorderService) UpdateSalesorder(salesorderID string, info Salesorde
 		msg := "update salesorder error: " + err.Error()
 		return nil, errors.New(msg)
 	}
-	var newEvent history.NewHistoryCreated
+	var newEvent common.NewHistoryCreated
 	newEvent.HistoryType = "salesorder"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 	newEvent.HistoryBy = info.User
@@ -432,7 +432,7 @@ func (s *salesorderService) DeleteSalesorder(salesorderID, organizationID, user,
 	if err != nil {
 		return err
 	}
-	var newEvent history.NewHistoryCreated
+	var newEvent common.NewHistoryCreated
 	newEvent.HistoryType = "salesorder"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 	newEvent.HistoryBy = user
@@ -485,7 +485,7 @@ func (s *salesorderService) ConfirmSalesorder(salesorderID, organizationID, user
 		msg := "update salesorder error: " + err.Error()
 		return errors.New(msg)
 	}
-	var newEvent history.NewHistoryCreated
+	var newEvent common.NewHistoryCreated
 	newEvent.HistoryType = "salesorder"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 	newEvent.HistoryBy = user
@@ -725,7 +725,7 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 		return nil, errors.New(msg)
 	}
 	tx.Commit()
-	var newEvent history.NewHistoryCreated
+	var newEvent common.NewHistoryCreated
 	newEvent.HistoryType = "salesorder"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 	newEvent.HistoryBy = info.User
@@ -945,7 +945,7 @@ func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, 
 			msg := "update sales order status error: " + err.Error()
 			return nil, errors.New(msg)
 		}
-		var newEvent history.NewHistoryCreated
+		var newEvent common.NewHistoryCreated
 		newEvent.HistoryType = "salesorder"
 		newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 		newEvent.HistoryBy = info.User
@@ -1077,7 +1077,7 @@ func (s *salesorderService) NewPickingFromLocation(pickingorderID string, info P
 	}
 
 	tx.Commit()
-	var newEvent history.NewHistoryCreated
+	var newEvent common.NewHistoryCreated
 	newEvent.HistoryType = "location"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 	newEvent.HistoryBy = info.User
@@ -1160,7 +1160,7 @@ func (s *salesorderService) UpdatePickingorderPicked(pickingorderID, organizatio
 		msg := "update pickingorder error: " + err.Error()
 		return errors.New(msg)
 	}
-	var newEvent history.NewHistoryCreated
+	var newEvent common.NewHistoryCreated
 	newEvent.HistoryType = "pickingorder"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 	newEvent.HistoryBy = user

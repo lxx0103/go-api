@@ -90,3 +90,52 @@ type PurchasereceiveItemNew struct {
 	ItemID   string `json:"item_id" binding:"omitempty"`
 	Quantity int    `json:"quantity" binding:"required"`
 }
+
+type PurchasereceiveResponse struct {
+	ID                    int64  `db:"id" json:"id"`
+	OrganizationID        string `db:"organization_id" json:"organization_id"`
+	PurchaseorderID       string `db:"purchaseorder_id" json:"purchaseorder_id"`
+	PurchaseorderNumber   string `db:"purchaseorder_number" json:"purchaseorder_number"`
+	PurchasereceiveID     string `db:"purchasereceive_id" json:"purchasereceive_id"`
+	PurchasereceiveNumber string `db:"purchasereceive_number" json:"purchasereceive_number"`
+	PurchasereceiveDate   string `db:"purchasereceive_date" json:"purchasereceive_date"`
+	Notes                 string `db:"notes" json:"notes"`
+	Status                int    `db:"status" json:"status"`
+}
+
+type PurchasereceiveFilter struct {
+	PurchasereceiveNumber string `form:"purchasereceive_number" binding:"omitempty,max=64,min=1"`
+	OrganizationID        string `json:"organiztion_id" swaggerignore:"true"`
+	request.PageInfo
+}
+
+type PurchasereceiveID struct {
+	ID string `uri:"id" binding:"required,min=1"`
+}
+
+type PurchasereceiveItemResponse struct {
+	OrganizationID        string `db:"organization_id" json:"organization_id"`
+	PurchasereceiveID     string `db:"purchasereceive_id" json:"purchasereceive_id"`
+	PurchaseorderItemID   string `db:"purchaseorder_item_id" json:"purchaseorder_item_id"`
+	PurchasereceiveItemID string `db:"purchasereceive_item_id" json:"purchasereceive_item_id"`
+	ItemID                string `db:"item_id" json:"item_id"`
+	ItemName              string `db:"item_name" json:"item_name"`
+	SKU                   string `db:"sku" json:"sku"`
+	Quantity              int    `db:"quantity" json:"quantity"`
+	Status                int    `db:"status" json:"status"`
+}
+
+type PurchasereceiveDetailResponse struct {
+	PurchasereceiveDetailID string `db:"purchasereceive_detail_id" json:"purchasereceive_detail_id"`
+	OrganizationID          string `db:"organization_id" json:"organization_id"`
+	PurchasereceiveID       string `db:"purchasereceive_id" json:"purchasereceive_id"`
+	PurchaseorderItemID     string `db:"purchaseorder_item_id" json:"purchaseorder_item_id"`
+	PurchasereceiveItemID   string `db:"purchasereceive_item_id" json:"purchasereceive_item_id"`
+	LocationID              string `db:"location_id" json:"location_id"`
+	LocationCode            string `db:"location_code" json:"location_code"`
+	ItemID                  string `db:"item_id" json:"item_id"`
+	ItemName                string `db:"item_name" json:"item_name"`
+	SKU                     string `db:"sku" json:"sku"`
+	Quantity                int    `db:"quantity" json:"quantity"`
+	Status                  int    `db:"status" json:"status"`
+}

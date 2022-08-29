@@ -3,7 +3,7 @@ package purchaseorder
 import (
 	"encoding/json"
 	"errors"
-	"go-api/api/v1/history"
+	"go-api/api/v1/common"
 	"go-api/api/v1/item"
 	"go-api/api/v1/setting"
 	"go-api/api/v1/warehouse"
@@ -132,7 +132,7 @@ func (s *purchaseorderService) NewPurchaseorder(info PurchaseorderNew) (*string,
 		msg := "create purchaseorder error: " + err.Error()
 		return nil, errors.New(msg)
 	}
-	var newEvent history.NewHistoryCreated
+	var newEvent common.NewHistoryCreated
 	newEvent.HistoryType = "purchaseorder"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 	newEvent.HistoryBy = info.User
@@ -347,7 +347,7 @@ func (s *purchaseorderService) UpdatePurchaseorder(purchaseorderID string, info 
 		msg := "update purchaseorder error: " + err.Error()
 		return nil, errors.New(msg)
 	}
-	var newEvent history.NewHistoryCreated
+	var newEvent common.NewHistoryCreated
 	newEvent.HistoryType = "purchaseorder"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 	newEvent.HistoryBy = info.User
@@ -394,7 +394,7 @@ func (s *purchaseorderService) DeletePurchaseorder(purchaseorderID, organization
 	if err != nil {
 		return err
 	}
-	var newEvent history.NewHistoryCreated
+	var newEvent common.NewHistoryCreated
 	newEvent.HistoryType = "purchaseorder"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 	newEvent.HistoryBy = user
@@ -447,7 +447,7 @@ func (s *purchaseorderService) IssuePurchaseorder(purchaseorderID, organizationI
 		msg := "update purchaseorder error: " + err.Error()
 		return errors.New(msg)
 	}
-	var newEvent history.NewHistoryCreated
+	var newEvent common.NewHistoryCreated
 	newEvent.HistoryType = "purchaseorder"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 	newEvent.HistoryBy = user
@@ -691,7 +691,7 @@ func (s *purchaseorderService) NewPurchasereceive(purchaseorderID string, info P
 		}
 	}
 	tx.Commit()
-	var newEvent history.NewHistoryCreated
+	var newEvent common.NewHistoryCreated
 	newEvent.HistoryType = "purchaseorder"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 	newEvent.HistoryBy = info.User
@@ -714,4 +714,42 @@ func (s *purchaseorderService) NewPurchasereceive(purchaseorderID string, info P
 		}
 	}
 	return &receiveID, err
+}
+
+func (s *purchaseorderService) GetPurchasereceiveList(filter PurchasereceiveFilter) (int, *[]PurchasereceiveResponse, error) {
+	db := database.RDB()
+	query := NewPurchaseorderQuery(db)
+	count, err := query.GetPurchasereceiveCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := query.GetPurchasereceiveList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *purchaseorderService) GetPurchaseReceiveItemList(purchasereceiveID, organizationID string) (*[]PurchasereceiveItemResponse, error) {
+	db := database.RDB()
+	query := NewPurchaseorderQuery(db)
+	_, err := query.GetPurchasereceiveByID(organizationID, purchasereceiveID)
+	if err != nil {
+		msg := "get purchaseorder error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	list, err := query.GetPurchasereceiveItemList(purchasereceiveID)
+	return list, err
+}
+
+func (s *purchaseorderService) GetPurchaseReceiveDetailList(purchasereceiveID, organizationID string) (*[]PurchasereceiveDetailResponse, error) {
+	db := database.RDB()
+	query := NewPurchaseorderQuery(db)
+	_, err := query.GetPurchasereceiveByID(organizationID, purchasereceiveID)
+	if err != nil {
+		msg := "get purchaseorder error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	list, err := query.GetPurchasereceiveDetailList(purchasereceiveID)
+	return list, err
 }

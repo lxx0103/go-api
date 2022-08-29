@@ -1,4 +1,4 @@
-package history
+package common
 
 import (
 	"go-api/core/request"
@@ -28,4 +28,9 @@ type HistoryResponse struct {
 	HistoryTime    string `db:"history_time" json:"history_time"`
 	HistoryBy      string `db:"history_by" json:"history_by"`
 	Description    string `db:"description" json:"description"`
+}
+
+type NumberFilter struct {
+	NumberType     string `form:"number_type" binding:"required,oneof=purchaseorder salesorder purchasereceive"`
+	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
 }
