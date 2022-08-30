@@ -212,7 +212,7 @@ func ConfirmSalesorder(c *gin.Context) {
 // @version 1.0
 // @Accept application/json
 // @Produce application/json
-// @Param purchasereceive_info body PickingorderNew true "销售单信息"
+// @Param pickingorder body PickingorderNew true "销售单信息"
 // @Success 200 object response.SuccessRes{data=string} 成功
 // @Failure 400 object response.ErrorRes 内部错误
 // @Router /salesorders/:id/pickings [POST]
@@ -222,17 +222,17 @@ func NewPickingorder(c *gin.Context) {
 		response.ResponseError(c, "BindingError", err)
 		return
 	}
-	var purchasereceive PickingorderNew
-	if err := c.ShouldBindJSON(&purchasereceive); err != nil {
+	var pickingorder PickingorderNew
+	if err := c.ShouldBindJSON(&pickingorder); err != nil {
 		response.ResponseError(c, "BindingError", err)
 		return
 	}
 	claims := c.MustGet("claims").(*service.CustomClaims)
-	purchasereceive.OrganizationID = claims.OrganizationID
-	purchasereceive.User = claims.UserName
-	purchasereceive.Email = claims.Email
+	pickingorder.OrganizationID = claims.OrganizationID
+	pickingorder.User = claims.UserName
+	pickingorder.Email = claims.Email
 	salesorderService := NewSalesorderService()
-	new, err := salesorderService.NewPickingorder(uri.ID, purchasereceive)
+	new, err := salesorderService.NewPickingorder(uri.ID, pickingorder)
 	if err != nil {
 		response.ResponseError(c, "DatabaseError", err)
 		return
@@ -409,4 +409,38 @@ func MarkPickingorderPicked(c *gin.Context) {
 		return
 	}
 	response.Response(c, "ok")
+}
+
+// @Summary 新建包裹
+// @Id 615
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param package body PackageNew true "销售单信息"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /salesorders/:id/packages [POST]
+func NewPackage(c *gin.Context) {
+	var uri SalesorderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	var packageNew PackageNew
+	if err := c.ShouldBindJSON(&packageNew); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	packageNew.OrganizationID = claims.OrganizationID
+	packageNew.User = claims.UserName
+	packageNew.Email = claims.Email
+	salesorderService := NewSalesorderService()
+	new, err := salesorderService.NewPackage(uri.ID, packageNew)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
 }

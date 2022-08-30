@@ -3725,6 +3725,58 @@ var doc = `{
                 }
             }
         },
+        "/salesorders/:id/packages": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "新建包裹",
+                "operationId": "615",
+                "parameters": [
+                    {
+                        "description": "销售单信息",
+                        "name": "package",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/salesorder.PackageNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/salesorders/:id/pickings": {
             "post": {
                 "consumes": [
@@ -3741,7 +3793,7 @@ var doc = `{
                 "parameters": [
                     {
                         "description": "销售单信息",
-                        "name": "purchasereceive_info",
+                        "name": "pickingorder",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -5659,6 +5711,48 @@ var doc = `{
                 "data": {}
             }
         },
+        "salesorder.PackageItemNew": {
+            "type": "object",
+            "required": [
+                "item_id",
+                "quantity"
+            ],
+            "properties": {
+                "item_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
+        "salesorder.PackageNew": {
+            "type": "object",
+            "required": [
+                "items",
+                "package_date",
+                "package_number"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/salesorder.PackageItemNew"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "package_date": {
+                    "type": "string"
+                },
+                "package_number": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 6
+                }
+            }
+        },
         "salesorder.PickingFromLocationNew": {
             "type": "object",
             "required": [
@@ -5748,6 +5842,7 @@ var doc = `{
         "salesorder.PickingorderItemNew": {
             "type": "object",
             "required": [
+                "item_id",
                 "quantity"
             ],
             "properties": {

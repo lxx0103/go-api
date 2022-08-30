@@ -102,7 +102,7 @@ type PickingorderBatch struct {
 }
 
 type PickingorderItemNew struct {
-	ItemID   string `json:"item_id" binding:"omitempty"`
+	ItemID   string `json:"item_id" binding:"required"`
 	Quantity int    `json:"quantity" binding:"required"`
 }
 
@@ -174,4 +174,18 @@ type PickingFromLocationNew struct {
 	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
 	User           string `json:"user" swaggerignore:"true"`
 	Email          string `json:"email" swaggerignore:"true"`
+}
+
+type PackageNew struct {
+	PackageNumber  string           `json:"package_number" binding:"required,min=6,max=64"`
+	PackageDate    string           `json:"package_date" binding:"required,datetime=2006-01-02"`
+	Notes          string           `json:"notes" binding:"omitempty"`
+	Items          []PackageItemNew `json:"items" binding:"required"`
+	OrganizationID string           `json:"organiztion_id" swaggerignore:"true"`
+	User           string           `json:"user" swaggerignore:"true"`
+	Email          string           `json:"email" swaggerignore:"true"`
+}
+type PackageItemNew struct {
+	ItemID   string `json:"item_id" binding:"required"`
+	Quantity int    `json:"quantity" binding:"required"`
 }

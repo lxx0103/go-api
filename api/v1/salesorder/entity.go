@@ -114,3 +114,33 @@ type PickingorderDetail struct {
 	Updated              time.Time `db:"updated" json:"updated"`
 	UpdatedBy            string    `db:"updated_by" json:"updated_by"`
 }
+
+type Package struct {
+	ID             int64     `db:"id" json:"id"`
+	OrganizationID string    `db:"organization_id" json:"organization_id"`
+	SalesorderID   string    `db:"salesorder_id" json:"salesorder_id"`
+	PackageID      string    `db:"package_id" json:"package_id"`
+	PackageNumber  string    `db:"package_number" json:"package_number"`
+	PackageDate    string    `db:"package_date" json:"package_date"`
+	Notes          string    `db:"notes" json:"notes"`
+	Status         int       `db:"status" json:"status"`
+	Created        time.Time `db:"created" json:"created"`
+	CreatedBy      string    `db:"created_by" json:"created_by"`
+	Updated        time.Time `db:"updated" json:"updated"`
+	UpdatedBy      string    `db:"updated_by" json:"updated_by"`
+}
+
+type PackageItem struct {
+	ID               int64     `db:"id" json:"id"`
+	OrganizationID   string    `db:"organization_id" json:"organization_id"`
+	PackageID        string    `db:"package_id" json:"package_id"`
+	SalesorderItemID string    `db:"salesorder_item_id" json:"salesorder_item_id"`
+	PackageItemID    string    `db:"package_item_id" json:"package_item_id"`
+	ItemID           string    `db:"item_id" json:"item_id"`
+	Quantity         int       `db:"quantity" json:"quantity"`
+	Status           int       `db:"status" json:"status"`
+	Created          time.Time `db:"created" json:"created"`
+	CreatedBy        string    `db:"created_by" json:"created_by"`
+	Updated          time.Time `db:"updated" json:"updated"`
+	UpdatedBy        string    `db:"updated_by" json:"updated_by"`
+}

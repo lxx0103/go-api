@@ -1178,3 +1178,143 @@ func (s *salesorderService) UpdatePickingorderPicked(pickingorderID, organizatio
 	tx.Commit()
 	return err
 }
+
+//package
+
+func (s *salesorderService) NewPackage(salesorderID string, info PackageNew) (*string, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return nil, errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewSalesorderRepository(tx)
+	isConflict, err := repo.CheckPackageNumberConfict("", info.OrganizationID, info.PackageNumber)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "picking order number exists"
+		return nil, errors.New(msg)
+	}
+	packageID := "pac-" + xid.New().String()
+	itemRepo := item.NewItemRepository(tx)
+	for _, itemRow := range info.Items {
+		oldSoItem, err := repo.GetSalesorderItemByID(info.OrganizationID, salesorderID, itemRow.ItemID)
+		if err != nil {
+			msg := "sales order item not exist"
+			return nil, errors.New(msg)
+		}
+		itemInfo, err := itemRepo.GetItemByID(itemRow.ItemID, info.OrganizationID)
+		if err != nil {
+			msg := "item not exist"
+			return nil, errors.New(msg)
+		}
+		packageItemID := "pai-" + xid.New().String()
+		if itemInfo.StockPacking < itemRow.Quantity {
+			msg := "no enough stock to pack"
+			return nil, errors.New(msg)
+		}
+		if oldSoItem.QuantityPicked < itemRow.Quantity {
+			msg := "packing quantity greater than not packed"
+			return nil, errors.New(msg)
+		}
+		var soItem SalesorderItem
+		soItem.SalesorderItemID = oldSoItem.SalesorderItemID
+		soItem.QuantityPicked = oldSoItem.QuantityPicked - itemRow.Quantity
+		soItem.QuantityPacked = oldSoItem.QuantityPacked + itemRow.Quantity
+		soItem.Updated = time.Now()
+		soItem.UpdatedBy = info.Email
+
+		err = repo.PackSalesorderItem(soItem)
+		if err != nil {
+			msg := "pack salesorder item error: " + err.Error()
+			return nil, errors.New(msg)
+		}
+		var packageItem PackageItem
+		packageItem.OrganizationID = info.OrganizationID
+		packageItem.PackageID = packageID
+		packageItem.SalesorderItemID = oldSoItem.SalesorderItemID
+		packageItem.PackageItemID = packageItemID
+		packageItem.ItemID = oldSoItem.ItemID
+		packageItem.Quantity = itemRow.Quantity
+		packageItem.Status = 1
+		packageItem.CreatedBy = info.Email
+		packageItem.Created = time.Now()
+		packageItem.Updated = time.Now()
+		packageItem.UpdatedBy = info.Email
+
+		err = repo.CreatePackageItem(packageItem)
+		if err != nil {
+			msg := "create package item error: " + err.Error()
+			return nil, errors.New(msg)
+		}
+		err = itemRepo.UpdateItemPackedStock(itemRow.ItemID, itemRow.Quantity, info.Email)
+		if err != nil {
+			msg := "update item stock error: " + err.Error()
+			return nil, errors.New(msg)
+		}
+	}
+	var newPackage Package
+	newPackage.SalesorderID = salesorderID
+	newPackage.PackageID = packageID
+	newPackage.PackageNumber = info.PackageNumber
+	newPackage.PackageDate = info.PackageDate
+	newPackage.OrganizationID = info.OrganizationID
+	newPackage.Notes = info.Notes
+	newPackage.Status = 1
+	newPackage.Created = time.Now()
+	newPackage.CreatedBy = info.Email
+	newPackage.Updated = time.Now()
+	newPackage.UpdatedBy = info.Email
+	err = repo.CreatePackage(newPackage)
+	if err != nil {
+		msg := "create package error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	so, err := repo.GetSalesorderByID(info.OrganizationID, salesorderID)
+	if err != nil {
+		msg := "get sales order error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	packedCount, err := repo.GetSalesorderPackedCount(info.OrganizationID, salesorderID)
+	if err != nil {
+		msg := "get sales order packed count error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	packing_status := 1
+	if so.ItemCount == packedCount {
+		packing_status = 3
+	} else {
+		packing_status = 2
+	}
+	err = repo.UpdateSalesorderPackingStatus(salesorderID, packing_status, info.Email)
+	if err != nil {
+		msg := "update sales order packing status error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	err = repo.UpdateSalesorderStatus(salesorderID, 2, info.Email)
+	if err != nil {
+		msg := "update sales order status error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	tx.Commit()
+	var newEvent common.NewHistoryCreated
+	newEvent.HistoryType = "salesorder"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = info.User
+	newEvent.ReferenceID = salesorderID
+	newEvent.Description = "Package Created"
+	newEvent.OrganizationID = info.OrganizationID
+	newEvent.Email = info.Email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return nil, errors.New(msg)
+	}
+	return &packageID, err
+}

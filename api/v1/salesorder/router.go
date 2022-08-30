@@ -20,4 +20,6 @@ func AuthRouter(g *gin.RouterGroup) {
 	g.POST("/pickingorders/:id/pick", NewPickingFromLocation)
 	g.POST("/pickingorders/:id/picked", MarkPickingorderPicked)
 
+	g.POST("/salesorders/:id/packages", NewPackage)
+
 }

@@ -351,3 +351,15 @@ func (r *itemRepository) PickItem(id string, quantity int, email string) error {
 	`, quantity, time.Now(), email, id)
 	return err
 }
+
+func (r *itemRepository) UpdateItemPackedStock(id string, stock int, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update i_items SET
+		stock_packing = stock_packing - ?,
+		stock_on_hand = stock_on_hand - ?,
+		updated = ?,
+		updated_by = ?
+		WHERE item_id = ?
+	`, stock, stock, time.Now(), byUser, id)
+	return err
+}

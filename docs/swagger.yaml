@@ -681,6 +681,35 @@ definitions:
     properties:
       data: {}
     type: object
+  salesorder.PackageItemNew:
+    properties:
+      item_id:
+        type: string
+      quantity:
+        type: integer
+    required:
+    - item_id
+    - quantity
+    type: object
+  salesorder.PackageNew:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/salesorder.PackageItemNew'
+        type: array
+      notes:
+        type: string
+      package_date:
+        type: string
+      package_number:
+        maxLength: 64
+        minLength: 6
+        type: string
+    required:
+    - items
+    - package_date
+    - package_number
+    type: object
   salesorder.PickingFromLocationNew:
     properties:
       location_id:
@@ -747,6 +776,7 @@ definitions:
       quantity:
         type: integer
     required:
+    - item_id
     - quantity
     type: object
   salesorder.PickingorderItemResponse:
@@ -3853,6 +3883,37 @@ paths:
       summary: 销售单产品列表
       tags:
       - 销售单管理
+  /salesorders/:id/packages:
+    post:
+      consumes:
+      - application/json
+      operationId: "615"
+      parameters:
+      - description: 销售单信息
+        in: body
+        name: package
+        required: true
+        schema:
+          $ref: '#/definitions/salesorder.PackageNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建包裹
+      tags:
+      - 销售单管理
   /salesorders/:id/pickings:
     post:
       consumes:
@@ -3861,7 +3922,7 @@ paths:
       parameters:
       - description: 销售单信息
         in: body
-        name: purchasereceive_info
+        name: pickingorder
         required: true
         schema:
           $ref: '#/definitions/salesorder.PickingorderNew'

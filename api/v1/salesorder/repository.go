@@ -302,6 +302,7 @@ func (r *salesorderRepository) UpdateSalesorderPickingStatus(id string, status i
 	`, status, time.Now(), byUser, id)
 	return err
 }
+
 func (r *salesorderRepository) CheckSOItem(salesorder_id, organizationID string) (bool, error) {
 	var existed int
 	row := r.tx.QueryRow("SELECT count(1) FROM s_salesorder_items WHERE organization_id = ? AND salesorder_id = ? AND status = -1  AND (quantity_invoiced > 0 OR quantity_picked > 0 OR quantity_packed > 0 OR quantity_shipped > 0)", organizationID, salesorder_id)
@@ -409,6 +410,7 @@ func (r *salesorderRepository) GetSalesorderPickedCount(organizationID, salesord
 	err := row.Scan(&sum)
 	return sum, err
 }
+
 func (r salesorderRepository) CreatePickingorder(info Pickingorder) error {
 	_, err := r.tx.Exec(`
 		INSERT INTO s_pickingorders 
@@ -573,4 +575,90 @@ func (r *salesorderRepository) GetPickingorderDetailList(organizationID, picking
 		}
 	}
 	return &pickingorderDetails, err
+}
+
+//receive
+
+func (r *salesorderRepository) CheckPackageNumberConfict(packageID, organizationID, packageNumber string) (bool, error) {
+	var existed int
+	row := r.tx.QueryRow("SELECT count(1) FROM s_packages WHERE organization_id = ? AND package_id != ? AND package_number = ? AND status > 0 ", organizationID, packageID, packageNumber)
+	err := row.Scan(&existed)
+	if err != nil {
+		return true, err
+	}
+	return existed != 0, nil
+}
+
+func (r salesorderRepository) PackSalesorderItem(info SalesorderItem) error {
+	_, err := r.tx.Exec(`
+		UPDATE s_salesorder_items set
+		quantity_picked = ?,
+		quantity_packed = ?,
+		updated = ?,
+		updated_by =?
+		WHERE salesorder_item_id = ?
+	`, info.QuantityPicked, info.QuantityPacked, info.Updated, info.UpdatedBy, info.SalesorderItemID)
+	return err
+}
+
+func (r salesorderRepository) CreatePackageItem(info PackageItem) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO s_package_items 
+		(
+			organization_id,
+			package_id,
+			salesorder_item_id,
+			package_item_id,
+			item_id,
+			quantity,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.PackageID, info.SalesorderItemID, info.PackageItemID, info.ItemID, info.Quantity, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}
+
+func (r salesorderRepository) CreatePackage(info Package) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO s_packages 
+		(
+			organization_id,
+			salesorder_id,
+			package_id,
+			package_number,
+			package_date,
+			notes,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.SalesorderID, info.PackageID, info.PackageNumber, info.PackageDate, info.Notes, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}
+
+func (r *salesorderRepository) GetSalesorderPackedCount(organizationID, salesorderID string) (float64, error) {
+	var sum float64
+	row := r.tx.QueryRow("SELECT SUM(quantity_packed) FROM s_salesorder_items WHERE organization_id = ? AND salesorder_id = ? AND status > 0", organizationID, salesorderID)
+	err := row.Scan(&sum)
+	return sum, err
+}
+
+func (r *salesorderRepository) UpdateSalesorderPackingStatus(id string, status int, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update s_salesorders SET
+		packing_status = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE salesorder_id = ?
+	`, status, time.Now(), byUser, id)
+	return err
 }
