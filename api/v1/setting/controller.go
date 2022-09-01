@@ -877,3 +877,148 @@ func DeleteCustomer(c *gin.Context) {
 	}
 	response.Response(c, "OK")
 }
+
+// @Summary 物流商列表
+// @Id 331
+// @Tags 物流商管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数（5/10/15/20）"
+// @Param name query string false "物流商名称"
+// @Success 200 object response.ListRes{data=[]CarrierResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /carriers [GET]
+func GetCarrierList(c *gin.Context) {
+	var filter CarrierFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	filter.OrganizationID = claims.OrganizationID
+	settingService := NewSettingService()
+	count, list, err := settingService.GetCarrierList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageID, filter.PageSize, count, list)
+}
+
+// @Summary 新建物流商
+// @Id 332
+// @Tags 物流商管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param carrier_info body CarrierNew true "物流商信息"
+// @Success 200 object response.SuccessRes{data=CarrierResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /carriers [POST]
+func NewCarrier(c *gin.Context) {
+	var info CarrierNew
+	if err := c.ShouldBindJSON(&info); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	info.User = claims.Email
+	info.OrganizationID = claims.OrganizationID
+	settingService := NewSettingService()
+	new, err := settingService.NewCarrier(info)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
+
+// @Summary 根据ID更新物流商
+// @Id 333
+// @Tags 物流商管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "物流商ID"
+// @Param carrier_info body CarrierNew true "物流商信息"
+// @Success 200 object response.SuccessRes{data=Carrier} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /carriers/:id [PUT]
+func UpdateCarrier(c *gin.Context) {
+	var uri CarrierID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	var info CarrierNew
+	if err := c.ShouldBindJSON(&info); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	info.User = claims.Email
+	info.OrganizationID = claims.OrganizationID
+	settingService := NewSettingService()
+	new, err := settingService.UpdateCarrier(uri.ID, info)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
+
+// @Summary 根据ID获取物流商
+// @Id 334
+// @Tags 物流商管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "物流商ID"
+// @Success 200 object response.SuccessRes{data=CarrierResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /carriers/:id [GET]
+func GetCarrierByID(c *gin.Context) {
+	var uri CarrierID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	settingService := NewSettingService()
+	carrier, err := settingService.GetCarrierByID(claims.OrganizationID, uri.ID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, carrier)
+
+}
+
+// @Summary 根据ID删除物流商
+// @Id 335
+// @Tags 物流商管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "物流商ID"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /carriers/:id [DELETE]
+func DeleteCarrier(c *gin.Context) {
+	var uri CarrierID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	settingService := NewSettingService()
+	err := settingService.DeleteCarrier(uri.ID, claims.OrganizationID, claims.Email)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, "OK")
+}

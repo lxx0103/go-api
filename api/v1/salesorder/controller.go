@@ -444,3 +444,172 @@ func NewPackage(c *gin.Context) {
 	}
 	response.Response(c, new)
 }
+
+// @Summary 包裹列表
+// @Id 616
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数（5/10/15/20）"
+// @Param package_number query string false "包裹编码"
+// @Param salesorder_id query string false "销售订单ID"
+// @Success 200 object response.ListRes{data=[]PackageResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /packages [GET]
+func GetPackageList(c *gin.Context) {
+	var filter PackageFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	filter.OrganizationID = claims.OrganizationID
+	salesorderService := NewSalesorderService()
+	count, list, err := salesorderService.GetPackageList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageID, filter.PageSize, count, list)
+}
+
+// @Summary 拣货单产品列表
+// @Id 617
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "拣货单ID"
+// @Success 200 object response.ListRes{data=[]PackageItemResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /packages/:id/items [GET]
+func GetPackageItemList(c *gin.Context) {
+	var uri PackageID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	salesorderService := NewSalesorderService()
+	list, err := salesorderService.GetPackageItemList(uri.ID, claims.OrganizationID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, list)
+}
+
+// @Summary 批量发货
+// @Id 618
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param shippingorder_info body ShippingorderBatch true "销售单信息"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /shippingorders [POST]
+func BatchShippingorder(c *gin.Context) {
+	var batchShippingorder ShippingorderBatch
+	if err := c.ShouldBindJSON(&batchShippingorder); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	batchShippingorder.OrganizationID = claims.OrganizationID
+	batchShippingorder.User = claims.UserName
+	batchShippingorder.Email = claims.Email
+	salesorderService := NewSalesorderService()
+	new, err := salesorderService.BatchShippingorder(batchShippingorder)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
+
+// @Summary 发货单列表
+// @Id 619
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数（5/10/15/20）"
+// @Param shippingorder_number query string false "发货单编码"
+// @Param package_id query string false "包裹ID"
+// @Success 200 object response.ListRes{data=[]ShippingorderResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /shippingorders [GET]
+func GetShippingorderList(c *gin.Context) {
+	var filter ShippingorderFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	filter.OrganizationID = claims.OrganizationID
+	salesorderService := NewSalesorderService()
+	count, list, err := salesorderService.GetShippingorderList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageID, filter.PageSize, count, list)
+}
+
+// @Summary 发货单产品列表
+// @Id 620
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "拣货单ID"
+// @Success 200 object response.ListRes{data=[]ShippingorderItemResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /shippingorders/:id/items [GET]
+func GetShippingorderItemList(c *gin.Context) {
+	var uri ShippingorderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	salesorderService := NewSalesorderService()
+	list, err := salesorderService.GetShippingorderItemList(uri.ID, claims.OrganizationID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, list)
+}
+
+// @Summary 发货单详情列表
+// @Id 621
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "拣货单ID"
+// @Success 200 object response.ListRes{data=[]ShippingorderItemResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /shippingorders/:id/details [GET]
+func GetShippingorderDetailList(c *gin.Context) {
+	var uri ShippingorderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	salesorderService := NewSalesorderService()
+	list, err := salesorderService.GetShippingorderItemList(uri.ID, claims.OrganizationID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, list)
+}

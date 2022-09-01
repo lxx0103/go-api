@@ -38,4 +38,11 @@ func AuthRouter(g *gin.RouterGroup) {
 	g.PUT("/customers/:id", UpdateCustomer)
 	g.GET("/customers/:id", GetCustomerByID)
 	g.DELETE("/customers/:id", DeleteCustomer)
+
+	g.POST("/carriers", NewCarrier)
+	g.GET("/carriers", GetCarrierList)
+	g.PUT("/carriers/:id", UpdateCarrier)
+	g.GET("/carriers/:id", GetCarrierByID)
+	g.DELETE("/carriers/:id", DeleteCarrier)
+
 }

@@ -137,7 +137,7 @@ func (r *warehouseQuery) GetLocationList(filter LocationFilter) (*[]LocationResp
 	return &locations, err
 }
 
-func (r *warehouseQuery) GetLocationByID(organizationID, locationID string) (*LocationResponse, error) {
+func (r *warehouseQuery) GetLocationByCode(organizationID, locationCode string) (*LocationResponse, error) {
 	var location LocationResponse
 	err := r.conn.Get(&location, `
 		SELECT 
@@ -161,7 +161,7 @@ func (r *warehouseQuery) GetLocationByID(organizationID, locationID string) (*Lo
 		ON l.bay_id = b.bay_id
 		LEFT JOIN i_items i
 		ON l.item_id = i.item_id
-		WHERE l.organization_id = ? AND l.location_id = ? AND l.status > 0
-	`, organizationID, locationID)
+		WHERE l.organization_id = ? AND l.code = ? AND l.status > 0
+	`, organizationID, locationCode)
 	return &location, err
 }

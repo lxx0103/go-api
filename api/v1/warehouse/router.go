@@ -10,7 +10,7 @@ func AuthRouter(g *gin.RouterGroup) {
 	g.DELETE("/bays/:id", DeleteBay)
 
 	g.GET("/locations", GetLocationList)
-	g.GET("/locations/:id", GetLocationByID)
+	g.GET("/locations/:code", GetLocationByCode)
 	g.PUT("/locations/:id", UpdateLocation)
 	g.POST("/locations", NewLocation)
 	g.DELETE("/locations/:id", DeleteLocation)

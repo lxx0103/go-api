@@ -274,10 +274,10 @@ func (s *warehouseService) UpdateLocation(locationID string, info LocationNew) (
 	return res, err
 }
 
-func (s *warehouseService) GetLocationByID(organizationID, id string) (*LocationResponse, error) {
+func (s *warehouseService) GetLocationByCode(organizationID, code string) (*LocationResponse, error) {
 	db := database.RDB()
 	query := NewWarehouseQuery(db)
-	unit, err := query.GetLocationByID(organizationID, id)
+	unit, err := query.GetLocationByCode(organizationID, code)
 	if err != nil {
 		msg := "get unit error: " + err.Error()
 		return nil, errors.New(msg)

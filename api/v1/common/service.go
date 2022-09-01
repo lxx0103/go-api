@@ -88,6 +88,12 @@ func (s *commonService) GetNextNumber(filter NumberFilter) (*string, error) {
 		prefix = "SO"
 	case "purchasereceive":
 		prefix = "PR"
+	case "pickingorder":
+		prefix = "PIC"
+	case "package":
+		prefix = "PAC"
+	case "shippingorder":
+		prefix = "SHIP"
 	default:
 		msg := "number type error"
 		return nil, errors.New(msg)

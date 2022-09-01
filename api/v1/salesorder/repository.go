@@ -662,3 +662,201 @@ func (r *salesorderRepository) UpdateSalesorderPackingStatus(id string, status i
 	`, status, time.Now(), byUser, id)
 	return err
 }
+
+//shipping
+
+func (r *salesorderRepository) CheckShippingorderNumberConfict(shippingorderID, organizationID, shippingorderNumber string) (bool, error) {
+	var existed int
+	row := r.tx.QueryRow("SELECT count(1) FROM s_shippingorders WHERE organization_id = ? AND shippingorder_id != ? AND shippingorder_number = ? AND status > 0 ", organizationID, shippingorderID, shippingorderNumber)
+	err := row.Scan(&existed)
+	if err != nil {
+		return true, err
+	}
+	return existed != 0, nil
+}
+
+func (r *salesorderRepository) GetPackageByID(organizationID, packageID string) (*PackageResponse, error) {
+	var res PackageResponse
+	row := r.tx.QueryRow(`
+		SELECT 
+		p.organization_id,
+		p.salesorder_id,
+		IFNULL(s.salesorder_number, "") as salesorder_number, 
+		p.package_id, 
+		p.package_number, 
+		p.package_date,
+		p.notes,
+		p.status
+		FROM s_packages p
+		LEFT JOIN s_salesorders s
+		ON s.salesorder_id = p.salesorder_id
+		WHERE p.organization_id = ? AND p.package_id = ? AND p.status > 0 LIMIT 1
+	`, organizationID, packageID)
+	err := row.Scan(&res.OrganizationID, &res.SalesorderID, &res.SalesorderNumber, &res.PackageID, &res.PackageNumber, &res.PackageDate, &res.Notes, &res.Status)
+	return &res, err
+}
+
+func (r *salesorderRepository) GetPackageItemList(organizationID, packageID string) (*[]PackageItemResponse, error) {
+	var salesorders []PackageItemResponse
+	rows, err := r.tx.Query(`
+		SELECT
+		s.organization_id,
+		s.package_id,
+		s.salesorder_item_id,
+		s.package_item_id,
+		s.item_id,
+		i.name as item_name,
+		i.sku as sku,
+		s.quantity,
+		s.status
+		FROM s_package_items s
+		LEFT JOIN i_items i
+		ON s.item_id = i.item_id
+		WHERE s.organization_id =? AND s.package_id = ? AND s.status > 0 
+	`, organizationID, packageID)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var res PackageItemResponse
+		err = rows.Scan(&res.OrganizationID, &res.PackageID, &res.SalesorderItemID, &res.PackageItemID, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity, &res.Status)
+		salesorders = append(salesorders, res)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &salesorders, err
+}
+
+func (r salesorderRepository) ShipSalesorderItem(info SalesorderItem) error {
+	_, err := r.tx.Exec(`
+		UPDATE s_salesorder_items set
+		quantity_packed = ?,
+		quantity_shipped = ?,
+		updated = ?,
+		updated_by =?
+		WHERE salesorder_item_id = ?
+	`, info.QuantityPacked, info.QuantityShipped, info.Updated, info.UpdatedBy, info.SalesorderItemID)
+	return err
+}
+
+func (r salesorderRepository) CreateShippingorderItem(info ShippingorderItem) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO s_shippingorder_items 
+		(
+			organization_id,
+			shippingorder_id,
+			shippingorder_item_id,
+			item_id,
+			quantity,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.ShippingorderID, info.ShippingorderItemID, info.ItemID, info.Quantity, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}
+
+func (r *salesorderRepository) GetSalesorderShippedCount(organizationID, salesorderID string) (float64, error) {
+	var sum float64
+	row := r.tx.QueryRow("SELECT SUM(quantity_shipped) FROM s_salesorder_items WHERE organization_id = ? AND salesorder_id = ? AND status > 0", organizationID, salesorderID)
+	err := row.Scan(&sum)
+	return sum, err
+}
+
+func (r *salesorderRepository) UpdateSalesorderShippingStatus(id string, status int, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update s_salesorders SET
+		shipping_status = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE salesorder_id = ?
+	`, status, time.Now(), byUser, id)
+	return err
+}
+
+func (r *salesorderRepository) UpdatePackageStatus(id string, status int, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update s_packages SET
+		status = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE package_id = ?
+	`, status, time.Now(), byUser, id)
+	return err
+}
+
+func (r salesorderRepository) CreateShippingorderDetail(info ShippingorderDetail) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO s_shippingorder_details 
+		(
+			organization_id,
+			shippingorder_id,
+			shippingorder_detail_id,
+			package_id,
+			package_item_id,
+			item_id,
+			quantity,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.ShippingorderID, info.ShippingorderDetailID, info.PackageID, info.PackageItemID, info.ItemID, info.Quantity, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}
+
+func (r salesorderRepository) GetShippingorderDetailSum(pickingorderID string) (*[]ShippingorderDetailResponse, error) {
+	var shippingorderDetails []ShippingorderDetailResponse
+	rows, err := r.tx.Query(`
+	SELECT
+	s.organization_id,
+	s.shippingorder_id,
+	s.item_id,
+	i.name as item_name,
+	i.sku as sku,
+	sum(s.quantity) as quantity
+	FROM s_shippingorder_details s
+	LEFT JOIN i_items i
+	ON s.item_id = i.item_id
+	WHERE s.shippingorder_id = ? AND s.status > 0 
+	GROUP BY s.organization_id, s.shippingorder_id, s.item_id 
+	`, pickingorderID)
+	for rows.Next() {
+		var res ShippingorderDetailResponse
+		rows.Scan(&res.OrganizationID, &res.ShippingorderID, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity)
+		shippingorderDetails = append(shippingorderDetails, res)
+	}
+	return &shippingorderDetails, err
+}
+
+func (r salesorderRepository) CreateShippingorder(info Shippingorder) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO s_shippingorders 
+		(
+			organization_id,
+			shippingorder_id,
+			package_id,
+			shippingorder_number,
+			shippingorder_date,
+			carrier_id,
+			tracking_number,
+			notes,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.ShippingorderID, info.PackageID, info.ShippingorderNumber, info.ShippingorderDate, info.CarrierID, info.TrackingNumber, info.Notes, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}

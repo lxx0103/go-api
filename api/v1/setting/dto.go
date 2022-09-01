@@ -206,3 +206,29 @@ type CustomerNew struct {
 type CustomerID struct {
 	ID string `uri:"id" binding:"required,min=1"`
 }
+
+//carrier
+
+type CarrierFilter struct {
+	Name           string `form:"name" binding:"omitempty,max=64,min=1"`
+	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
+	request.PageInfo
+}
+
+type CarrierResponse struct {
+	CarrierID      string `db:"carrier_id" json:"carrier_id"`
+	OrganizationID string `db:"organization_id" json:"organization_id"`
+	Name           string `db:"name" json:"name"`
+	Status         int    `db:"status" json:"status"`
+}
+
+type CarrierNew struct {
+	Name           string `json:"name" binding:"required,min=1,max=64"`
+	Status         int    `json:"status" binding:"required,oneof=1 2"`
+	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
+	User           string `json:"user" swaggerignore:"true"`
+}
+
+type CarrierID struct {
+	ID string `uri:"id" binding:"required,min=1"`
+}

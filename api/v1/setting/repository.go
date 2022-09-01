@@ -475,3 +475,63 @@ func (r *settingRepository) DeleteCustomer(id, byUser string) error {
 	`, time.Now(), byUser, id)
 	return err
 }
+
+// Carrier
+
+func (r *settingRepository) GetCarrierByID(organizationID, carrierID string) (*CarrierResponse, error) {
+	var res CarrierResponse
+	row := r.tx.QueryRow(`SELECT carrier_id, organization_id, name, status FROM s_carriers WHERE organization_id = ? AND carrier_id = ? AND status > 0 LIMIT 1`, organizationID, carrierID)
+	err := row.Scan(&res.CarrierID, &res.OrganizationID, &res.Name, &res.Status)
+	return &res, err
+}
+
+func (r *settingRepository) CheckCarrierConfict(carrierID, organizationID, name string) (bool, error) {
+	var existed int
+	row := r.tx.QueryRow("SELECT count(1) FROM s_carriers WHERE organization_id = ? AND carrier_id != ? AND name = ? AND status > 0", organizationID, carrierID, name)
+	err := row.Scan(&existed)
+	if err != nil {
+		return true, err
+	}
+	return existed != 0, nil
+}
+
+func (r *settingRepository) CreateCarrier(info Carrier) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO s_carriers
+		(
+			carrier_id,
+			organization_id,
+			name,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.CarrierID, info.OrganizationID, info.Name, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}
+
+func (r *settingRepository) UpdateCarrier(id string, info Carrier) error {
+	_, err := r.tx.Exec(`
+		Update s_carriers SET
+		name = ?,
+		status = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE carrier_id = ?
+	`, info.Name, info.Status, info.Updated, info.UpdatedBy, id)
+	return err
+}
+
+func (r *settingRepository) DeleteCarrier(id, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update s_carriers SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE carrier_id = ?
+	`, time.Now(), byUser, id)
+	return err
+}

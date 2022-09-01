@@ -189,3 +189,98 @@ type PackageItemNew struct {
 	ItemID   string `json:"item_id" binding:"required"`
 	Quantity int    `json:"quantity" binding:"required"`
 }
+
+type PackageFilter struct {
+	SalesorderID   string `form:"salesorder_id" binding:"omitempty,max=64"`
+	PackageNumber  string `form:"package_number" binding:"omitempty,max=64,min=1"`
+	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
+	request.PageInfo
+}
+type PackageResponse struct {
+	OrganizationID   string `db:"organization_id" json:"organization_id"`
+	SalesorderID     string `db:"salesorder_id" json:"salesorder_id"`
+	SalesorderNumber string `db:"salesorder_number" json:"salesorder_number"`
+	PackageID        string `db:"package_id" json:"package_id"`
+	PackageNumber    string `db:"package_number" json:"package_number"`
+	PackageDate      string `db:"package_date" json:"package_date"`
+	Notes            string `db:"notes" json:"notes"`
+	Status           int    `db:"status" json:"status"`
+}
+
+type PackageID struct {
+	ID string `uri:"id" binding:"required,min=1"`
+}
+
+type PackageItemResponse struct {
+	ID               int64  `db:"id" json:"id"`
+	OrganizationID   string `db:"organization_id" json:"organization_id"`
+	PackageID        string `db:"package_id" json:"package_id"`
+	SalesorderItemID string `db:"salesorder_item_id" json:"salesorder_item_id"`
+	PackageItemID    string `db:"package_item_id" json:"package_item_id"`
+	ItemID           string `db:"item_id" json:"item_id"`
+	ItemName         string `db:"item_name" json:"item_name"`
+	SKU              string `db:"sku" json:"sku"`
+	Quantity         int    `db:"quantity" json:"quantity"`
+	Status           int    `db:"status" json:"status"`
+}
+
+type ShippingorderBatch struct {
+	PackageID           []string `json:"package_id" binding:"required,min=1"`
+	ShippingorderNumber string   `json:"shippingorder_number" binding:"required,min=6,max=64"`
+	ShippingorderDate   string   `json:"shippingorder_date" binding:"required,datetime=2006-01-02"`
+	CarrierID           string   `json:"carrier_id" binding:"omitempty"`
+	TrackingNumber      string   `json:"tracking_number" binding:"omitempty"`
+	Notes               string   `json:"notes" binding:"omitempty"`
+	OrganizationID      string   `json:"organiztion_id" swaggerignore:"true"`
+	User                string   `json:"user" swaggerignore:"true"`
+	Email               string   `json:"email" swaggerignore:"true"`
+}
+
+type ShippingorderItemResponse struct {
+	OrganizationID      string `db:"organization_id" json:"organization_id"`
+	ShippingorderID     string `db:"shippingorder_id" json:"shippingorder_id"`
+	ShippingorderItemID string `db:"shippingorder_item_id" json:"shippingorder_item_id"`
+	ItemID              string `db:"item_id" json:"item_id"`
+	ItemName            string `db:"item_name" json:"item_name"`
+	SKU                 string `db:"sku" json:"sku"`
+	Quantity            int    `db:"quantity" json:"quantity"`
+	Status              int    `db:"status" json:"status"`
+}
+
+type ShippingorderDetailResponse struct {
+	OrganizationID        string `db:"organization_id" json:"organization_id"`
+	ShippingorderID       string `db:"shippingorder_id" json:"shippingorder_id"`
+	ShippingorderDetailID string `db:"shippingorder_detail_id" json:"shippingorder_detail_id"`
+	PackageID             string `db:"package_id" json:"package_id"`
+	PackageItemID         string `db:"package_item_id" json:"package_item_id"`
+	ItemID                string `db:"item_id" json:"item_id"`
+	ItemName              string `db:"item_name" json:"item_name"`
+	SKU                   string `db:"sku" json:"sku"`
+	Quantity              int    `db:"quantity" json:"quantity"`
+	Status                int    `db:"status" json:"status"`
+}
+
+type ShippingorderFilter struct {
+	PackageID           string `form:"package_id" binding:"omitempty,max=64"`
+	ShippingorderNumber string `form:"shipping_number" binding:"omitempty,max=64,min=1"`
+	OrganizationID      string `json:"organiztion_id" swaggerignore:"true"`
+	request.PageInfo
+}
+
+type ShippingorderResponse struct {
+	OrganizationID      string `db:"organization_id" json:"organization_id"`
+	ShippingorderID     string `db:"shippingorder_id" json:"shippingorder_id"`
+	PackageID           string `db:"package_id" json:"package_id"`
+	PackageNumber       string `db:"package_number" json:"package_number"`
+	ShippingorderNumber string `db:"shippingorder_number" json:"shippingorder_number"`
+	ShippingorderDate   string `db:"shippingorder_date" json:"shippingorder_date"`
+	CarrierID           string `db:"carrier_id" json:"carrier_id"`
+	CarrierName         string `db:"carrier_name" json:"carrier_name"`
+	TrackingNumber      string `db:"tracking_number" json:"tracking_number"`
+	Notes               string `db:"notes" json:"notes"`
+	Status              int    `db:"status" json:"status"`
+}
+
+type ShippingorderID struct {
+	ID string `uri:"id" binding:"required,min=1"`
+}

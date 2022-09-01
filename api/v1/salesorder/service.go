@@ -1318,3 +1318,290 @@ func (s *salesorderService) NewPackage(salesorderID string, info PackageNew) (*s
 	}
 	return &packageID, err
 }
+
+func (s *salesorderService) GetPackageList(filter PackageFilter) (int, *[]PackageResponse, error) {
+	db := database.RDB()
+	query := NewSalesorderQuery(db)
+	count, err := query.GetPackageCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := query.GetPackageList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *salesorderService) GetPackageItemList(salesorderID, organizationID string) (*[]PackageItemResponse, error) {
+	db := database.RDB()
+	query := NewSalesorderQuery(db)
+	_, err := query.GetPackageByID(organizationID, salesorderID)
+	if err != nil {
+		msg := "get package error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	list, err := query.GetPackageItemList(salesorderID)
+	return list, err
+}
+
+func (s *salesorderService) BatchShippingorder(info ShippingorderBatch) (*string, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return nil, errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewSalesorderRepository(tx)
+	isConflict, err := repo.CheckShippingorderNumberConfict("", info.OrganizationID, info.ShippingorderNumber)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "picking order number exists"
+		return nil, errors.New(msg)
+	}
+	shippingorderID := "shi-" + xid.New().String()
+	itemRepo := item.NewItemRepository(tx)
+	settingRepo := setting.NewSettingRepository(tx)
+	if info.CarrierID != "" {
+		_, err = settingRepo.GetCarrierByID(info.OrganizationID, info.CarrierID)
+		if err != nil {
+			msg := "carrier not exist"
+			return nil, errors.New(msg)
+		}
+	}
+	var msgs [][]byte
+	var salesorders []string
+	var itemHistorys []string
+	for _, packageID := range info.PackageID {
+		packageInfo, err := repo.GetPackageByID(info.OrganizationID, packageID)
+		if err != nil {
+			msg := "get package error: " + err.Error()
+			return nil, errors.New(msg)
+		}
+		if packageInfo.Status != 1 {
+			msg := "package status error for package: " + packageInfo.PackageNumber
+			return nil, errors.New(msg)
+		}
+		items, err := repo.GetPackageItemList(info.OrganizationID, packageID)
+		if err != nil {
+			msg := "get package items error: " + err.Error()
+			return nil, errors.New(msg)
+		}
+		for _, itemRow := range *items {
+			itemInfo, err := itemRepo.GetItemByID(itemRow.ItemID, info.OrganizationID)
+			if err != nil {
+				msg := "item not exist"
+				return nil, errors.New(msg)
+			}
+			shippingorderDetailID := "shid-" + xid.New().String()
+			salesorderInfo, err := repo.GetSalesorderByID(info.OrganizationID, packageInfo.SalesorderID)
+			if err != nil {
+				msg := "salesorder not exist"
+				return nil, errors.New(msg)
+			}
+			salesorderItem, err := repo.GetSalesorderItemByID(info.OrganizationID, salesorderInfo.SalesorderID, itemInfo.ItemID)
+			fmt.Println(salesorderItem.QuantityPacked, "------")
+			if err != nil {
+				msg := "salesorder item not exist"
+				return nil, errors.New(msg)
+			}
+			if salesorderItem.QuantityPacked < itemRow.Quantity {
+				msg := "no enough stock to ship for item: " + itemInfo.Name + " in salesorder :" + salesorderInfo.SalesorderNumber
+				return nil, errors.New(msg)
+			}
+			var soItem SalesorderItem
+			soItem.SalesorderItemID = salesorderItem.SalesorderItemID
+			soItem.QuantityPacked = salesorderItem.QuantityPacked - itemRow.Quantity
+			soItem.QuantityShipped = salesorderItem.QuantityShipped + itemRow.Quantity
+			soItem.Updated = time.Now()
+			soItem.UpdatedBy = info.Email
+
+			err = repo.ShipSalesorderItem(soItem)
+			if err != nil {
+				msg := "ship salesorder item error: " + err.Error()
+				return nil, errors.New(msg)
+			}
+			var shippingorderDetail ShippingorderDetail
+			shippingorderDetail.OrganizationID = info.OrganizationID
+			shippingorderDetail.ShippingorderID = shippingorderID
+			shippingorderDetail.ShippingorderDetailID = shippingorderDetailID
+			shippingorderDetail.PackageID = packageID
+			shippingorderDetail.PackageItemID = itemRow.PackageItemID
+			shippingorderDetail.ItemID = itemRow.ItemID
+			shippingorderDetail.Quantity = itemRow.Quantity
+			shippingorderDetail.Status = 1
+			shippingorderDetail.CreatedBy = info.Email
+			shippingorderDetail.Created = time.Now()
+			shippingorderDetail.Updated = time.Now()
+			shippingorderDetail.UpdatedBy = info.Email
+
+			err = repo.CreateShippingorderDetail(shippingorderDetail)
+			if err != nil {
+				msg := "create shipping order item error: " + err.Error()
+				return nil, errors.New(msg)
+			}
+			salesorderUpdated := false
+			for _, salesorderID := range salesorders {
+				if salesorderID == packageInfo.SalesorderID {
+					salesorderUpdated = true
+					continue
+				}
+			}
+			itemUpdated := false
+			for _, itemID := range itemHistorys {
+				if itemID == itemRow.ItemID {
+					itemUpdated = true
+					continue
+				}
+			}
+			if !salesorderUpdated {
+				salesorders = append(salesorders, packageInfo.SalesorderID)
+				var newEvent common.NewHistoryCreated
+				newEvent.HistoryType = "salesorder"
+				newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+				newEvent.HistoryBy = info.User
+				newEvent.ReferenceID = packageInfo.SalesorderID
+				newEvent.Description = "Shipping Order Created"
+				newEvent.OrganizationID = info.OrganizationID
+				newEvent.Email = info.Email
+				msg, _ := json.Marshal(newEvent)
+				msgs = append(msgs, msg)
+			}
+			if !itemUpdated {
+				itemHistorys = append(itemHistorys, itemRow.ItemID)
+				var newEvent common.NewHistoryCreated
+				newEvent.HistoryType = "item"
+				newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+				newEvent.HistoryBy = info.User
+				newEvent.ReferenceID = packageInfo.SalesorderID
+				newEvent.Description = "Shipping Order Created"
+				newEvent.OrganizationID = info.OrganizationID
+				newEvent.Email = info.Email
+				msg, _ := json.Marshal(newEvent)
+				msgs = append(msgs, msg)
+			}
+			shippedCount, err := repo.GetSalesorderShippedCount(info.OrganizationID, packageInfo.SalesorderID)
+			if err != nil {
+				msg := "get sales order packed count error: " + err.Error()
+				return nil, errors.New(msg)
+			}
+			shippingStatus := 1
+			if salesorderInfo.ItemCount == shippedCount {
+				shippingStatus = 3
+			} else {
+				shippingStatus = 2
+			}
+			err = repo.UpdateSalesorderShippingStatus(packageInfo.SalesorderID, shippingStatus, info.Email)
+			if err != nil {
+				msg := "update salesorder shipping status error: " + err.Error()
+				return nil, errors.New(msg)
+			}
+			if salesorderInfo.InvoiceStatus == 3 && shippingStatus == 3 {
+				err = repo.UpdateSalesorderStatus(packageInfo.SalesorderID, 3, info.Email)
+				if err != nil {
+					msg := "update sales order status error: " + err.Error()
+					return nil, errors.New(msg)
+				}
+			}
+		}
+		err = repo.UpdatePackageStatus(packageID, 2, info.Email)
+		if err != nil {
+			msg := "update package status error: " + err.Error()
+			return nil, errors.New(msg)
+		}
+	}
+	details, err := repo.GetShippingorderDetailSum(shippingorderID)
+	if err != nil {
+		msg := "get picking order detail  error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	for _, detailRow := range *details {
+		var shippingorderItem ShippingorderItem
+		shippingorderItem.ShippingorderItemID = "shii-" + xid.New().String()
+		shippingorderItem.OrganizationID = detailRow.OrganizationID
+		shippingorderItem.ShippingorderID = detailRow.ShippingorderID
+		shippingorderItem.ItemID = detailRow.ItemID
+		shippingorderItem.Quantity = detailRow.Quantity
+		shippingorderItem.Status = 1
+		shippingorderItem.CreatedBy = info.Email
+		shippingorderItem.Created = time.Now()
+		shippingorderItem.Updated = time.Now()
+		shippingorderItem.UpdatedBy = info.Email
+		err = repo.CreateShippingorderItem(shippingorderItem)
+		if err != nil {
+			msg := "create picking order item error: " + err.Error()
+			return nil, errors.New(msg)
+		}
+	}
+	var shippingorder Shippingorder
+	shippingorder.OrganizationID = info.OrganizationID
+	shippingorder.ShippingorderID = shippingorderID
+	shippingorder.PackageID = strings.Join(info.PackageID[:], ",")
+	shippingorder.ShippingorderNumber = info.ShippingorderNumber
+	shippingorder.ShippingorderDate = info.ShippingorderDate
+	shippingorder.CarrierID = info.CarrierID
+	shippingorder.TrackingNumber = info.TrackingNumber
+	shippingorder.Notes = info.Notes
+	shippingorder.Status = 1
+	shippingorder.Created = time.Now()
+	shippingorder.CreatedBy = info.Email
+	shippingorder.Updated = time.Now()
+	shippingorder.UpdatedBy = info.Email
+	err = repo.CreateShippingorder(shippingorder)
+	if err != nil {
+		msg := "create shipping order error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	tx.Commit()
+	rabbit, _ := queue.GetConn()
+	for _, msgRow := range msgs {
+		err = rabbit.Publish("NewHistoryCreated", msgRow)
+		if err != nil {
+			msg := "create event NewHistoryCreated error"
+			return nil, errors.New(msg)
+		}
+	}
+	return &shippingorderID, err
+}
+
+func (s *salesorderService) GetShippingorderList(filter ShippingorderFilter) (int, *[]ShippingorderResponse, error) {
+	db := database.RDB()
+	query := NewSalesorderQuery(db)
+	count, err := query.GetShippingorderCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := query.GetShippingorderList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *salesorderService) GetShippingorderItemList(salesorderID, organizationID string) (*[]ShippingorderItemResponse, error) {
+	db := database.RDB()
+	query := NewSalesorderQuery(db)
+	_, err := query.GetShippingorderByID(organizationID, salesorderID)
+	if err != nil {
+		msg := "get package error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	list, err := query.GetShippingorderItemList(salesorderID)
+	return list, err
+}
+
+func (s *salesorderService) GetShippingorderDetailList(salesorderID, organizationID string) (*[]ShippingorderDetailResponse, error) {
+	db := database.RDB()
+	query := NewSalesorderQuery(db)
+	_, err := query.GetShippingorderByID(organizationID, salesorderID)
+	if err != nil {
+		msg := "get package error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	list, err := query.GetShippingorderDetailList(salesorderID)
+	return list, err
+}

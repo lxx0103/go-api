@@ -21,5 +21,12 @@ func AuthRouter(g *gin.RouterGroup) {
 	g.POST("/pickingorders/:id/picked", MarkPickingorderPicked)
 
 	g.POST("/salesorders/:id/packages", NewPackage)
+	g.GET("/packages", GetPackageList)
+	g.GET("/packages/:id/items", GetPackageItemList)
+
+	g.POST("/shippingorders", BatchShippingorder)
+	g.GET("/shippingorders", GetShippingorderList)
+	g.GET("/shippingorders/:id/items", GetShippingorderItemList)
+	g.GET("/shippingorders/:id/details", GetShippingorderDetailList)
 
 }

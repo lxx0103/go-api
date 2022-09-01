@@ -825,3 +825,123 @@ func (s *settingService) DeleteCustomer(customerID, organizationID, user string)
 	tx.Commit()
 	return nil
 }
+
+//carrier
+
+func (s *settingService) GetCarrierByID(organizationID, id string) (*CarrierResponse, error) {
+	db := database.RDB()
+	query := NewSettingQuery(db)
+	carrier, err := query.GetCarrierByID(organizationID, id)
+	if err != nil {
+		msg := "get carrier error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	return carrier, nil
+}
+
+func (s *settingService) NewCarrier(info CarrierNew) (*CarrierResponse, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	isConflict, err := repo.CheckCarrierConfict("", info.OrganizationID, info.Name)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "Carrier name conflict"
+		return nil, errors.New(msg)
+	}
+	var carrier Carrier
+	carrier.CarrierID = "car-" + xid.New().String()
+	carrier.OrganizationID = info.OrganizationID
+	carrier.Name = info.Name
+	carrier.Status = info.Status
+	carrier.Created = time.Now()
+	carrier.CreatedBy = info.User
+	carrier.Updated = time.Now()
+	carrier.UpdatedBy = info.User
+	err = repo.CreateCarrier(carrier)
+	if err != nil {
+		return nil, err
+	}
+	res, err := repo.GetCarrierByID(info.OrganizationID, carrier.CarrierID)
+	tx.Commit()
+	return res, err
+}
+
+func (s *settingService) GetCarrierList(filter CarrierFilter) (int, *[]CarrierResponse, error) {
+	db := database.RDB()
+	query := NewSettingQuery(db)
+	count, err := query.GetCarrierCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := query.GetCarrierList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *settingService) UpdateCarrier(carrierID string, info CarrierNew) (*CarrierResponse, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	isConflict, err := repo.CheckCarrierConfict(carrierID, info.OrganizationID, info.Name)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "carrier name conflict"
+		return nil, errors.New(msg)
+	}
+	_, err = repo.GetCarrierByID(info.OrganizationID, carrierID)
+	if err != nil {
+		msg := "Carrier not exist"
+		return nil, errors.New(msg)
+	}
+	var carrier Carrier
+	carrier.Name = info.Name
+	carrier.UpdatedBy = info.User
+	carrier.Updated = time.Now()
+	carrier.Status = info.Status
+	err = repo.UpdateCarrier(carrierID, carrier)
+	if err != nil {
+		msg := "update carrier error"
+		return nil, errors.New(msg)
+	}
+	res, err := repo.GetCarrierByID(info.OrganizationID, carrierID)
+	tx.Commit()
+	return res, err
+}
+
+func (s *settingService) DeleteCarrier(carrierID, organizationID, user string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	_, err = repo.GetCarrierByID(organizationID, carrierID)
+	if err != nil {
+		msg := "Carrier not exist"
+		return errors.New(msg)
+	}
+	err = repo.DeleteCarrier(carrierID, user)
+	if err != nil {
+		return err
+	}
+	tx.Commit()
+	return nil
+}

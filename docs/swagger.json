@@ -881,6 +881,277 @@
                 }
             }
         },
+        "/carriers": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "物流商管理"
+                ],
+                "summary": "物流商列表",
+                "operationId": "331",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "物流商名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/setting.CarrierResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "物流商管理"
+                ],
+                "summary": "新建物流商",
+                "operationId": "332",
+                "parameters": [
+                    {
+                        "description": "物流商信息",
+                        "name": "carrier_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/setting.CarrierNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/setting.CarrierResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/carriers/:id": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "物流商管理"
+                ],
+                "summary": "根据ID获取物流商",
+                "operationId": "334",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "物流商ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/setting.CarrierResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "物流商管理"
+                ],
+                "summary": "根据ID更新物流商",
+                "operationId": "333",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "物流商ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "物流商信息",
+                        "name": "carrier_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/setting.CarrierNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/setting.Carrier"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "物流商管理"
+                ],
+                "summary": "根据ID删除物流商",
+                "operationId": "335",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "物流商ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/customers": {
             "get": {
                 "consumes": [
@@ -1619,7 +1890,7 @@
                 }
             }
         },
-        "/locations/:id": {
+        "/locations/:code": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -1630,13 +1901,13 @@
                 "tags": [
                     "货位管理"
                 ],
-                "summary": "根据ID获取货位",
+                "summary": "根据Code获取货位",
                 "operationId": "508",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "货位ID",
-                        "name": "id",
+                        "description": "货位code",
+                        "name": "code",
                         "in": "path",
                         "required": true
                     }
@@ -1667,7 +1938,9 @@
                         }
                     }
                 }
-            },
+            }
+        },
+        "/locations/:id": {
             "put": {
                 "consumes": [
                     "application/json"
@@ -2132,6 +2405,131 @@
                                     "properties": {
                                         "data": {
                                             "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/packages": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "包裹列表",
+                "operationId": "616",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "包裹编码",
+                        "name": "package_number",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "销售订单ID",
+                        "name": "salesorder_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/salesorder.PackageResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/packages/:id/items": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "拣货单产品列表",
+                "operationId": "617",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "拣货单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/salesorder.PackageItemResponse"
+                                            }
                                         }
                                     }
                                 }
@@ -3800,6 +4198,234 @@
                                     "properties": {
                                         "data": {
                                             "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/shippingorders": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "发货单列表",
+                "operationId": "619",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "发货单编码",
+                        "name": "shippingorder_number",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "包裹ID",
+                        "name": "package_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/salesorder.ShippingorderResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "批量发货",
+                "operationId": "618",
+                "parameters": [
+                    {
+                        "description": "销售单信息",
+                        "name": "shippingorder_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/salesorder.ShippingorderBatch"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/shippingorders/:id/details": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "发货单详情列表",
+                "operationId": "621",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "拣货单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/salesorder.ShippingorderItemResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/shippingorders/:id/items": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "发货单产品列表",
+                "operationId": "620",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "拣货单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/salesorder.ShippingorderItemResponse"
+                                            }
                                         }
                                     }
                                 }
@@ -5712,6 +6338,41 @@
                 }
             }
         },
+        "salesorder.PackageItemResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "package_id": {
+                    "type": "string"
+                },
+                "package_item_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "salesorder_item_id": {
+                    "type": "string"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
         "salesorder.PackageNew": {
             "type": "object",
             "required": [
@@ -5736,6 +6397,35 @@
                     "type": "string",
                     "maxLength": 64,
                     "minLength": 6
+                }
+            }
+        },
+        "salesorder.PackageResponse": {
+            "type": "object",
+            "properties": {
+                "notes": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "package_date": {
+                    "type": "string"
+                },
+                "package_id": {
+                    "type": "string"
+                },
+                "package_number": {
+                    "type": "string"
+                },
+                "salesorder_id": {
+                    "type": "string"
+                },
+                "salesorder_number": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
                 }
             }
         },
@@ -6199,6 +6889,107 @@
                 }
             }
         },
+        "salesorder.ShippingorderBatch": {
+            "type": "object",
+            "required": [
+                "package_id",
+                "shippingorder_date",
+                "shippingorder_number"
+            ],
+            "properties": {
+                "carrier_id": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "package_id": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "shippingorder_date": {
+                    "type": "string"
+                },
+                "shippingorder_number": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 6
+                },
+                "tracking_number": {
+                    "type": "string"
+                }
+            }
+        },
+        "salesorder.ShippingorderItemResponse": {
+            "type": "object",
+            "properties": {
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "shippingorder_id": {
+                    "type": "string"
+                },
+                "shippingorder_item_id": {
+                    "type": "string"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "salesorder.ShippingorderResponse": {
+            "type": "object",
+            "properties": {
+                "carrier_id": {
+                    "type": "string"
+                },
+                "carrier_name": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "package_id": {
+                    "type": "string"
+                },
+                "package_number": {
+                    "type": "string"
+                },
+                "shippingorder_date": {
+                    "type": "string"
+                },
+                "shippingorder_id": {
+                    "type": "string"
+                },
+                "shippingorder_number": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "tracking_number": {
+                    "type": "string"
+                }
+            }
+        },
         "setting.Brand": {
             "type": "object",
             "properties": {
@@ -6256,6 +7047,76 @@
             "type": "object",
             "properties": {
                 "brand_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "setting.Carrier": {
+            "type": "object",
+            "properties": {
+                "carrier_id": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "setting.CarrierNew": {
+            "type": "object",
+            "required": [
+                "name",
+                "status"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                },
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
+                }
+            }
+        },
+        "setting.CarrierResponse": {
+            "type": "object",
+            "properties": {
+                "carrier_id": {
                     "type": "string"
                 },
                 "name": {

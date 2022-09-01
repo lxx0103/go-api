@@ -71,3 +71,7 @@ type LocationNew struct {
 type LocationID struct {
 	ID string `uri:"id" binding:"required,min=1"`
 }
+
+type LocationCode struct {
+	Code string `uri:"code" binding:"required,min=1"`
+}

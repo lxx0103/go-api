@@ -691,6 +691,29 @@ definitions:
     - item_id
     - quantity
     type: object
+  salesorder.PackageItemResponse:
+    properties:
+      id:
+        type: integer
+      item_id:
+        type: string
+      item_name:
+        type: string
+      organization_id:
+        type: string
+      package_id:
+        type: string
+      package_item_id:
+        type: string
+      quantity:
+        type: integer
+      salesorder_item_id:
+        type: string
+      sku:
+        type: string
+      status:
+        type: integer
+    type: object
   salesorder.PackageNew:
     properties:
       items:
@@ -709,6 +732,25 @@ definitions:
     - items
     - package_date
     - package_number
+    type: object
+  salesorder.PackageResponse:
+    properties:
+      notes:
+        type: string
+      organization_id:
+        type: string
+      package_date:
+        type: string
+      package_id:
+        type: string
+      package_number:
+        type: string
+      salesorder_id:
+        type: string
+      salesorder_number:
+        type: string
+      status:
+        type: integer
     type: object
   salesorder.PickingFromLocationNew:
     properties:
@@ -1020,6 +1062,74 @@ definitions:
       total:
         type: number
     type: object
+  salesorder.ShippingorderBatch:
+    properties:
+      carrier_id:
+        type: string
+      notes:
+        type: string
+      package_id:
+        items:
+          type: string
+        minItems: 1
+        type: array
+      shippingorder_date:
+        type: string
+      shippingorder_number:
+        maxLength: 64
+        minLength: 6
+        type: string
+      tracking_number:
+        type: string
+    required:
+    - package_id
+    - shippingorder_date
+    - shippingorder_number
+    type: object
+  salesorder.ShippingorderItemResponse:
+    properties:
+      item_id:
+        type: string
+      item_name:
+        type: string
+      organization_id:
+        type: string
+      quantity:
+        type: integer
+      shippingorder_id:
+        type: string
+      shippingorder_item_id:
+        type: string
+      sku:
+        type: string
+      status:
+        type: integer
+    type: object
+  salesorder.ShippingorderResponse:
+    properties:
+      carrier_id:
+        type: string
+      carrier_name:
+        type: string
+      notes:
+        type: string
+      organization_id:
+        type: string
+      package_id:
+        type: string
+      package_number:
+        type: string
+      shippingorder_date:
+        type: string
+      shippingorder_id:
+        type: string
+      shippingorder_number:
+        type: string
+      status:
+        type: integer
+      tracking_number:
+        type: string
+    type: object
   setting.Brand:
     properties:
       brand_id:
@@ -1059,6 +1169,53 @@ definitions:
   setting.BrandResponse:
     properties:
       brand_id:
+        type: string
+      name:
+        type: string
+      organization_id:
+        type: string
+      status:
+        type: integer
+    type: object
+  setting.Carrier:
+    properties:
+      carrier_id:
+        type: string
+      created:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      organization_id:
+        type: string
+      status:
+        type: integer
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  setting.CarrierNew:
+    properties:
+      name:
+        maxLength: 64
+        minLength: 1
+        type: string
+      status:
+        enum:
+        - 1
+        - 2
+        type: integer
+    required:
+    - name
+    - status
+    type: object
+  setting.CarrierResponse:
+    properties:
+      carrier_id:
         type: string
       name:
         type: string
@@ -2162,6 +2319,171 @@ paths:
       summary: 根据ID更新品牌
       tags:
       - 品牌管理
+  /carriers:
+    get:
+      consumes:
+      - application/json
+      operationId: "331"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 物流商名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/setting.CarrierResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 物流商列表
+      tags:
+      - 物流商管理
+    post:
+      consumes:
+      - application/json
+      operationId: "332"
+      parameters:
+      - description: 物流商信息
+        in: body
+        name: carrier_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.CarrierNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.CarrierResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建物流商
+      tags:
+      - 物流商管理
+  /carriers/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "335"
+      parameters:
+      - description: 物流商ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除物流商
+      tags:
+      - 物流商管理
+    get:
+      consumes:
+      - application/json
+      operationId: "334"
+      parameters:
+      - description: 物流商ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.CarrierResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取物流商
+      tags:
+      - 物流商管理
+    put:
+      consumes:
+      - application/json
+      operationId: "333"
+      parameters:
+      - description: 物流商ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 物流商信息
+        in: body
+        name: carrier_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.CarrierNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.Carrier'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新物流商
+      tags:
+      - 物流商管理
   /customers:
     get:
       consumes:
@@ -2614,6 +2936,36 @@ paths:
       summary: 新建货位
       tags:
       - 货位管理
+  /locations/:code:
+    get:
+      consumes:
+      - application/json
+      operationId: "508"
+      parameters:
+      - description: 货位code
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/warehouse.Location'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据Code获取货位
+      tags:
+      - 货位管理
   /locations/:id:
     delete:
       consumes:
@@ -2642,35 +2994,6 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorRes'
       summary: 根据ID删除货位
-      tags:
-      - 货位管理
-    get:
-      consumes:
-      - application/json
-      operationId: "508"
-      parameters:
-      - description: 货位ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.SuccessRes'
-            - properties:
-                data:
-                  $ref: '#/definitions/warehouse.Location'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/response.ErrorRes'
-      summary: 根据ID获取货位
       tags:
       - 货位管理
     put:
@@ -2934,6 +3257,83 @@ paths:
       summary: 新建组织
       tags:
       - 组织管理
+  /packages:
+    get:
+      consumes:
+      - application/json
+      operationId: "616"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 包裹编码
+        in: query
+        name: package_number
+        type: string
+      - description: 销售订单ID
+        in: query
+        name: salesorder_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/salesorder.PackageResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 包裹列表
+      tags:
+      - 销售单管理
+  /packages/:id/items:
+    get:
+      consumes:
+      - application/json
+      operationId: "617"
+      parameters:
+      - description: 拣货单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/salesorder.PackageItemResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 拣货单产品列表
+      tags:
+      - 销售单管理
   /pickingorders:
     get:
       consumes:
@@ -3943,6 +4343,145 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorRes'
       summary: 新建拣货单
+      tags:
+      - 销售单管理
+  /shippingorders:
+    get:
+      consumes:
+      - application/json
+      operationId: "619"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 发货单编码
+        in: query
+        name: shippingorder_number
+        type: string
+      - description: 包裹ID
+        in: query
+        name: package_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/salesorder.ShippingorderResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 发货单列表
+      tags:
+      - 销售单管理
+    post:
+      consumes:
+      - application/json
+      operationId: "618"
+      parameters:
+      - description: 销售单信息
+        in: body
+        name: shippingorder_info
+        required: true
+        schema:
+          $ref: '#/definitions/salesorder.ShippingorderBatch'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 批量发货
+      tags:
+      - 销售单管理
+  /shippingorders/:id/details:
+    get:
+      consumes:
+      - application/json
+      operationId: "621"
+      parameters:
+      - description: 拣货单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/salesorder.ShippingorderItemResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 发货单详情列表
+      tags:
+      - 销售单管理
+  /shippingorders/:id/items:
+    get:
+      consumes:
+      - application/json
+      operationId: "620"
+      parameters:
+      - description: 拣货单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/salesorder.ShippingorderItemResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 发货单产品列表
       tags:
       - 销售单管理
   /signin:

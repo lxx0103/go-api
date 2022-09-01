@@ -283,3 +283,47 @@ func (r *settingQuery) GetCustomerList(filter CustomerFilter) (*[]CustomerRespon
 	`, args...)
 	return &customers, err
 }
+
+//Carrier
+
+func (r *settingQuery) GetCarrierByID(organizationID, id string) (*CarrierResponse, error) {
+	var carrier CarrierResponse
+	err := r.conn.Get(&carrier, "SELECT carrier_id, organization_id, name, status FROM s_carriers WHERE organization_id = ? AND carrier_id = ? AND status > 0", organizationID, id)
+	return &carrier, err
+}
+
+func (r *settingQuery) GetCarrierCount(filter CarrierFilter) (int, error) {
+	where, args := []string{"status > 0"}, []interface{}{}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	if v := filter.Name; v != "" {
+		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
+	}
+	var count int
+	err := r.conn.Get(&count, `
+		SELECT count(1) as count
+		FROM s_carriers
+		WHERE `+strings.Join(where, " AND "), args...)
+	return count, err
+}
+
+func (r *settingQuery) GetCarrierList(filter CarrierFilter) (*[]CarrierResponse, error) {
+	where, args := []string{"status > 0"}, []interface{}{}
+	if v := filter.Name; v != "" {
+		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	args = append(args, filter.PageID*filter.PageSize-filter.PageSize)
+	args = append(args, filter.PageSize)
+	var carriers []CarrierResponse
+	err := r.conn.Select(&carriers, `
+		SELECT carrier_id, organization_id, name, status
+		FROM s_carriers
+		WHERE `+strings.Join(where, " AND ")+`
+		LIMIT ?, ?
+	`, args...)
+	return &carriers, err
+}

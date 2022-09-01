@@ -144,3 +144,50 @@ type PackageItem struct {
 	Updated          time.Time `db:"updated" json:"updated"`
 	UpdatedBy        string    `db:"updated_by" json:"updated_by"`
 }
+
+type Shippingorder struct {
+	ID                  int64     `db:"id" json:"id"`
+	OrganizationID      string    `db:"organization_id" json:"organization_id"`
+	ShippingorderID     string    `db:"shippingorder_id" json:"shippingorder_id"`
+	PackageID           string    `db:"package_id" json:"package_id"`
+	ShippingorderNumber string    `db:"shippingorder_number" json:"shippingorder_number"`
+	ShippingorderDate   string    `db:"shippingorder_date" json:"shippingorder_date"`
+	CarrierID           string    `db:"carrier_id" json:"carrier_id"`
+	TrackingNumber      string    `db:"tracking_number" json:"tracking_number"`
+	Notes               string    `db:"notes" json:"notes"`
+	Status              int       `db:"status" json:"status"`
+	Created             time.Time `db:"created" json:"created"`
+	CreatedBy           string    `db:"created_by" json:"created_by"`
+	Updated             time.Time `db:"updated" json:"updated"`
+	UpdatedBy           string    `db:"updated_by" json:"updated_by"`
+}
+
+type ShippingorderItem struct {
+	ID                  int64     `db:"id" json:"id"`
+	OrganizationID      string    `db:"organization_id" json:"organization_id"`
+	ShippingorderID     string    `db:"shippingorder_id" json:"shippingorder_id"`
+	ShippingorderItemID string    `db:"shippingorder_item_id" json:"shippingorder_item_id"`
+	ItemID              string    `db:"item_id" json:"item_id"`
+	Quantity            int       `db:"quantity" json:"quantity"`
+	Status              int       `db:"status" json:"status"`
+	Created             time.Time `db:"created" json:"created"`
+	CreatedBy           string    `db:"created_by" json:"created_by"`
+	Updated             time.Time `db:"updated" json:"updated"`
+	UpdatedBy           string    `db:"updated_by" json:"updated_by"`
+}
+
+type ShippingorderDetail struct {
+	ID                    int64     `db:"id" json:"id"`
+	OrganizationID        string    `db:"organization_id" json:"organization_id"`
+	ShippingorderID       string    `db:"shippingorder_id" json:"shippingorder_id"`
+	ShippingorderDetailID string    `db:"shippingorder_detail_id" json:"shippingorder_detail_id"`
+	PackageID             string    `db:"package_id" json:"package_id"`
+	PackageItemID         string    `db:"package_item_id" json:"package_item_id"`
+	ItemID                string    `db:"item_id" json:"item_id"`
+	Quantity              int       `db:"quantity" json:"quantity"`
+	Status                int       `db:"status" json:"status"`
+	Created               time.Time `db:"created" json:"created"`
+	CreatedBy             string    `db:"created_by" json:"created_by"`
+	Updated               time.Time `db:"updated" json:"updated"`
+	UpdatedBy             string    `db:"updated_by" json:"updated_by"`
+}

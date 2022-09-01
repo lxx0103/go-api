@@ -207,25 +207,25 @@ func NewLocation(c *gin.Context) {
 	response.Response(c, new)
 }
 
-// @Summary 根据ID获取货位
+// @Summary 根据Code获取货位
 // @Id 508
 // @Tags 货位管理
 // @version 1.0
 // @Accept application/json
 // @Produce application/json
-// @Param id path string true "货位ID"
+// @Param code path string true "货位code"
 // @Success 200 object response.SuccessRes{data=Location} 成功
 // @Failure 400 object response.ErrorRes 内部错误
-// @Router /locations/:id [GET]
-func GetLocationByID(c *gin.Context) {
-	var uri LocationID
+// @Router /locations/:code [GET]
+func GetLocationByCode(c *gin.Context) {
+	var uri LocationCode
 	if err := c.ShouldBindUri(&uri); err != nil {
 		response.ResponseError(c, "BindingError", err)
 		return
 	}
 	claims := c.MustGet("claims").(*service.CustomClaims)
 	warehouseService := NewWarehouseService()
-	location, err := warehouseService.GetLocationByID(claims.OrganizationID, uri.ID)
+	location, err := warehouseService.GetLocationByCode(claims.OrganizationID, uri.Code)
 	if err != nil {
 		response.ResponseError(c, "DatabaseError", err)
 		return
