@@ -272,7 +272,7 @@ definitions:
         type: string
       name:
         maxLength: 255
-        minLength: 6
+        minLength: 4
         type: string
       reorder_stock:
         type: integer
@@ -280,7 +280,7 @@ definitions:
         type: number
       sku:
         maxLength: 64
-        minLength: 6
+        minLength: 4
         type: string
       status:
         enum:
@@ -325,6 +325,8 @@ definitions:
         type: string
       dimension_unit:
         type: string
+      dimension_unit_name:
+        type: string
       height:
         type: number
       item_id:
@@ -364,6 +366,8 @@ definitions:
       weight:
         type: number
       weight_unit:
+        type: string
+      weight_unit_name:
         type: string
       width:
         type: number
@@ -1651,6 +1655,51 @@ definitions:
       zip:
         type: string
     type: object
+  warehouse.AdjustmentNew:
+    properties:
+      location_id:
+        type: string
+      quantity:
+        type: integer
+      rate:
+        type: number
+      reason:
+        type: string
+      remark:
+        type: string
+    required:
+    - location_id
+    - quantity
+    - reason
+    - remark
+    type: object
+  warehouse.AdjustmentResponse:
+    properties:
+      adjustment_id:
+        type: string
+      item_id:
+        type: string
+      item_name:
+        type: string
+      location_code:
+        type: string
+      location_id:
+        type: string
+      organization_id:
+        type: string
+      quantity:
+        type: integer
+      rate:
+        type: number
+      reason:
+        type: string
+      remark:
+        type: string
+      sku:
+        type: string
+      status:
+        type: integer
+    type: object
   warehouse.Bay:
     properties:
       bay_id:
@@ -1790,6 +1839,81 @@ info:
   title: go-api API
   version: "1.0"
 paths:
+  /adjustments:
+    get:
+      consumes:
+      - application/json
+      operationId: "512"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 商品ID
+        in: query
+        name: item_id
+        type: string
+      - description: 货位ID
+        in: query
+        name: location_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/warehouse.AdjustmentResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 库存调整列表
+      tags:
+      - 货位管理
+    post:
+      consumes:
+      - application/json
+      operationId: "511"
+      parameters:
+      - description: 调整信息
+        in: body
+        name: info
+        required: true
+        schema:
+          $ref: '#/definitions/warehouse.AdjustmentNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 库存调整
+      tags:
+      - 货位管理
   /barcodes:
     get:
       consumes:

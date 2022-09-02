@@ -30,8 +30,10 @@ func (r *itemQuery) GetItemByID(organizationID, id string) (*ItemResponse, error
 	i.brand_id,
 	IFNULL(b.name, "") as brand_name,
 	i.weight_unit,
+	u3.name as weight_unit_name,
 	i.weight,
 	i.dimension_unit,
+	u2.name as dimension_unit_name,
 	i.length,
 	i.width,
 	i.height,
@@ -53,6 +55,10 @@ func (r *itemQuery) GetItemByID(organizationID, id string) (*ItemResponse, error
 	ON i.manufacturer_id = m.manufacturer_id
 	LEFT JOIN s_brands b
 	ON i.brand_id = b.brand_id
+	LEFT JOIN s_units u2
+	ON i.dimension_unit = u2.unit_id
+	LEFT JOIN s_units u3
+	ON i.weight_unit = u3.unit_id
 	WHERE i.organization_id = ? AND i.item_id = ? AND i.status > 0
 	`, organizationID, id)
 	return &item, err
@@ -98,8 +104,10 @@ func (r *itemQuery) GetItemList(filter ItemFilter) (*[]ItemResponse, error) {
 		i.brand_id,
 		IFNULL(b.name, "") as brand_name,
 		i.weight_unit,
+		u3.name as weight_unit_name,
 		i.weight,
 		i.dimension_unit,
+		u2.name as dimension_unit_name,
 		i.length,
 		i.width,
 		i.height,
@@ -121,6 +129,10 @@ func (r *itemQuery) GetItemList(filter ItemFilter) (*[]ItemResponse, error) {
 		ON i.manufacturer_id = m.manufacturer_id
 		LEFT JOIN s_brands b
 		ON i.brand_id = b.brand_id
+		LEFT JOIN s_units u2
+		ON i.dimension_unit = u2.unit_id
+		LEFT JOIN s_units u3
+		ON i.weight_unit = u3.unit_id
 		WHERE `+strings.Join(where, " AND ")+`
 		LIMIT ?, ?
 	`, args...)

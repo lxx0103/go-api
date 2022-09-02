@@ -165,3 +165,62 @@ func (r *warehouseQuery) GetLocationByCode(organizationID, locationCode string) 
 	`, organizationID, locationCode)
 	return &location, err
 }
+
+//Adjustment
+func (r *warehouseQuery) GetAdjustmentCount(filter AdjustmentFilter) (int, error) {
+	where, args := []string{"status > 0"}, []interface{}{}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	if v := filter.ItemID; v != "" {
+		where, args = append(where, "item_id = ?"), append(args, v)
+	}
+	if v := filter.LocationID; v != "" {
+		where, args = append(where, "location_id = ?"), append(args, v)
+	}
+	var count int
+	err := r.conn.Get(&count, `
+		SELECT count(1) as count
+		FROM w_bays
+		WHERE `+strings.Join(where, " AND "), args...)
+	return count, err
+}
+
+func (r *warehouseQuery) GetAdjustmentList(filter AdjustmentFilter) (*[]AdjustmentResponse, error) {
+	where, args := []string{"a.status > 0"}, []interface{}{}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "a.organization_id = ?"), append(args, v)
+	}
+	if v := filter.ItemID; v != "" {
+		where, args = append(where, "a.item_id = ?"), append(args, v)
+	}
+	if v := filter.LocationID; v != "" {
+		where, args = append(where, "a.location_id = ?"), append(args, v)
+	}
+	args = append(args, filter.PageID*filter.PageSize-filter.PageSize)
+	args = append(args, filter.PageSize)
+	var adjustments []AdjustmentResponse
+	err := r.conn.Select(&adjustments, `
+		SELECT 
+		a.organization_id,
+		a.location_id,
+		l.code as location_code,
+		a.item_id,
+		i.name as item_name,
+		i.sku,
+		a.adjustment_id,
+		a.quantity, 
+		a.rate,
+		a.reason,
+		a.remark, 
+		a.status
+		FROM i_adjustments a
+		LEFT JOIN w_locations l
+		ON l.location_id = a.location_id
+		LEFT join i_items i
+		ON a.item_id = i.item_id
+		WHERE `+strings.Join(where, " AND ")+`
+		LIMIT ?, ?
+	`, args...)
+	return &adjustments, err
+}

@@ -21,7 +21,7 @@ func Run(args []string) {
 	log.ConfigLogger()
 	// cache.ConfigCache()
 	database.ConfigMysql()
-	event.Subscribe(auth.Subscribe, common.Subscribe, item.Subscribe)
+	event.Subscribe(auth.Subscribe, common.Subscribe, item.Subscribe, setting.Subscribe)
 	r := router.InitRouter()
 	router.InitPublicRouter(r, auth.Routers, organization.Routers)
 	router.InitAuthRouter(r, auth.AuthRouter, setting.AuthRouter, item.AuthRouter, purchaseorder.AuthRouter, warehouse.AuthRouter, common.AuthRouter, salesorder.AuthRouter)

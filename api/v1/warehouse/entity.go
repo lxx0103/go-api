@@ -35,3 +35,20 @@ type Location struct {
 	Updated        time.Time `db:"updated" json:"updated"`
 	UpdatedBy      string    `db:"updated_by" json:"updated_by"`
 }
+
+type Adjustment struct {
+	ID             int64     `db:"id" json:"id"`
+	OrganizationID string    `db:"organization_id" json:"organization_id"`
+	LocationID     string    `db:"location_id" json:"location_id"`
+	ItemID         string    `db:"item_id" json:"item_id"`
+	AdjustmentID   string    `db:"adjustment_id" json:"adjustment_id"`
+	Quantity       int       `db:"quantity" json:"quantity"`
+	Rate           float64   `db:"rate" json:"rate"`
+	Reason         string    `db:"reason" json:"reason"`
+	Remark         string    `db:"remark" json:"remark"`
+	Status         int       `db:"status" json:"status"`
+	Created        time.Time `db:"created" json:"created"`
+	CreatedBy      string    `db:"created_by" json:"created_by"`
+	Updated        time.Time `db:"updated" json:"updated"`
+	UpdatedBy      string    `db:"updated_by" json:"updated_by"`
+}

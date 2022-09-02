@@ -309,3 +309,144 @@ func (s *warehouseService) DeleteLocation(locationID, organizationID, user strin
 	tx.Commit()
 	return nil
 }
+
+//Adjustment
+func (s *warehouseService) NewAdjustment(info AdjustmentNew) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	repo := NewWarehouseRepository(tx)
+	itemRepo := item.NewItemRepository(tx)
+	oldLocation, err := repo.GetLocationByID(info.LocationID, info.OrganizationID)
+	if err != nil {
+		msg := "Location not exist"
+		return errors.New(msg)
+	}
+	if oldLocation.ItemID == "" {
+		msg := "Location item error"
+		return errors.New(msg)
+	}
+	if oldLocation.CanPick+info.Quantity < 0 {
+		msg := "not enough item to adjust"
+		return errors.New(msg)
+	}
+	if oldLocation.Quantity+info.Quantity > oldLocation.Capacity {
+		msg := "not enough space to adjust"
+		return errors.New(msg)
+	}
+	itemInfo, err := itemRepo.GetItemByID(oldLocation.ItemID, info.OrganizationID)
+	if err != nil {
+		msg := "item not exist"
+		return errors.New(msg)
+	}
+	if itemInfo.StockAvailable+info.Quantity < 0 {
+		msg := "item stock not enough"
+		return errors.New(msg)
+	}
+	adjustmentID := "adj-" + xid.New().String()
+	var location Location
+	location.LocationID = oldLocation.LocationID
+	location.Quantity = oldLocation.Quantity + info.Quantity
+	location.Available = oldLocation.Available - info.Quantity
+	location.CanPick = oldLocation.CanPick + info.Quantity
+	location.Updated = time.Now()
+	location.UpdatedBy = info.Email
+	err = repo.UpdateLocationQuantity(location)
+	if err != nil {
+		msg := "update location error"
+		return errors.New(msg)
+	}
+	err = itemRepo.UpdateItemStock(itemInfo.ItemID, info.Quantity, info.Email)
+	if err != nil {
+		msg := "update item stock error"
+		return errors.New(msg)
+	}
+	if info.Quantity > 0 {
+		if info.Rate <= 0 {
+			msg := "rate must be greater than 0 "
+			return errors.New(msg)
+		}
+		var batch item.ItemBatch
+		batch.OrganizationID = info.OrganizationID
+		batch.ItemID = itemInfo.ItemID
+		batch.BatchID = "bat-" + xid.New().String()
+		batch.Type = "Adjustment"
+		batch.ReferenceID = adjustmentID
+		batch.LocationID = oldLocation.LocationID
+		batch.Quantity = info.Quantity
+		batch.Rate = info.Rate
+		batch.Balance = info.Quantity
+		batch.Status = 1
+		batch.Created = time.Now()
+		batch.CreatedBy = info.Email
+		batch.Updated = time.Now()
+		batch.UpdatedBy = info.Email
+		err = itemRepo.CreateItemBatch(batch)
+		if err != nil {
+			msg := "create item batch error"
+			return errors.New(msg)
+		}
+	} else {
+		toAdjust := 0 - info.Quantity
+		for toAdjust > 0 {
+			nextBatch, err := itemRepo.GetItemNextBatch(itemInfo.ItemID, info.OrganizationID)
+			if err != nil {
+				msg := "get next batch error" + err.Error()
+				return errors.New(msg)
+			}
+			if nextBatch.Balance >= toAdjust {
+				err = itemRepo.PickItem(nextBatch.BatchID, toAdjust, info.Email)
+				if err != nil {
+					msg := "pick item from batch error"
+					return errors.New(msg)
+				}
+				toAdjust = 0
+			} else {
+				err = itemRepo.PickItem(nextBatch.BatchID, nextBatch.Balance, info.Email)
+				if err != nil {
+					msg := "pick item from batch error"
+					return errors.New(msg)
+				}
+				toAdjust = toAdjust - nextBatch.Balance
+			}
+		}
+	}
+	var adjustment Adjustment
+	adjustment.OrganizationID = info.OrganizationID
+	adjustment.LocationID = info.LocationID
+	adjustment.ItemID = itemInfo.ItemID
+	adjustment.AdjustmentID = adjustmentID
+	adjustment.Quantity = info.Quantity
+	adjustment.Rate = info.Rate
+	adjustment.Reason = info.Reason
+	adjustment.Remark = info.Remark
+	adjustment.Status = 1
+	adjustment.Created = time.Now()
+	adjustment.Updated = time.Now()
+	adjustment.CreatedBy = info.Email
+	adjustment.UpdatedBy = info.Email
+	err = repo.CreateAdjustment(adjustment)
+	if err != nil {
+		msg := "create adjustment error" + err.Error()
+		return errors.New(msg)
+	}
+	tx.Commit()
+	return nil
+}
+
+func (s *warehouseService) GetAdjustmentList(filter AdjustmentFilter) (int, *[]AdjustmentResponse, error) {
+	db := database.RDB()
+	query := NewWarehouseQuery(db)
+	count, err := query.GetAdjustmentCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := query.GetAdjustmentList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}

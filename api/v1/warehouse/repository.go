@@ -237,3 +237,40 @@ func (r *warehouseRepository) UpdateLocationPicked(locationID string, quantity i
 	`, quantity, quantity, time.Now(), byUser, locationID)
 	return err
 }
+
+func (r *warehouseRepository) UpdateLocationQuantity(info Location) error {
+	_, err := r.tx.Exec(`
+		Update w_locations SET
+		available = ?,
+		quantity = ?,
+		can_pick = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE location_id = ?
+	`, info.Available, info.Quantity, info.CanPick, info.Updated, info.UpdatedBy, info.LocationID)
+	return err
+}
+
+func (r warehouseRepository) CreateAdjustment(info Adjustment) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO i_adjustments 
+		(
+			organization_id,
+			location_id,
+			item_id,
+			adjustment_id,
+			quantity,
+			rate,
+			reason,
+			remark,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.LocationID, info.ItemID, info.AdjustmentID, info.Quantity, info.Rate, info.Reason, info.Remark, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}

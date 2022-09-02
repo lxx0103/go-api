@@ -75,3 +75,36 @@ type LocationID struct {
 type LocationCode struct {
 	Code string `uri:"code" binding:"required,min=1"`
 }
+
+type AdjustmentNew struct {
+	LocationID     string  `json:"location_id" binding:"required"`
+	Reason         string  `json:"reason" binding:"required"`
+	Quantity       int     `json:"quantity" binding:"required"`
+	Rate           float64 `json:"rate" binding:"omitempty"`
+	Remark         string  `json:"remark" binding:"required"`
+	OrganizationID string  `json:"organiztion_id" swaggerignore:"true"`
+	User           string  `json:"user" swaggerignore:"true"`
+	Email          string  `json:"email" swaggerignore:"true"`
+}
+
+type AdjustmentFilter struct {
+	LocationID     string `form:"location_id" binding:"omitempty,max=64,min=1"`
+	ItemID         string `form:"item_id" binding:"omitempty"`
+	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
+	request.PageInfo
+}
+
+type AdjustmentResponse struct {
+	OrganizationID string  `db:"organization_id" json:"organization_id"`
+	LocationID     string  `db:"location_id" json:"location_id"`
+	LocationCode   string  `db:"location_code" json:"location_code"`
+	ItemID         string  `db:"item_id" json:"item_id"`
+	ItemName       string  `db:"item_name" json:"item_name"`
+	SKU            string  `db:"sku" json:"sku"`
+	AdjustmentID   string  `db:"adjustment_id" json:"adjustment_id"`
+	Quantity       int     `db:"quantity" json:"quantity"`
+	Rate           float64 `db:"rate" json:"rate"`
+	Reason         string  `db:"reason" json:"reason"`
+	Remark         string  `db:"remark" json:"remark"`
+	Status         int     `db:"status" json:"status"`
+}

@@ -14,4 +14,8 @@ func AuthRouter(g *gin.RouterGroup) {
 	g.PUT("/locations/:id", UpdateLocation)
 	g.POST("/locations", NewLocation)
 	g.DELETE("/locations/:id", DeleteLocation)
+
+	g.POST("/adjustments", NewAdjustment)
+	g.GET("/adjustments", GetAdjustmentList)
+
 }

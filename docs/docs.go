@@ -26,6 +26,128 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/adjustments": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "货位管理"
+                ],
+                "summary": "库存调整列表",
+                "operationId": "512",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "商品ID",
+                        "name": "item_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "货位ID",
+                        "name": "location_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/warehouse.AdjustmentResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "货位管理"
+                ],
+                "summary": "库存调整",
+                "operationId": "511",
+                "parameters": [
+                    {
+                        "description": "调整信息",
+                        "name": "info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/warehouse.AdjustmentNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/barcodes": {
             "get": {
                 "consumes": [
@@ -5742,7 +5864,7 @@ var doc = `{
                 "name": {
                     "type": "string",
                     "maxLength": 255,
-                    "minLength": 6
+                    "minLength": 4
                 },
                 "reorder_stock": {
                     "type": "integer"
@@ -5753,7 +5875,7 @@ var doc = `{
                 "sku": {
                     "type": "string",
                     "maxLength": 64,
-                    "minLength": 6
+                    "minLength": 4
                 },
                 "status": {
                     "type": "integer",
@@ -5806,6 +5928,9 @@ var doc = `{
                     "type": "string"
                 },
                 "dimension_unit": {
+                    "type": "string"
+                },
+                "dimension_unit_name": {
                     "type": "string"
                 },
                 "height": {
@@ -5866,6 +5991,9 @@ var doc = `{
                     "type": "number"
                 },
                 "weight_unit": {
+                    "type": "string"
+                },
+                "weight_unit_name": {
                     "type": "string"
                 },
                 "width": {
@@ -7765,6 +7893,73 @@ var doc = `{
                 },
                 "zip": {
                     "type": "string"
+                }
+            }
+        },
+        "warehouse.AdjustmentNew": {
+            "type": "object",
+            "required": [
+                "location_id",
+                "quantity",
+                "reason",
+                "remark"
+            ],
+            "properties": {
+                "location_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "rate": {
+                    "type": "number"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "remark": {
+                    "type": "string"
+                }
+            }
+        },
+        "warehouse.AdjustmentResponse": {
+            "type": "object",
+            "properties": {
+                "adjustment_id": {
+                    "type": "string"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "location_code": {
+                    "type": "string"
+                },
+                "location_id": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "rate": {
+                    "type": "number"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
                 }
             }
         },
