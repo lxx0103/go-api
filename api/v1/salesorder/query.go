@@ -466,3 +466,24 @@ func (r *salesorderQuery) GetShippingorderDetailList(shippingorderID string) (*[
 	`, shippingorderID)
 	return &shippingorderDetails, err
 }
+
+func (r *salesorderQuery) GetRequisitionList(filter RequsitionFilter) (*[]RequsitionResponse, error) {
+	var res []RequsitionResponse
+	err := r.conn.Select(&res, `
+		SELECT CEIL(SUM(ssi.quantity)/?*?) as target_stock , ssi.item_id , ii.name as item_name, ii.sku, ii.stock_available as stock_on_hand, (CEIL(SUM(ssi.quantity)/?*?)-ii.stock_available) as quantity, su.name as unit
+		FROM s_salesorder_items ssi 
+		LEFT JOIN s_salesorders ss  
+		on ss.salesorder_id  = ssi.salesorder_id 
+		LEFT JOIN i_items ii 
+		ON ssi.item_id  = ii.item_id 
+		LEFT JOIN s_units su 
+		ON ii.unit_id = su.unit_id 
+		where ssi.status  > 0 
+		AND ss.status > 0
+		AND ss.salesorder_date > ?
+		AND ss.salesorder_date < ?
+		GROUP BY ssi.item_id  
+	`, filter.Period, filter.TargetDay, filter.Period, filter.TargetDay, filter.StartDate, filter.EndDate)
+	return &res, err
+
+}

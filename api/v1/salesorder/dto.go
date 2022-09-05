@@ -284,3 +284,21 @@ type ShippingorderResponse struct {
 type ShippingorderID struct {
 	ID string `uri:"id" binding:"required,min=1"`
 }
+
+type RequsitionFilter struct {
+	StartDate      string `form:"start_date" binding:"omitempty,datetime=2006-01-02"`
+	EndDate        string `form:"end_date" binding:"omitempty,datetime=2006-01-02"`
+	TargetDay      int    `form:"target_day" binding:"omitempty"`
+	Period         int    `json:"period" swaggerignore:"true"`
+	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
+}
+
+type RequsitionResponse struct {
+	ItemID      string `db:"item_id" json:"item_id"`
+	ItemName    string `db:"item_name" json:"item_name"`
+	SKU         string `db:"sku" json:"sku"`
+	StockOnHand int    `db:"stock_on_hand" json:"stock_on_hand"`
+	TargetStock int    `db:"target_stock" json:"target_stock"`
+	Quantity    int    `db:"quantity" json:"quantity"`
+	Unit        string `db:"unit" json:"unit"`
+}

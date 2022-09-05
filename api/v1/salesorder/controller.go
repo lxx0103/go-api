@@ -613,3 +613,33 @@ func GetShippingorderDetailList(c *gin.Context) {
 	}
 	response.Response(c, list)
 }
+
+// @Summary 采购需求列表
+// @Id 622
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param start_date query string false "开始时间"
+// @Param end_date query string false "结束时间"
+// @Param target_day query int false "目标时间"
+// @Success 200 object response.ListRes{data=[]RequsitionResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /requisitions [GET]
+func GetRequisitionList(c *gin.Context) {
+	var filter RequsitionFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	filter.OrganizationID = claims.OrganizationID
+	salesorderService := NewSalesorderService()
+	list, err := salesorderService.GetRequisitionList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, list)
+}

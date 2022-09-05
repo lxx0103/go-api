@@ -115,6 +115,102 @@ definitions:
       reference_id:
         type: string
     type: object
+  crm.LeadConvertNew:
+    properties:
+      type:
+        enum:
+        - customer
+        - vendor
+        type: string
+    required:
+    - type
+    type: object
+  crm.LeadNew:
+    properties:
+      address1:
+        type: string
+      address2:
+        type: string
+      city:
+        type: string
+      company:
+        type: string
+      country:
+        type: string
+      fax:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      lead_email:
+        type: string
+      mobile:
+        type: string
+      notes:
+        type: string
+      phone:
+        type: string
+      salutation:
+        type: string
+      source:
+        type: string
+      state:
+        type: string
+      status:
+        minimum: 1
+        type: integer
+      zip:
+        type: string
+    required:
+    - company
+    - first_name
+    - last_name
+    - phone
+    - salutation
+    - source
+    type: object
+  crm.LeadResponse:
+    properties:
+      address1:
+        type: string
+      address2:
+        type: string
+      city:
+        type: string
+      company:
+        type: string
+      country:
+        type: string
+      email:
+        type: string
+      fax:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      lead_id:
+        type: string
+      mobile:
+        type: string
+      notes:
+        type: string
+      organization_id:
+        type: string
+      phone:
+        type: string
+      salutation:
+        type: string
+      source:
+        type: string
+      state:
+        type: string
+      status:
+        type: integer
+      zip:
+        type: string
+    type: object
   item.Barcode:
     properties:
       barcode_id:
@@ -883,6 +979,23 @@ definitions:
         type: string
       status:
         type: integer
+    type: object
+  salesorder.RequsitionResponse:
+    properties:
+      item_id:
+        type: string
+      item_name:
+        type: string
+      quantity:
+        type: integer
+      sku:
+        type: string
+      stock_on_hand:
+        type: integer
+      target_stock:
+        type: integer
+      unit:
+        type: string
     type: object
   salesorder.Salesorder:
     properties:
@@ -2985,6 +3098,207 @@ paths:
       summary: 根据ID更新商品
       tags:
       - 商品管理
+  /leads:
+    get:
+      consumes:
+      - application/json
+      operationId: "802"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 公司名称
+        in: query
+        name: company
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/crm.LeadResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 线索列表
+      tags:
+      - 客户资源管理
+    post:
+      consumes:
+      - application/json
+      operationId: "801"
+      parameters:
+      - description: 线索信息
+        in: body
+        name: lead_info
+        required: true
+        schema:
+          $ref: '#/definitions/crm.LeadNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建线索
+      tags:
+      - 客户资源管理
+  /leads/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "805"
+      parameters:
+      - description: 线索ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除线索
+      tags:
+      - 客户资源管理
+    get:
+      consumes:
+      - application/json
+      operationId: "804"
+      parameters:
+      - description: 线索ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/crm.LeadResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取线索
+      tags:
+      - 客户资源管理
+    put:
+      consumes:
+      - application/json
+      operationId: "803"
+      parameters:
+      - description: 线索ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 客户管理信息
+        in: body
+        name: lead_info
+        required: true
+        schema:
+          $ref: '#/definitions/crm.LeadNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新线索
+      tags:
+      - 客户资源管理
+  /leads/:id/convert:
+    post:
+      consumes:
+      - application/json
+      operationId: "806"
+      parameters:
+      - description: 线索ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 客户管理信息
+        in: body
+        name: lead_info
+        required: true
+        schema:
+          $ref: '#/definitions/crm.LeadConvertNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 转化线索为顾客/供应商
+      tags:
+      - 客户资源管理
   /locations:
     get:
       consumes:
@@ -4015,6 +4329,45 @@ paths:
       summary: 收货单商品列表
       tags:
       - 采购单管理
+  /requisitions:
+    get:
+      consumes:
+      - application/json
+      operationId: "622"
+      parameters:
+      - description: 开始时间
+        in: query
+        name: start_date
+        type: string
+      - description: 结束时间
+        in: query
+        name: end_date
+        type: string
+      - description: 目标时间
+        in: query
+        name: target_day
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/salesorder.RequsitionResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 采购需求列表
+      tags:
+      - 销售单管理
   /roles:
     get:
       consumes:

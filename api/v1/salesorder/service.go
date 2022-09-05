@@ -1605,3 +1605,42 @@ func (s *salesorderService) GetShippingorderDetailList(salesorderID, organizatio
 	list, err := query.GetShippingorderDetailList(salesorderID)
 	return list, err
 }
+
+func (s *salesorderService) GetRequisitionList(filter RequsitionFilter) (*[]RequsitionResponse, error) {
+	db := database.RDB()
+	query := NewSalesorderQuery(db)
+	if filter.StartDate == "" {
+		filter.StartDate = time.Now().AddDate(0, -3, 0).Format("2006-01-02")
+	}
+	if filter.EndDate == "" {
+		filter.EndDate = time.Now().Format("2006-01-02")
+	}
+	if filter.TargetDay == 0 {
+		filter.TargetDay = 30
+	}
+	fmt.Println(filter.EndDate)
+	endTime, err := time.Parse("2006-01-02", filter.EndDate)
+	if err != nil {
+		msg := "end date error"
+		return nil, errors.New(msg)
+	}
+	fmt.Println(filter.StartDate)
+	startTime, err := time.Parse("2006-01-02", filter.StartDate)
+	if err != nil {
+		msg := "start date error"
+		return nil, errors.New(msg)
+	}
+	filter.Period = int(endTime.Sub(startTime).Hours() / 24)
+	fmt.Println(filter.Period)
+	list, err := query.GetRequisitionList(filter)
+	if err != nil {
+		return nil, err
+	}
+	var res []RequsitionResponse
+	for _, item := range *list {
+		if item.Quantity > 0 {
+			res = append(res, item)
+		}
+	}
+	return &res, err
+}

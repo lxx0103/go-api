@@ -85,7 +85,7 @@ func (r *warehouseQuery) GetLocationCount(filter LocationFilter) (int, error) {
 		where, args = append(where, "bay_id = ?"), append(args, v)
 	}
 	if v := filter.Code; v != "" {
-		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
+		where, args = append(where, "code like ?"), append(args, "%"+v+"%")
 	}
 	var count int
 	err := r.conn.Get(&count, `
