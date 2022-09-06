@@ -423,9 +423,25 @@ func (s *salesorderService) DeleteSalesorder(salesorderID, organizationID, user,
 	}
 	defer tx.Rollback()
 	repo := NewSalesorderRepository(tx)
-	_, err = repo.GetSalesorderByID(organizationID, salesorderID)
+	so, err := repo.GetSalesorderByID(organizationID, salesorderID)
 	if err != nil {
 		msg := "Salesorder not exist"
+		return errors.New(msg)
+	}
+	if so.InvoiceStatus != 1 {
+		msg := "Salesorder invoiced can not be deleted"
+		return errors.New(msg)
+	}
+	if so.PickingStatus != 1 {
+		msg := "Salesorder picked can not be deleted"
+		return errors.New(msg)
+	}
+	if so.PackingStatus != 1 {
+		msg := "Salesorder packed can not be deleted"
+		return errors.New(msg)
+	}
+	if so.ShippingStatus != 1 {
+		msg := "Salesorder shipped can not be deleted"
 		return errors.New(msg)
 	}
 	err = repo.DeleteSalesorder(salesorderID, email)
@@ -1223,7 +1239,6 @@ func (s *salesorderService) NewPackage(salesorderID string, info PackageNew) (*s
 		}
 		var soItem SalesorderItem
 		soItem.SalesorderItemID = oldSoItem.SalesorderItemID
-		soItem.QuantityPicked = oldSoItem.QuantityPicked - itemRow.Quantity
 		soItem.QuantityPacked = oldSoItem.QuantityPacked + itemRow.Quantity
 		soItem.Updated = time.Now()
 		soItem.UpdatedBy = info.Email
@@ -1415,7 +1430,6 @@ func (s *salesorderService) BatchShippingorder(info ShippingorderBatch) (*string
 			}
 			var soItem SalesorderItem
 			soItem.SalesorderItemID = salesorderItem.SalesorderItemID
-			soItem.QuantityPacked = salesorderItem.QuantityPacked - itemRow.Quantity
 			soItem.QuantityShipped = salesorderItem.QuantityShipped + itemRow.Quantity
 			soItem.Updated = time.Now()
 			soItem.UpdatedBy = info.Email

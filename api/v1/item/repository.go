@@ -363,3 +363,24 @@ func (r *itemRepository) UpdateItemPackedStock(id string, stock int, byUser stri
 	`, stock, stock, time.Now(), byUser, id)
 	return err
 }
+
+func (r *itemRepository) GetPOItemCount(item_id, organizationID string) (int, error) {
+	var count int
+	row := r.tx.QueryRow("SELECT count(1) FROM p_purchaseorder_items WHERE organization_id = ? AND item_id = ? AND status > 0 ", organizationID, item_id)
+	err := row.Scan(&count)
+	return count, err
+}
+
+func (r *itemRepository) GetSOItemCount(item_id, organizationID string) (int, error) {
+	var count int
+	row := r.tx.QueryRow("SELECT count(1) FROM s_salesorder_items WHERE organization_id = ? AND item_id = ? AND status > 0 ", organizationID, item_id)
+	err := row.Scan(&count)
+	return count, err
+}
+
+func (r *itemRepository) GetLocationItemCount(item_id, organizationID string) (int, error) {
+	var count int
+	row := r.tx.QueryRow("SELECT count(1) FROM w_locations WHERE organization_id = ? AND item_id = ? AND status > 0 ", organizationID, item_id)
+	err := row.Scan(&count)
+	return count, err
+}

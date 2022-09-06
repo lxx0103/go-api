@@ -385,9 +385,17 @@ func (s *purchaseorderService) DeletePurchaseorder(purchaseorderID, organization
 	}
 	defer tx.Rollback()
 	repo := NewPurchaseorderRepository(tx)
-	_, err = repo.GetPurchaseorderByID(organizationID, purchaseorderID)
+	po, err := repo.GetPurchaseorderByID(organizationID, purchaseorderID)
 	if err != nil {
 		msg := "Purchaseorder not exist"
+		return errors.New(msg)
+	}
+	if po.BillingStatus != 1 {
+		msg := "Purchaseorder billed can not be deleted"
+		return errors.New(msg)
+	}
+	if po.ReceiveStatus != 1 {
+		msg := "Purchaseorder received can not be deleted"
 		return errors.New(msg)
 	}
 	err = repo.DeletePurchaseorder(purchaseorderID, email)

@@ -592,12 +592,11 @@ func (r *salesorderRepository) CheckPackageNumberConfict(packageID, organization
 func (r salesorderRepository) PackSalesorderItem(info SalesorderItem) error {
 	_, err := r.tx.Exec(`
 		UPDATE s_salesorder_items set
-		quantity_picked = ?,
 		quantity_packed = ?,
 		updated = ?,
 		updated_by =?
 		WHERE salesorder_item_id = ?
-	`, info.QuantityPicked, info.QuantityPacked, info.Updated, info.UpdatedBy, info.SalesorderItemID)
+	`, info.QuantityPacked, info.Updated, info.UpdatedBy, info.SalesorderItemID)
 	return err
 }
 
@@ -731,12 +730,11 @@ func (r *salesorderRepository) GetPackageItemList(organizationID, packageID stri
 func (r salesorderRepository) ShipSalesorderItem(info SalesorderItem) error {
 	_, err := r.tx.Exec(`
 		UPDATE s_salesorder_items set
-		quantity_packed = ?,
 		quantity_shipped = ?,
 		updated = ?,
 		updated_by =?
 		WHERE salesorder_item_id = ?
-	`, info.QuantityPacked, info.QuantityShipped, info.Updated, info.UpdatedBy, info.SalesorderItemID)
+	`, info.QuantityShipped, info.Updated, info.UpdatedBy, info.SalesorderItemID)
 	return err
 }
 

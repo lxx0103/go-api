@@ -247,6 +247,37 @@ func (s *itemService) DeleteItem(itemID, organizationID, email, user string) err
 		msg := "Item not exist"
 		return errors.New(msg)
 	}
+	if err != nil {
+		msg := "Item not exist"
+		return errors.New(msg)
+	}
+	poItemCount, err := repo.GetPOItemCount(itemID, organizationID)
+	if err != nil {
+		msg := "get po item count error"
+		return errors.New(msg)
+	}
+	if poItemCount > 0 {
+		msg := "Item with existing purchase order can not be deleted"
+		return errors.New(msg)
+	}
+	soItemCount, err := repo.GetSOItemCount(itemID, organizationID)
+	if err != nil {
+		msg := "get so item count error"
+		return errors.New(msg)
+	}
+	if soItemCount > 0 {
+		msg := "Item with existing sales order can not be deleted"
+		return errors.New(msg)
+	}
+	locationItemCount, err := repo.GetLocationItemCount(itemID, organizationID)
+	if err != nil {
+		msg := "get so item count error"
+		return errors.New(msg)
+	}
+	if locationItemCount > 0 {
+		msg := "Item in location can not be deleted"
+		return errors.New(msg)
+	}
 	err = repo.DeleteItem(itemID, email)
 	if err != nil {
 		return err

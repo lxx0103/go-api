@@ -57,7 +57,7 @@ func (s *settingService) NewUnit(info UnitNew) (*UnitResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	res, err := repo.GetUnitByID(unit.UnitID)
+	res, err := repo.GetUnitByID(unit.UnitID, info.OrganizationID)
 	tx.Commit()
 	return res, err
 }
@@ -93,7 +93,7 @@ func (s *settingService) UpdateUnit(unitID string, info UnitNew) (*UnitResponse,
 		msg := "unit name conflict"
 		return nil, errors.New(msg)
 	}
-	oldUnit, err := repo.GetUnitByID(unitID)
+	oldUnit, err := repo.GetUnitByID(unitID, info.OrganizationID)
 	if err != nil {
 		msg := "Unit not exist"
 		return nil, errors.New(msg)
@@ -112,7 +112,7 @@ func (s *settingService) UpdateUnit(unitID string, info UnitNew) (*UnitResponse,
 		msg := "update unit error"
 		return nil, errors.New(msg)
 	}
-	res, err := repo.GetUnitByID(unitID)
+	res, err := repo.GetUnitByID(unitID, info.OrganizationID)
 	tx.Commit()
 	return res, err
 }
@@ -125,13 +125,18 @@ func (s *settingService) DeleteUnit(unitID, organizationID, user string) error {
 	}
 	defer tx.Rollback()
 	repo := NewSettingRepository(tx)
-	oldUnit, err := repo.GetUnitByID(unitID)
+	_, err = repo.GetUnitByID(unitID, organizationID)
 	if err != nil {
 		msg := "Unit not exist"
 		return errors.New(msg)
 	}
-	if oldUnit.OrganizationID != organizationID {
-		msg := "Unit not exist"
+	itemUnitCount, err := repo.GetItemUnitCount(unitID, organizationID)
+	if err != nil {
+		msg := "get item unit count error"
+		return errors.New(msg)
+	}
+	if itemUnitCount > 0 {
+		msg := "Unit used by item can not be deleted"
 		return errors.New(msg)
 	}
 	err = repo.DeleteUnit(unitID, user)
@@ -183,7 +188,7 @@ func (s *settingService) NewManufacturer(info ManufacturerNew) (*ManufacturerRes
 	if err != nil {
 		return nil, err
 	}
-	res, err := repo.GetManufacturerByID(manufacturer.ManufacturerID)
+	res, err := repo.GetManufacturerByID(manufacturer.ManufacturerID, info.OrganizationID)
 	tx.Commit()
 	return res, err
 }
@@ -219,7 +224,7 @@ func (s *settingService) UpdateManufacturer(manufacturerID string, info Manufact
 		msg := "manufacturer name conflict"
 		return nil, errors.New(msg)
 	}
-	oldManufacturer, err := repo.GetManufacturerByID(manufacturerID)
+	oldManufacturer, err := repo.GetManufacturerByID(manufacturerID, info.OrganizationID)
 	if err != nil {
 		msg := "Manufacturer not exist"
 		return nil, errors.New(msg)
@@ -238,7 +243,7 @@ func (s *settingService) UpdateManufacturer(manufacturerID string, info Manufact
 		msg := "update manufacturer error"
 		return nil, errors.New(msg)
 	}
-	res, err := repo.GetManufacturerByID(manufacturerID)
+	res, err := repo.GetManufacturerByID(manufacturerID, info.OrganizationID)
 	tx.Commit()
 	return res, err
 }
@@ -251,13 +256,18 @@ func (s *settingService) DeleteManufacturer(manufacturerID, organizationID, user
 	}
 	defer tx.Rollback()
 	repo := NewSettingRepository(tx)
-	oldManufacturer, err := repo.GetManufacturerByID(manufacturerID)
+	_, err = repo.GetManufacturerByID(manufacturerID, organizationID)
 	if err != nil {
 		msg := "Manufacturer not exist"
 		return errors.New(msg)
 	}
-	if oldManufacturer.OrganizationID != organizationID {
-		msg := "Manufacturer not exist"
+	usedCount, err := repo.GetItemManufacturerCount(manufacturerID, organizationID)
+	if err != nil {
+		msg := "get item unit count error"
+		return errors.New(msg)
+	}
+	if usedCount > 0 {
+		msg := "Manufacturer used by item can not be deleted"
 		return errors.New(msg)
 	}
 	err = repo.DeleteManufacturer(manufacturerID, user)
@@ -311,7 +321,7 @@ func (s *settingService) NewBrand(info BrandNew) (*BrandResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	res, err := repo.GetBrandByID(brand.BrandID)
+	res, err := repo.GetBrandByID(brand.BrandID, info.OrganizationID)
 	tx.Commit()
 	return res, err
 }
@@ -347,7 +357,7 @@ func (s *settingService) UpdateBrand(brandID string, info BrandNew) (*BrandRespo
 		msg := "brand name conflict"
 		return nil, errors.New(msg)
 	}
-	oldBrand, err := repo.GetBrandByID(brandID)
+	oldBrand, err := repo.GetBrandByID(brandID, info.OrganizationID)
 	if err != nil {
 		msg := "Brand not exist"
 		return nil, errors.New(msg)
@@ -366,7 +376,7 @@ func (s *settingService) UpdateBrand(brandID string, info BrandNew) (*BrandRespo
 		msg := "update brand error"
 		return nil, errors.New(msg)
 	}
-	res, err := repo.GetBrandByID(brandID)
+	res, err := repo.GetBrandByID(brandID, info.OrganizationID)
 	tx.Commit()
 	return res, err
 }
@@ -379,13 +389,18 @@ func (s *settingService) DeleteBrand(brandID, organizationID, user string) error
 	}
 	defer tx.Rollback()
 	repo := NewSettingRepository(tx)
-	oldBrand, err := repo.GetBrandByID(brandID)
+	_, err = repo.GetBrandByID(brandID, organizationID)
 	if err != nil {
 		msg := "Brand not exist"
 		return errors.New(msg)
 	}
-	if oldBrand.OrganizationID != organizationID {
-		msg := "Brand not exist"
+	usedCount, err := repo.GetItemBrandCount(brandID, organizationID)
+	if err != nil {
+		msg := "get item unit count error"
+		return errors.New(msg)
+	}
+	if usedCount > 0 {
+		msg := "Brand used by item can not be deleted"
 		return errors.New(msg)
 	}
 	err = repo.DeleteBrand(brandID, user)
@@ -452,7 +467,7 @@ func (s *settingService) NewVendor(info VendorNew) (*VendorResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	res, err := repo.GetVendorByID(vendor.VendorID)
+	res, err := repo.GetVendorByID(vendor.VendorID, info.OrganizationID)
 	tx.Commit()
 	return res, err
 }
@@ -488,12 +503,8 @@ func (s *settingService) UpdateVendor(vendorID string, info VendorNew) (*VendorR
 		msg := "vendor name conflict"
 		return nil, errors.New(msg)
 	}
-	oldVendor, err := repo.GetVendorByID(vendorID)
+	_, err = repo.GetVendorByID(vendorID, info.OrganizationID)
 	if err != nil {
-		msg := "Vendor not exist"
-		return nil, errors.New(msg)
-	}
-	if oldVendor.OrganizationID != info.OrganizationID {
 		msg := "Vendor not exist"
 		return nil, errors.New(msg)
 	}
@@ -520,7 +531,7 @@ func (s *settingService) UpdateVendor(vendorID string, info VendorNew) (*VendorR
 		msg := "update vendor error"
 		return nil, errors.New(msg)
 	}
-	res, err := repo.GetVendorByID(vendorID)
+	res, err := repo.GetVendorByID(vendorID, info.OrganizationID)
 	tx.Commit()
 	return res, err
 }
@@ -533,13 +544,18 @@ func (s *settingService) DeleteVendor(vendorID, organizationID, user string) err
 	}
 	defer tx.Rollback()
 	repo := NewSettingRepository(tx)
-	oldVendor, err := repo.GetVendorByID(vendorID)
+	_, err = repo.GetVendorByID(vendorID, organizationID)
 	if err != nil {
 		msg := "Vendor not exist"
 		return errors.New(msg)
 	}
-	if oldVendor.OrganizationID != organizationID {
-		msg := "Vendor not exist"
+	usedCount, err := repo.GetPOVendorCount(vendorID, organizationID)
+	if err != nil {
+		msg := "get po vendor count error"
+		return errors.New(msg)
+	}
+	if usedCount > 0 {
+		msg := "Vendor used in Purchase order can not be deleted"
 		return errors.New(msg)
 	}
 	err = repo.DeleteVendor(vendorID, user)
@@ -664,6 +680,24 @@ func (s *settingService) DeleteTax(taxID, organizationID, user string) error {
 		msg := "Tax not exist"
 		return errors.New(msg)
 	}
+	usedCount, err := repo.GetPOTaxCount(taxID, organizationID)
+	if err != nil {
+		msg := "get po tax count error"
+		return errors.New(msg)
+	}
+	if usedCount > 0 {
+		msg := "Tax used in Purchase order can not be deleted"
+		return errors.New(msg)
+	}
+	usedCount, err = repo.GetSOTaxCount(taxID, organizationID)
+	if err != nil {
+		msg := "get so tax count error"
+		return errors.New(msg)
+	}
+	if usedCount > 0 {
+		msg := "Tax used in Sales order can not be deleted"
+		return errors.New(msg)
+	}
 	err = repo.DeleteTax(taxID, user)
 	if err != nil {
 		return err
@@ -728,7 +762,7 @@ func (s *settingService) NewCustomer(info CustomerNew) (*CustomerResponse, error
 	if err != nil {
 		return nil, err
 	}
-	res, err := repo.GetCustomerByID(customer.CustomerID)
+	res, err := repo.GetCustomerByID(customer.CustomerID, info.OrganizationID)
 	tx.Commit()
 	return res, err
 }
@@ -764,7 +798,7 @@ func (s *settingService) UpdateCustomer(customerID string, info CustomerNew) (*C
 		msg := "customer name conflict"
 		return nil, errors.New(msg)
 	}
-	oldCustomer, err := repo.GetCustomerByID(customerID)
+	oldCustomer, err := repo.GetCustomerByID(customerID, info.OrganizationID)
 	if err != nil {
 		msg := "Customer not exist"
 		return nil, errors.New(msg)
@@ -796,7 +830,7 @@ func (s *settingService) UpdateCustomer(customerID string, info CustomerNew) (*C
 		msg := "update customer error"
 		return nil, errors.New(msg)
 	}
-	res, err := repo.GetCustomerByID(customerID)
+	res, err := repo.GetCustomerByID(customerID, info.OrganizationID)
 	tx.Commit()
 	return res, err
 }
@@ -809,13 +843,18 @@ func (s *settingService) DeleteCustomer(customerID, organizationID, user string)
 	}
 	defer tx.Rollback()
 	repo := NewSettingRepository(tx)
-	oldCustomer, err := repo.GetCustomerByID(customerID)
+	_, err = repo.GetCustomerByID(customerID, organizationID)
 	if err != nil {
 		msg := "Customer not exist"
 		return errors.New(msg)
 	}
-	if oldCustomer.OrganizationID != organizationID {
-		msg := "Customer not exist"
+	usedCount, err := repo.GetSOCustomerCount(customerID, organizationID)
+	if err != nil {
+		msg := "get so customer count error"
+		return errors.New(msg)
+	}
+	if usedCount > 0 {
+		msg := "Customer used in Sales order can not be deleted"
 		return errors.New(msg)
 	}
 	err = repo.DeleteCustomer(customerID, user)
@@ -936,6 +975,15 @@ func (s *settingService) DeleteCarrier(carrierID, organizationID, user string) e
 	_, err = repo.GetCarrierByID(organizationID, carrierID)
 	if err != nil {
 		msg := "Carrier not exist"
+		return errors.New(msg)
+	}
+	usedCount, err := repo.GetShppingCarrierCount(carrierID, organizationID)
+	if err != nil {
+		msg := "get so customer count error"
+		return errors.New(msg)
+	}
+	if usedCount > 0 {
+		msg := "Carrier used in Shipping order can not be deleted"
 		return errors.New(msg)
 	}
 	err = repo.DeleteCarrier(carrierID, user)

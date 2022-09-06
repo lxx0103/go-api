@@ -15,9 +15,9 @@ func NewSettingRepository(transaction *sql.Tx) *settingRepository {
 	}
 }
 
-func (r *settingRepository) GetUnitByID(unitID string) (*UnitResponse, error) {
+func (r *settingRepository) GetUnitByID(unitID, organizationID string) (*UnitResponse, error) {
 	var res UnitResponse
-	row := r.tx.QueryRow(`SELECT unit_id, organization_id, name, status FROM s_units WHERE unit_id = ? AND status > 0 LIMIT 1`, unitID)
+	row := r.tx.QueryRow(`SELECT unit_id, organization_id, name, status FROM s_units WHERE unit_id = ? AND organization_id = ? AND status > 0 LIMIT 1`, unitID, organizationID)
 	err := row.Scan(&res.UnitID, &res.OrganizationID, &res.Name, &res.Status)
 	return &res, err
 }
@@ -74,11 +74,18 @@ func (r *settingRepository) DeleteUnit(id, byUser string) error {
 	return err
 }
 
+func (r *settingRepository) GetItemUnitCount(item_id, organizationID string) (int, error) {
+	var count int
+	row := r.tx.QueryRow("SELECT count(1) FROM i_items WHERE organization_id = ? AND unit_id = ? AND status > 0 ", organizationID, item_id)
+	err := row.Scan(&count)
+	return count, err
+}
+
 // Manufacturer
 
-func (r *settingRepository) GetManufacturerByID(manufacturerID string) (*ManufacturerResponse, error) {
+func (r *settingRepository) GetManufacturerByID(manufacturerID, organizationID string) (*ManufacturerResponse, error) {
 	var res ManufacturerResponse
-	row := r.tx.QueryRow(`SELECT manufacturer_id, organization_id, name, status FROM s_manufacturers WHERE manufacturer_id = ? AND status > 0 LIMIT 1`, manufacturerID)
+	row := r.tx.QueryRow(`SELECT manufacturer_id, organization_id, name, status FROM s_manufacturers WHERE manufacturer_id = ? AND organization_id = ? AND status > 0 LIMIT 1`, manufacturerID, organizationID)
 	err := row.Scan(&res.ManufacturerID, &res.OrganizationID, &res.Name, &res.Status)
 	return &res, err
 }
@@ -134,11 +141,18 @@ func (r *settingRepository) DeleteManufacturer(id, byUser string) error {
 	return err
 }
 
+func (r *settingRepository) GetItemManufacturerCount(manufacturerID, organizationID string) (int, error) {
+	var count int
+	row := r.tx.QueryRow("SELECT count(1) FROM i_items WHERE organization_id = ? AND manufacturer_id = ? AND status > 0 ", organizationID, manufacturerID)
+	err := row.Scan(&count)
+	return count, err
+}
+
 // Brand
 
-func (r *settingRepository) GetBrandByID(brandID string) (*BrandResponse, error) {
+func (r *settingRepository) GetBrandByID(brandID, organizationID string) (*BrandResponse, error) {
 	var res BrandResponse
-	row := r.tx.QueryRow(`SELECT brand_id, organization_id, name, status FROM s_brands WHERE brand_id = ? AND status > 0 LIMIT 1`, brandID)
+	row := r.tx.QueryRow(`SELECT brand_id, organization_id, name, status FROM s_brands WHERE brand_id = ? AND organization_id = ? AND status > 0 LIMIT 1`, brandID, organizationID)
 	err := row.Scan(&res.BrandID, &res.OrganizationID, &res.Name, &res.Status)
 	return &res, err
 }
@@ -194,9 +208,16 @@ func (r *settingRepository) DeleteBrand(id, byUser string) error {
 	return err
 }
 
+func (r *settingRepository) GetItemBrandCount(brandID, organizationID string) (int, error) {
+	var count int
+	row := r.tx.QueryRow("SELECT count(1) FROM i_items WHERE organization_id = ? AND brand_id = ? AND status > 0 ", organizationID, brandID)
+	err := row.Scan(&count)
+	return count, err
+}
+
 // Vendor
 
-func (r *settingRepository) GetVendorByID(vendorID string) (*VendorResponse, error) {
+func (r *settingRepository) GetVendorByID(vendorID, organizationID string) (*VendorResponse, error) {
 	var res VendorResponse
 	row := r.tx.QueryRow(`
 	SELECT 
@@ -218,7 +239,7 @@ func (r *settingRepository) GetVendorByID(vendorID string) (*VendorResponse, err
 	fax,
 	status
 	FROM s_vendors 
-	WHERE vendor_id = ? AND status > 0 LIMIT 1`, vendorID)
+	WHERE vendor_id = ? AND organization_id = ? AND status > 0 LIMIT 1`, vendorID, organizationID)
 	err := row.Scan(&res.VendorID, &res.OrganizationID, &res.Name, &res.ContactSalutation, &res.ContactFirstName, &res.ContactLastName, &res.ContactEmail, &res.ContactPhone, &res.Country, &res.State, &res.City, &res.Address1, &res.Address2, &res.Zip, &res.Phone, &res.Fax, &res.Status)
 	return &res, err
 }
@@ -300,6 +321,13 @@ func (r *settingRepository) DeleteVendor(id, byUser string) error {
 	return err
 }
 
+func (r *settingRepository) GetPOVendorCount(vendorID, organizationID string) (int, error) {
+	var count int
+	row := r.tx.QueryRow("SELECT count(1) FROM p_purchaseorders WHERE organization_id = ? AND vendor_id = ? AND status > 0 ", organizationID, vendorID)
+	err := row.Scan(&count)
+	return count, err
+}
+
 // Tax
 
 func (r *settingRepository) GetTaxByID(taxID, organizationID string) (*TaxResponse, error) {
@@ -370,9 +398,23 @@ func (r *settingRepository) DeleteTax(id, byUser string) error {
 	return err
 }
 
+func (r *settingRepository) GetPOTaxCount(taxID, organizationID string) (int, error) {
+	var count int
+	row := r.tx.QueryRow("SELECT count(1) FROM p_purchaseorder_items WHERE organization_id = ? AND tax_id = ? AND status > 0 ", organizationID, taxID)
+	err := row.Scan(&count)
+	return count, err
+}
+
+func (r *settingRepository) GetSOTaxCount(taxID, organizationID string) (int, error) {
+	var count int
+	row := r.tx.QueryRow("SELECT count(1) FROM s_salesorder_items WHERE organization_id = ? AND tax_id = ? AND status > 0 ", organizationID, taxID)
+	err := row.Scan(&count)
+	return count, err
+}
+
 // Customer
 
-func (r *settingRepository) GetCustomerByID(customerID string) (*CustomerResponse, error) {
+func (r *settingRepository) GetCustomerByID(customerID, organizationID string) (*CustomerResponse, error) {
 	var res CustomerResponse
 	row := r.tx.QueryRow(`
 	SELECT 
@@ -394,7 +436,7 @@ func (r *settingRepository) GetCustomerByID(customerID string) (*CustomerRespons
 	fax,
 	status
 	FROM s_customers 
-	WHERE customer_id = ? AND status > 0 LIMIT 1`, customerID)
+	WHERE customer_id = ? AND organization_id = ? AND status > 0 LIMIT 1`, customerID, organizationID)
 	err := row.Scan(&res.CustomerID, &res.OrganizationID, &res.Name, &res.ContactSalutation, &res.ContactFirstName, &res.ContactLastName, &res.ContactEmail, &res.ContactPhone, &res.Country, &res.State, &res.City, &res.Address1, &res.Address2, &res.Zip, &res.Phone, &res.Fax, &res.Status)
 	return &res, err
 }
@@ -476,6 +518,13 @@ func (r *settingRepository) DeleteCustomer(id, byUser string) error {
 	return err
 }
 
+func (r *settingRepository) GetSOCustomerCount(customerID, organizationID string) (int, error) {
+	var count int
+	row := r.tx.QueryRow("SELECT count(1) FROM s_salesorders WHERE organization_id = ? AND customer_id = ? AND status > 0 ", organizationID, customerID)
+	err := row.Scan(&count)
+	return count, err
+}
+
 // Carrier
 
 func (r *settingRepository) GetCarrierByID(organizationID, carrierID string) (*CarrierResponse, error) {
@@ -534,4 +583,11 @@ func (r *settingRepository) DeleteCarrier(id, byUser string) error {
 		WHERE carrier_id = ?
 	`, time.Now(), byUser, id)
 	return err
+}
+
+func (r *settingRepository) GetShppingCarrierCount(carrierID, organizationID string) (int, error) {
+	var count int
+	row := r.tx.QueryRow("SELECT count(1) FROM s_shippingorders WHERE organization_id = ? AND carrier_Id = ? AND status > 0 ", organizationID, carrierID)
+	err := row.Scan(&count)
+	return count, err
 }
