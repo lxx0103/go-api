@@ -1658,3 +1658,165 @@ func (s *salesorderService) GetRequisitionList(filter RequsitionFilter) (*[]Requ
 	}
 	return &res, err
 }
+
+func (s *salesorderService) DeleteShippingorder(shippingorderID, organizationID, user, email string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	repo := NewSalesorderRepository(tx)
+	itemRepo := item.NewItemRepository(tx)
+	_, err = repo.GetShippingorderByID(shippingorderID, organizationID)
+	if err != nil {
+		msg := "shipping order not exist"
+		return errors.New(msg)
+	}
+	shippingorderDetails, err := repo.GetShippingorderDetailList(shippingorderID)
+	if err != nil {
+		msg := "get shipping order details error"
+		return errors.New(msg)
+	}
+	var msgs [][]byte
+	var salesorders []string
+	var itemHistorys []string
+	for _, detail := range *shippingorderDetails {
+		packageInfo, err := repo.GetPackageByID(organizationID, detail.PackageID)
+		if err != nil {
+			msg := "get package error: " + err.Error()
+			return errors.New(msg)
+		}
+		// fmt.Println(packageInfo.Status)
+		// if packageInfo.Status != 2 {
+		// 	msg := "package status error for package: " + packageInfo.PackageNumber
+		// 	return errors.New(msg)
+		// }
+		itemInfo, err := itemRepo.GetItemByID(detail.ItemID, organizationID)
+		if err != nil {
+			msg := "item not exist"
+			return errors.New(msg)
+		}
+		salesorderInfo, err := repo.GetSalesorderByID(organizationID, packageInfo.SalesorderID)
+		if err != nil {
+			msg := "salesorder not exist"
+			return errors.New(msg)
+		}
+		salesorderItem, err := repo.GetSalesorderItemByID(organizationID, salesorderInfo.SalesorderID, itemInfo.ItemID)
+		if err != nil {
+			msg := "salesorder item not exist"
+			return errors.New(msg)
+		}
+		if salesorderItem.QuantityShipped < detail.Quantity {
+			msg := "shipped item error for " + itemInfo.Name + " in salesorder :" + salesorderInfo.SalesorderNumber
+			return errors.New(msg)
+		}
+		fmt.Println(salesorderItem.QuantityShipped, detail.Quantity)
+		var soItem SalesorderItem
+		soItem.SalesorderItemID = salesorderItem.SalesorderItemID
+		soItem.QuantityShipped = salesorderItem.QuantityShipped - detail.Quantity
+		soItem.Updated = time.Now()
+		soItem.UpdatedBy = email
+
+		err = repo.ShipSalesorderItem(soItem)
+		if err != nil {
+			msg := "ship salesorder item error: " + err.Error()
+			return errors.New(msg)
+		}
+
+		salesorderUpdated := false
+		for _, salesorderID := range salesorders {
+			if salesorderID == packageInfo.SalesorderID {
+				salesorderUpdated = true
+				continue
+			}
+		}
+		itemUpdated := false
+		for _, itemID := range itemHistorys {
+			if itemID == detail.ItemID {
+				itemUpdated = true
+				continue
+			}
+		}
+		if !salesorderUpdated {
+			salesorders = append(salesorders, packageInfo.SalesorderID)
+			var newEvent common.NewHistoryCreated
+			newEvent.HistoryType = "salesorder"
+			newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+			newEvent.HistoryBy = user
+			newEvent.ReferenceID = packageInfo.SalesorderID
+			newEvent.Description = "Shipping Order Deleted"
+			newEvent.OrganizationID = organizationID
+			newEvent.Email = email
+			msg, _ := json.Marshal(newEvent)
+			msgs = append(msgs, msg)
+		}
+		if !itemUpdated {
+			itemHistorys = append(itemHistorys, detail.ItemID)
+			var newEvent common.NewHistoryCreated
+			newEvent.HistoryType = "item"
+			newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+			newEvent.HistoryBy = user
+			newEvent.ReferenceID = packageInfo.SalesorderID
+			newEvent.Description = "Shipping Order Deleted"
+			newEvent.OrganizationID = organizationID
+			newEvent.Email = email
+			msg, _ := json.Marshal(newEvent)
+			msgs = append(msgs, msg)
+		}
+		shippedCount, err := repo.GetSalesorderShippedCount(organizationID, packageInfo.SalesorderID)
+		if err != nil {
+			msg := "get sales order shipped count error: " + err.Error()
+			return errors.New(msg)
+		}
+		shippingStatus := 2
+		if shippedCount == 0 {
+			shippingStatus = 1
+		} else {
+			shippingStatus = 2
+		}
+		err = repo.UpdateSalesorderShippingStatus(packageInfo.SalesorderID, shippingStatus, email)
+		if err != nil {
+			msg := "update salesorder shipping status error: " + err.Error()
+			return errors.New(msg)
+		}
+		err = repo.UpdateSalesorderStatus(packageInfo.SalesorderID, 2, email)
+		if err != nil {
+			msg := "update sales order status error: " + err.Error()
+			return errors.New(msg)
+		}
+		err = repo.UpdatePackageStatus(detail.PackageID, 1, email)
+		if err != nil {
+			msg := "update package status error: " + err.Error()
+			return errors.New(msg)
+		}
+	}
+	err = repo.DeleteShippingorder(shippingorderID, email)
+	if err != nil {
+		return err
+	}
+	tx.Commit()
+	var newEvent common.NewHistoryCreated
+	newEvent.HistoryType = "shippingorder"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = user
+	newEvent.ReferenceID = shippingorderID
+	newEvent.Description = "Shipping order Deleted"
+	newEvent.OrganizationID = organizationID
+	newEvent.Email = email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return errors.New(msg)
+	}
+	for _, msgRow := range msgs {
+		err = rabbit.Publish("NewHistoryCreated", msgRow)
+		if err != nil {
+			msg := "create event NewHistoryCreated error"
+			return errors.New(msg)
+		}
+	}
+	return nil
+}

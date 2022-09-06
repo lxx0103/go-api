@@ -4897,13 +4897,43 @@ paths:
       summary: 批量发货
       tags:
       - 销售单管理
+  /shippingorders/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "623"
+      parameters:
+      - description: 发货单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除发货单
+      tags:
+      - 销售单管理
   /shippingorders/:id/details:
     get:
       consumes:
       - application/json
       operationId: "621"
       parameters:
-      - description: 拣货单ID
+      - description: 发货单ID
         in: path
         name: id
         required: true

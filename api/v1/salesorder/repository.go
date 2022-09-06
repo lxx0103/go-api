@@ -858,3 +858,86 @@ func (r salesorderRepository) CreateShippingorder(info Shippingorder) error {
 	`, info.OrganizationID, info.ShippingorderID, info.PackageID, info.ShippingorderNumber, info.ShippingorderDate, info.CarrierID, info.TrackingNumber, info.Notes, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	return err
 }
+
+func (r *salesorderRepository) GetShippingorderByID(shippingorderID, organizationID string) (*ShippingorderResponse, error) {
+	var res ShippingorderResponse
+	row := r.tx.QueryRow(`
+		SELECT 
+		s.organization_id,
+		s.shippingorder_id,
+		s.package_id,
+		IFNULL(p.package_number, "") as package_number,
+		s.shippingorder_number, 
+		s.shippingorder_date, 
+		s.carrier_id,
+		IFNULL(c.name, "") as carrier_name,
+		s.notes,
+		s.status
+		FROM s_shippingorders s
+		LEFT JOIN s_packages p
+		ON s.package_id = p.package_id
+		LEFT JOIN s_carriers c
+		ON s.carrier_id = c.carrier_id
+		WHERE s.organization_id = ? AND s.shippingorder_id = ? AND s.status > 0 LIMIT 1
+	`, organizationID, shippingorderID)
+	err := row.Scan(&res.OrganizationID, &res.ShippingorderID, &res.PackageID, &res.PackageNumber, &res.ShippingorderNumber, &res.ShippingorderDate, &res.CarrierID, &res.CarrierName, &res.Notes, &res.Status)
+	return &res, err
+}
+
+func (r *salesorderRepository) GetShippingorderDetailList(shippingorderID string) (*[]ShippingorderDetailResponse, error) {
+	var shippingorderDetails []ShippingorderDetailResponse
+	rows, err := r.tx.Query(`
+		SELECT
+		s.organization_id,
+		s.shippingorder_id,
+		s.shippingorder_detail_id,
+		s.package_id,
+		s.package_item_id,
+		s.item_id,
+		i.name as item_name,
+		i.sku as sku,
+		s.quantity,
+		s.status
+		FROM s_shippingorder_details s
+		LEFT JOIN i_items i
+		ON s.item_id = i.item_id
+		WHERE s.shippingorder_id = ? AND s.status > 0 
+	`, shippingorderID)
+	for rows.Next() {
+		var res ShippingorderDetailResponse
+		rows.Scan(&res.OrganizationID, &res.ShippingorderID, &res.ShippingorderDetailID, &res.PackageID, &res.PackageItemID, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity, &res.Status)
+		shippingorderDetails = append(shippingorderDetails, res)
+	}
+	return &shippingorderDetails, err
+}
+
+func (r *salesorderRepository) DeleteShippingorder(id, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update s_shippingorders SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE shippingorder_id = ?
+	`, time.Now(), byUser, id)
+	if err != nil {
+		return err
+	}
+	_, err = r.tx.Exec(`
+		UPDATE s_shippingorder_items SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE shippingorder_id = ?
+	`, time.Now(), byUser, id)
+	if err != nil {
+		return err
+	}
+	_, err = r.tx.Exec(`
+		UPDATE s_shippingorder_details SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE shippingorder_id = ?
+	`, time.Now(), byUser, id)
+	return err
+}

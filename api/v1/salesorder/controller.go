@@ -594,7 +594,7 @@ func GetShippingorderItemList(c *gin.Context) {
 // @version 1.0
 // @Accept application/json
 // @Produce application/json
-// @Param id path string true "拣货单ID"
+// @Param id path string true "发货单ID"
 // @Success 200 object response.ListRes{data=[]ShippingorderItemResponse} 成功
 // @Failure 400 object response.ErrorRes 内部错误
 // @Router /shippingorders/:id/details [GET]
@@ -642,4 +642,30 @@ func GetRequisitionList(c *gin.Context) {
 		return
 	}
 	response.Response(c, list)
+}
+
+// @Summary 根据ID删除发货单
+// @Id 623
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "发货单ID"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /shippingorders/:id [DELETE]
+func DeleteShippingorder(c *gin.Context) {
+	var uri ShippingorderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	salesorderService := NewSalesorderService()
+	err := salesorderService.DeleteShippingorder(uri.ID, claims.OrganizationID, claims.UserName, claims.Email)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, "OK")
 }

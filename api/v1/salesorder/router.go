@@ -28,6 +28,7 @@ func AuthRouter(g *gin.RouterGroup) {
 	g.GET("/shippingorders", GetShippingorderList)
 	g.GET("/shippingorders/:id/items", GetShippingorderItemList)
 	g.GET("/shippingorders/:id/details", GetShippingorderDetailList)
+	g.DELETE("/shippingorders/:id", DeleteShippingorder)
 
 	g.GET("/requisitions", GetRequisitionList)
 
