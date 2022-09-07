@@ -3877,6 +3877,36 @@ paths:
       summary: 批量拣货
       tags:
       - 销售单管理
+  /pickingorders/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "605"
+      parameters:
+      - description: 拣货单ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除拣货单
+      tags:
+      - 销售单管理
   /pickingorders/:id/details:
     get:
       consumes:
@@ -3994,6 +4024,30 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorRes'
       summary: 标记拣货单为已拣货
+      tags:
+      - 销售单管理
+  /pickingorders/:id/unpicked:
+    post:
+      consumes:
+      - application/json
+      operationId: "625"
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 标记拣货单为未拣货
       tags:
       - 销售单管理
   /purchaseorders:

@@ -577,9 +577,11 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 					pickingorderLog.PickingorderLogID = "pil-" + xid.New().String()
 					pickingorderLog.OrganizationID = info.OrganizationID
 					pickingorderLog.PickingorderID = pickingorderID
+					pickingorderLog.SalesorderID = salesorderID
 					pickingorderLog.SalesorderItemID = oldSoItem.SalesorderItemID
 					pickingorderLog.PickingorderItemID = pickingorderItemID
 					pickingorderLog.LocationID = nextBatch.LocationID
+					pickingorderLog.BatchID = nextBatch.BatchID
 					pickingorderLog.ItemID = itemRow.ItemID
 					pickingorderLog.Quantity = quantityToPick
 					pickingorderLog.Status = 1
@@ -608,9 +610,11 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 					pickingorderLog.PickingorderLogID = "pil-" + xid.New().String()
 					pickingorderLog.OrganizationID = info.OrganizationID
 					pickingorderLog.PickingorderID = pickingorderID
+					pickingorderLog.SalesorderID = salesorderID
 					pickingorderLog.SalesorderItemID = oldSoItem.SalesorderItemID
 					pickingorderLog.PickingorderItemID = pickingorderItemID
 					pickingorderLog.LocationID = nextBatch.LocationID
+					pickingorderLog.BatchID = nextBatch.BatchID
 					pickingorderLog.ItemID = itemRow.ItemID
 					pickingorderLog.Quantity = nextBatch.Balance
 					pickingorderLog.Status = 1
@@ -860,9 +864,11 @@ func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, 
 						pickingorderLog.PickingorderLogID = "pil-" + xid.New().String()
 						pickingorderLog.OrganizationID = info.OrganizationID
 						pickingorderLog.PickingorderID = pickingorderID
+						pickingorderLog.SalesorderID = soID
 						pickingorderLog.SalesorderItemID = itemRow.SalesorderItemID
 						pickingorderLog.PickingorderItemID = pickingorderItemID
 						pickingorderLog.LocationID = nextBatch.LocationID
+						pickingorderLog.BatchID = nextBatch.BatchID
 						pickingorderLog.ItemID = itemRow.ItemID
 						pickingorderLog.Quantity = quantityToPick
 						pickingorderLog.Status = 1
@@ -891,9 +897,11 @@ func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, 
 						pickingorderLog.PickingorderLogID = "pil-" + xid.New().String()
 						pickingorderLog.OrganizationID = info.OrganizationID
 						pickingorderLog.PickingorderID = pickingorderID
+						pickingorderLog.SalesorderID = soID
 						pickingorderLog.SalesorderItemID = itemRow.SalesorderItemID
 						pickingorderLog.PickingorderItemID = pickingorderItemID
 						pickingorderLog.LocationID = nextBatch.LocationID
+						pickingorderLog.BatchID = nextBatch.BatchID
 						pickingorderLog.ItemID = itemRow.ItemID
 						pickingorderLog.Quantity = nextBatch.Balance
 						pickingorderLog.Status = 1
@@ -1182,6 +1190,89 @@ func (s *salesorderService) UpdatePickingorderPicked(pickingorderID, organizatio
 	newEvent.HistoryBy = user
 	newEvent.ReferenceID = pickingorderID
 	newEvent.Description = "Picking Order Fully Picked"
+	newEvent.OrganizationID = organizationID
+	newEvent.Email = email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return errors.New(msg)
+	}
+	tx.Commit()
+	return err
+}
+
+func (s *salesorderService) UpdatePickingorderUnPicked(pickingorderID, organizationID, user, email string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	repo := NewSalesorderRepository(tx)
+	itemRepo := item.NewItemRepository(tx)
+	warehouseRepo := warehouse.NewWarehouseRepository(tx)
+	oldPickingorder, err := repo.GetPickingorderByID(organizationID, pickingorderID)
+	if err != nil {
+		msg := "Pickingorder not exist"
+		return errors.New(msg)
+	}
+	if oldPickingorder.Status != 3 && oldPickingorder.Status != 2 {
+		msg := "Pickingorder status error"
+		return errors.New(msg)
+	}
+	pickingorderDetails, err := repo.GetPickingorderDetailList(organizationID, pickingorderID)
+	if err != nil {
+		msg := "Pickingorder detail not exist"
+		return errors.New(msg)
+	}
+	for _, pickingorderDetail := range *pickingorderDetails {
+		itemInfo, err := itemRepo.GetItemByID(pickingorderDetail.ItemID, organizationID)
+		if err != nil {
+			msg := "item not exist"
+			return errors.New(msg)
+		}
+		if itemInfo.StockPacking < pickingorderDetail.QuantityPicked {
+			msg := "item packing quantity error"
+			return errors.New(msg)
+		}
+		location, err := warehouseRepo.GetLocationByID(pickingorderDetail.LocationID, organizationID)
+		if err != nil {
+			msg := "location not exist"
+			return errors.New(msg)
+		}
+		if location.Available < pickingorderDetail.QuantityPicked {
+			msg := "location space not enough"
+			return errors.New(msg)
+		}
+		err = repo.UpdatePickingorderPicked(pickingorderDetail.PickingorderDetailID, -pickingorderDetail.QuantityPicked, email)
+		if err != nil {
+			msg := "update picking order picked error"
+			return errors.New(msg)
+		}
+		err = itemRepo.UpdateItemPackingStock(pickingorderDetail.ItemID, -pickingorderDetail.QuantityPicked, email)
+		if err != nil {
+			msg := "update item stock error"
+			return errors.New(msg)
+		}
+		err = warehouseRepo.UpdateLocationPicked(pickingorderDetail.LocationID, -pickingorderDetail.QuantityPicked, email)
+		if err != nil {
+			msg := "update location stock error"
+			return errors.New(msg)
+		}
+	}
+	err = repo.UpdatePickingorderStatus(pickingorderID, 1, email) //CONFIRMED
+	if err != nil {
+		msg := "update pickingorder error: "
+		return errors.New(msg)
+	}
+	var newEvent common.NewHistoryCreated
+	newEvent.HistoryType = "pickingorder"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = user
+	newEvent.ReferenceID = pickingorderID
+	newEvent.Description = "Picking Order Marked As  UnPicked"
 	newEvent.OrganizationID = organizationID
 	newEvent.Email = email
 	rabbit, _ := queue.GetConn()
@@ -1491,7 +1582,7 @@ func (s *salesorderService) BatchShippingorder(info ShippingorderBatch) (*string
 				newEvent.HistoryType = "item"
 				newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 				newEvent.HistoryBy = info.User
-				newEvent.ReferenceID = packageInfo.SalesorderID
+				newEvent.ReferenceID = itemRow.ItemID
 				newEvent.Description = "Shipping Order Created"
 				newEvent.OrganizationID = info.OrganizationID
 				newEvent.Email = info.Email
@@ -1757,7 +1848,7 @@ func (s *salesorderService) DeleteShippingorder(shippingorderID, organizationID,
 			newEvent.HistoryType = "item"
 			newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
 			newEvent.HistoryBy = user
-			newEvent.ReferenceID = packageInfo.SalesorderID
+			newEvent.ReferenceID = detail.ItemID
 			newEvent.Description = "Shipping Order Deleted"
 			newEvent.OrganizationID = organizationID
 			newEvent.Email = email
@@ -1933,4 +2024,170 @@ func (s *salesorderService) DeletePackage(packageID, organizationID, user, email
 		}
 	}
 	return nil
+}
+
+func (s *salesorderService) DeletePickingorder(pickingorderID, organizationID, user, email string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewSalesorderRepository(tx)
+	itemRepo := item.NewItemRepository(tx)
+	warehouseRepo := warehouse.NewWarehouseRepository(tx)
+	oldPickingorder, err := repo.GetPickingorderByID(organizationID, pickingorderID)
+	if err != nil {
+		msg := "get picking order error"
+		return errors.New(msg)
+	}
+	if oldPickingorder.Status != 1 {
+		msg := " picking order status error"
+		return errors.New(msg)
+	}
+	pickingorderLogs, err := repo.GetPickingorderLogList(organizationID, pickingorderID)
+	if err != nil {
+		msg := "get picking order log error"
+		return errors.New(msg)
+	}
+	var msgs [][]byte
+	var salesorders []string
+	var itemHistorys []string
+	for _, logRow := range *pickingorderLogs {
+		oldSoItem, err := repo.GetSalesorderItemByID(organizationID, logRow.SalesorderID, logRow.ItemID)
+		if err != nil {
+			msg := "sales order item not exist"
+			return errors.New(msg)
+		}
+		itemInfo, err := itemRepo.GetItemByID(logRow.ItemID, organizationID)
+		if err != nil {
+			msg := "item not exist"
+			return errors.New(msg)
+		}
+		if itemInfo.StockPicking < logRow.Quantity {
+			msg := "item picking quantity error"
+			return errors.New(msg)
+		}
+		err = itemRepo.PickItem(logRow.BatchID, -logRow.Quantity, email)
+		if err != nil {
+			msg := "return item back to batch error"
+			return errors.New(msg)
+		}
+		err = warehouseRepo.UpdateLocationCanPick(logRow.LocationID, -logRow.Quantity, email)
+		if err != nil {
+			msg := "update location canpick error: "
+			return errors.New(msg)
+		}
+		if oldSoItem.QuantityPicked < logRow.Quantity {
+			msg := "sales order itme picked quantity error"
+			return errors.New(msg)
+		}
+		var soItem SalesorderItem
+		soItem.SalesorderItemID = oldSoItem.SalesorderItemID
+		soItem.QuantityPicked = oldSoItem.QuantityPicked - logRow.Quantity
+		soItem.Updated = time.Now()
+		soItem.UpdatedBy = email
+
+		err = repo.PickSalesorderItem(soItem)
+		if err != nil {
+			msg := "unpick salesorder item error: "
+			return errors.New(msg)
+		}
+		err = itemRepo.UpdateItemPickingStock(logRow.ItemID, -logRow.Quantity, email)
+		if err != nil {
+			msg := "update item stock error: "
+			return errors.New(msg)
+		}
+
+		salesorderUpdated := false
+		for _, salesorderID := range salesorders {
+			if salesorderID == logRow.SalesorderID {
+				salesorderUpdated = true
+				continue
+			}
+		}
+		itemUpdated := false
+		for _, itemID := range itemHistorys {
+			if itemID == logRow.ItemID {
+				itemUpdated = true
+				continue
+			}
+		}
+		if !salesorderUpdated {
+			salesorders = append(salesorders, logRow.SalesorderID)
+			var newEvent common.NewHistoryCreated
+			newEvent.HistoryType = "salesorder"
+			newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+			newEvent.HistoryBy = user
+			newEvent.ReferenceID = logRow.SalesorderID
+			newEvent.Description = "Picking Order Deleted"
+			newEvent.OrganizationID = organizationID
+			newEvent.Email = email
+			msg, _ := json.Marshal(newEvent)
+			msgs = append(msgs, msg)
+		}
+		if !itemUpdated {
+			itemHistorys = append(itemHistorys, logRow.ItemID)
+			var newEvent common.NewHistoryCreated
+			newEvent.HistoryType = "item"
+			newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+			newEvent.HistoryBy = user
+			newEvent.ReferenceID = logRow.ItemID
+			newEvent.Description = "Picking Order Deleted"
+			newEvent.OrganizationID = organizationID
+			newEvent.Email = email
+			msg, _ := json.Marshal(newEvent)
+			msgs = append(msgs, msg)
+		}
+	}
+	err = repo.DeletePickingorder(pickingorderID, email)
+	if err != nil {
+		msg := "delete picking order error: "
+		return errors.New(msg)
+	}
+	for _, so := range salesorders {
+		pickedCount, err := repo.GetSalesorderPickedCount(organizationID, so)
+		if err != nil {
+			msg := "get sales order received count error: "
+			return errors.New(msg)
+		}
+		pickingStatus := 1
+		if pickedCount == 0 {
+			pickingStatus = 1
+		} else {
+			pickingStatus = 2
+		}
+		err = repo.UpdateSalesorderPickingStatus(so, pickingStatus, email)
+		if err != nil {
+			msg := "update sales order receive status error: "
+			return errors.New(msg)
+		}
+
+	}
+	tx.Commit()
+
+	rabbit, _ := queue.GetConn()
+	var newEvent common.NewHistoryCreated
+	newEvent.HistoryType = "pickingorder"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = user
+	newEvent.ReferenceID = pickingorderID
+	newEvent.Description = "Picking Order Deleted"
+	newEvent.OrganizationID = organizationID
+	newEvent.Email = email
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return errors.New(msg)
+	}
+	for _, msgRow := range msgs {
+		err = rabbit.Publish("NewHistoryCreated", msgRow)
+		if err != nil {
+			msg := "create event NewHistoryCreated error"
+			return errors.New(msg)
+		}
+	}
+	return err
 }

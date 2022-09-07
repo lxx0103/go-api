@@ -19,6 +19,8 @@ func AuthRouter(g *gin.RouterGroup) {
 
 	g.POST("/pickingorders/:id/pick", NewPickingFromLocation)
 	g.POST("/pickingorders/:id/picked", MarkPickingorderPicked)
+	g.POST("/pickingorders/:id/unpicked", MarkPickingorderUnPicked)
+	g.DELETE("/pickingorders/:id", DeletePickingorder)
 
 	g.POST("/salesorders/:id/packages", NewPackage)
 	g.GET("/packages", GetPackageList)

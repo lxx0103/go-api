@@ -365,9 +365,11 @@ func (r salesorderRepository) CreatePickingorderLog(info PickingorderLog) error 
 			organization_id,
 			pickingorder_log_id,
 			pickingorder_item_id,
+			salesorder_id,
 			salesorder_item_id,
 			pickingorder_id,
 			location_id,
+			batch_id,
 			item_id,
 			quantity,
 			status,
@@ -377,8 +379,8 @@ func (r salesorderRepository) CreatePickingorderLog(info PickingorderLog) error 
 			updated_by
 		)
 		VALUES
-		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, info.OrganizationID, info.PickingorderLogID, info.PickingorderItemID, info.SalesorderItemID, info.PickingorderID, info.LocationID, info.ItemID, info.Quantity, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.PickingorderLogID, info.PickingorderItemID, info.SalesorderID, info.SalesorderItemID, info.PickingorderID, info.LocationID, info.BatchID, info.ItemID, info.Quantity, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	return err
 }
 func (r salesorderRepository) CreatePickingorderDetail(info PickingorderDetail) error {
@@ -959,6 +961,86 @@ func (r *salesorderRepository) DeletePackage(id, byUser string) error {
 		updated = ?,
 		updated_by = ?
 		WHERE package_id = ?
+	`, time.Now(), byUser, id)
+	return err
+}
+
+func (r *salesorderRepository) GetPickingorderLogList(organizationID, pickingorderID string) (*[]PickingorderLogResponse, error) {
+	var pickingorderLogs []PickingorderLogResponse
+	rows, err := r.tx.Query(`
+		SELECT
+		s.organization_id,
+		s.pickingorder_log_id,
+		s.pickingorder_id,
+		s.salesorder_id,
+		s.salesorder_item_id,
+		s.pickingorder_item_id,
+		s.location_id,
+		s.batch_id,
+		l.code as location_code,
+		s.item_id,
+		i.name as item_name,
+		i.sku,
+		s.quantity,
+		s.status
+		FROM s_pickingorder_logs s
+		LEFT JOIN i_items i
+		ON s.item_id = i.item_id
+		LEFT JOIN w_locations l
+		ON s.location_id = l.location_id
+		WHERE s.organization_id = ? AND s.pickingorder_id = ? AND s.status > 0
+	`, organizationID, pickingorderID)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var res PickingorderLogResponse
+		err = rows.Scan(&res.OrganizationID, &res.PickingorderLogID, &res.PickingorderID, &res.SalesorderID, &res.SalesorderItemID, &res.PickingorderItemID, &res.LocationID, &res.BatchID, &res.LocationCode, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity, &res.Status)
+		pickingorderLogs = append(pickingorderLogs, res)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &pickingorderLogs, err
+}
+
+func (r *salesorderRepository) DeletePickingorder(id, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update s_pickingorders SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE pickingorder_id = ?
+	`, time.Now(), byUser, id)
+	if err != nil {
+		return err
+	}
+	_, err = r.tx.Exec(`
+		UPDATE s_pickingorder_items SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE pickingorder_id = ?
+	`, time.Now(), byUser, id)
+	if err != nil {
+		return err
+	}
+	_, err = r.tx.Exec(`
+		UPDATE s_pickingorder_details SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE pickingorder_id = ?
+	`, time.Now(), byUser, id)
+	if err != nil {
+		return err
+	}
+	_, err = r.tx.Exec(`
+		UPDATE s_pickingorder_logs SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE pickingorder_id = ?
 	`, time.Now(), byUser, id)
 	return err
 }

@@ -87,9 +87,11 @@ type PickingorderLog struct {
 	PickingorderLogID  string    `db:"pickingorder_log_id" json:"pickingorder_log_id"`
 	OrganizationID     string    `db:"organization_id" json:"organization_id"`
 	PickingorderID     string    `db:"pickingorder_id" json:"pickingorder_id"`
+	SalesorderID       string    `db:"salesorder_id" json:"salesorder_id"`
 	SalesorderItemID   string    `db:"salesorder_item_id" json:"salesorder_item_id"`
 	PickingorderItemID string    `db:"pickingorder_item_id" json:"pickingorder_item_id"`
 	LocationID         string    `db:"location_id" json:"location_id"`
+	BatchID            string    `db:"batch_id" json:"batch_id"`
 	ItemID             string    `db:"item_id" json:"item_id"`
 	Quantity           int       `db:"quantity" json:"quantity"`
 	Status             int       `db:"status" json:"status"`

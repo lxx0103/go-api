@@ -3183,6 +3183,56 @@ var doc = `{
                 }
             }
         },
+        "/pickingorders/:id": {
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "根据ID删除拣货单",
+                "operationId": "605",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "拣货单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/pickingorders/:id/details": {
             "get": {
                 "consumes": [
@@ -3354,6 +3404,47 @@ var doc = `{
                 ],
                 "summary": "标记拣货单为已拣货",
                 "operationId": "614",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/pickingorders/:id/unpicked": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "标记拣货单为未拣货",
+                "operationId": "625",
                 "responses": {
                     "200": {
                         "description": "OK",

@@ -695,3 +695,54 @@ func DeletePackage(c *gin.Context) {
 	}
 	response.Response(c, "OK")
 }
+
+// @Summary 标记拣货单为未拣货
+// @Id 625
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /pickingorders/:id/unpicked [POST]
+func MarkPickingorderUnPicked(c *gin.Context) {
+	var uri PickingorderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	salesorderService := NewSalesorderService()
+	err := salesorderService.UpdatePickingorderUnPicked(uri.ID, claims.OrganizationID, claims.UserName, claims.Email)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, "ok")
+}
+
+// @Summary 根据ID删除拣货单
+// @Id 605
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "拣货单ID"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /pickingorders/:id [DELETE]
+func DeletePickingorder(c *gin.Context) {
+	var uri PickingorderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	salesorderService := NewSalesorderService()
+	err := salesorderService.DeletePickingorder(uri.ID, claims.OrganizationID, claims.UserName, claims.Email)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, "OK")
+}
