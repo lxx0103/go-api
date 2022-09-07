@@ -134,6 +134,26 @@ func (r *itemRepository) DeleteItem(id, byUser string) error {
 		updated_by = ?
 		WHERE item_id = ?
 	`, time.Now(), byUser, id)
+	if err != nil {
+		return err
+	}
+	_, err = r.tx.Exec(`
+		Update i_adjustments SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE item_id = ?
+	`, time.Now(), byUser, id)
+	if err != nil {
+		return err
+	}
+	_, err = r.tx.Exec(`
+		Update i_item_batches SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE item_id = ?
+	`, time.Now(), byUser, id)
 	return err
 }
 
@@ -383,4 +403,45 @@ func (r *itemRepository) GetLocationItemCount(item_id, organizationID string) (i
 	row := r.tx.QueryRow("SELECT count(1) FROM w_locations WHERE organization_id = ? AND item_id = ? AND status > 0 ", organizationID, item_id)
 	err := row.Scan(&count)
 	return count, err
+}
+
+func (r *itemRepository) GetBarcodeItemCount(item_id, organizationID string) (int, error) {
+	var count int
+	row := r.tx.QueryRow("SELECT count(1) FROM i_barcodes WHERE organization_id = ? AND item_id = ? AND status > 0 ", organizationID, item_id)
+	err := row.Scan(&count)
+	return count, err
+}
+
+func (r *itemRepository) GetItemBatchByReferenceID(itemID, referenceID, organiztionID string) (*ItemBatchResponse, error) {
+	var res ItemBatchResponse
+	row := r.tx.QueryRow(`
+		SELECT
+		b.organization_id,
+		b.item_id,
+		i.SKU,
+		i.name as item_name,
+		b.batch_id,
+		b.type,
+		b.reference_id,
+		b.location_id,
+		b.quantity,
+		b.balance,
+		b.status
+		FROM i_item_batches b
+		LEFT JOIN i_items i
+		ON b.item_id = i.item_id WHERE b.item_id = ? AND b.reference_id = ? AND b.organization_id = ? AND b.status > 0 LIMIT 1
+	`, itemID, referenceID, organiztionID)
+	err := row.Scan(&res.OrganizationID, &res.ItemID, &res.SKU, &res.ItemName, &res.BatchID, &res.Type, &res.ReferenceID, &res.LocationID, &res.Quantity, &res.Balance, &res.Status)
+	return &res, err
+}
+
+func (r *itemRepository) DeleteItemBatch(id, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update i_item_batches SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE batch_id = ?
+	`, time.Now(), byUser, id)
+	return err
 }

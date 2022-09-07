@@ -761,3 +761,183 @@ func (s *purchaseorderService) GetPurchaseReceiveDetailList(purchasereceiveID, o
 	list, err := query.GetPurchasereceiveDetailList(purchasereceiveID)
 	return list, err
 }
+
+func (s *purchaseorderService) DeletePurchasereceive(purchasereceiveID, organizationID, user, email string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewPurchaseorderRepository(tx)
+	itemRepo := item.NewItemRepository(tx)
+	var msgs [][]byte
+	var itemHistorys []string
+	oldPurchasereceive, err := repo.GetPurchasereceiveByID(organizationID, purchasereceiveID)
+	if err != nil {
+		msg := "get purchase receive error"
+		return errors.New(msg)
+	}
+	details, err := repo.GetPurchasereceiveDetailList(organizationID, purchasereceiveID)
+	if err != nil {
+		msg := "get purchase receive  detail error"
+		return errors.New(msg)
+	}
+	for _, detail := range *details {
+		oldPoItem, err := repo.GetPurchaseorderItemByID(organizationID, oldPurchasereceive.PurchaseorderID, detail.ItemID)
+		if err != nil {
+			msg := "purchase order item not exist"
+			return errors.New(msg)
+		}
+		itemInfo, err := itemRepo.GetItemByID(detail.ItemID, organizationID)
+		if err != nil {
+			msg := " item not exist"
+			return errors.New(msg)
+		}
+		if itemInfo.StockAvailable < detail.Quantity {
+			msg := "item stock available not enough"
+			return errors.New(msg)
+		}
+		warehouseRepo := warehouse.NewWarehouseRepository(tx)
+		batch, err := itemRepo.GetItemBatchByReferenceID(detail.ItemID, detail.PurchasereceiveItemID, organizationID)
+		if err != nil {
+			msg := " batch not exist"
+			return errors.New(msg)
+		}
+		if batch.Balance != batch.Quantity {
+			msg := "this batch of item has been used"
+			return errors.New(msg)
+		}
+		err = itemRepo.DeleteItemBatch(batch.BatchID, email)
+		if err != nil {
+			msg := " delete batch error"
+			return errors.New(msg)
+		}
+		location, err := warehouseRepo.GetLocationByID(detail.LocationID, organizationID)
+		if err != nil {
+			msg := " location not exist"
+			return errors.New(msg)
+		}
+		if location.CanPick < detail.Quantity {
+			msg := "location stock not enough"
+			return errors.New(msg)
+		}
+		err = warehouseRepo.ReceiveItem(detail.LocationID, -detail.Quantity, email)
+		if err != nil {
+			msg := "get item from location error"
+			return errors.New(msg)
+		}
+
+		if oldPoItem.QuantityReceived < detail.Quantity {
+			msg := "received quantity error"
+			return errors.New(msg)
+		}
+		var poItem PurchaseorderItem
+		poItem.PurchaseorderItemID = oldPoItem.PurchaseorderItemID
+		poItem.QuantityReceived = oldPoItem.QuantityReceived - detail.Quantity
+		poItem.Updated = time.Now()
+		poItem.UpdatedBy = email
+
+		err = repo.ReceivePurchaseorderItem(poItem)
+		if err != nil {
+			msg := "cancel purchaseorder item error: " + err.Error()
+			return errors.New(msg)
+		}
+		err = itemRepo.UpdateItemStock(detail.ItemID, -detail.Quantity, email)
+		if err != nil {
+			msg := "update item stock error: " + err.Error()
+			return errors.New(msg)
+		}
+		itemUpdated := false
+		for _, itemID := range itemHistorys {
+			if itemID == detail.ItemID {
+				itemUpdated = true
+				continue
+			}
+		}
+		if !itemUpdated {
+			itemHistorys = append(itemHistorys, detail.ItemID)
+			var newEvent common.NewHistoryCreated
+			newEvent.HistoryType = "item"
+			newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+			newEvent.HistoryBy = user
+			newEvent.ReferenceID = detail.ItemID
+			newEvent.Description = "Purchase Receive Deleted"
+			newEvent.OrganizationID = organizationID
+			newEvent.Email = email
+			msg, _ := json.Marshal(newEvent)
+			msgs = append(msgs, msg)
+		}
+	}
+	err = repo.DeletePurchasereceive(purchasereceiveID, email)
+	if err != nil {
+		msg := "delete purchase receive error: " + err.Error()
+		return errors.New(msg)
+	}
+	_, err = repo.GetPurchaseorderByID(organizationID, oldPurchasereceive.PurchaseorderID)
+	if err != nil {
+		msg := "get purchase order error: " + err.Error()
+		return errors.New(msg)
+	}
+	receivedCount, err := repo.GetPurchaseorderReceivedCount(organizationID, oldPurchasereceive.PurchaseorderID)
+	if err != nil {
+		msg := "get purchase order received count error: " + err.Error()
+		return errors.New(msg)
+	}
+	receivedStatus := 1
+	if receivedCount == 0 {
+		receivedStatus = 1
+	} else {
+		receivedStatus = 2
+	}
+	err = repo.UpdatePurchaseorderReceiveStatus(oldPurchasereceive.PurchaseorderID, receivedStatus, email)
+	if err != nil {
+		msg := "update purchase order receive status error: " + err.Error()
+		return errors.New(msg)
+	}
+
+	err = repo.UpdatePurchaseorderStatus(oldPurchasereceive.PurchaseorderID, 2, email)
+	if err != nil {
+		msg := "update purchase order status error: " + err.Error()
+		return errors.New(msg)
+	}
+	tx.Commit()
+	var newEvent common.NewHistoryCreated
+	newEvent.HistoryType = "purchaseorder"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = user
+	newEvent.ReferenceID = oldPurchasereceive.PurchaseorderID
+	newEvent.Description = "Purchase Receive Deleted"
+	newEvent.OrganizationID = organizationID
+	newEvent.Email = email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return errors.New(msg)
+	}
+	var newEvent2 common.NewHistoryCreated
+	newEvent2.HistoryType = "purchasereceive"
+	newEvent2.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent2.HistoryBy = user
+	newEvent2.ReferenceID = purchasereceiveID
+	newEvent2.Description = "Purchase Receive Deleted"
+	newEvent2.OrganizationID = organizationID
+	newEvent2.Email = email
+	msg2, _ := json.Marshal(newEvent2)
+	err = rabbit.Publish("NewHistoryCreated", msg2)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return errors.New(msg)
+	}
+	for _, msgRow := range msgs {
+		err = rabbit.Publish("NewHistoryCreated", msgRow)
+		if err != nil {
+			msg := "create event NewBatchCreated error"
+			return errors.New(msg)
+		}
+	}
+	return err
+}

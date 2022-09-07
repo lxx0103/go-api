@@ -136,6 +136,16 @@ func (s *warehouseService) DeleteBay(bayID, organizationID, user string) error {
 		msg := "Bay not exist"
 		return errors.New(msg)
 	}
+
+	bayLocationCount, err := repo.GetBayLocationCount(bayID, organizationID)
+	if err != nil {
+		msg := "get bay location count error"
+		return errors.New(msg)
+	}
+	if bayLocationCount > 0 {
+		msg := "bay with location can not be deleted"
+		return errors.New(msg)
+	}
 	err = repo.DeleteBay(bayID, user)
 	if err != nil {
 		return err

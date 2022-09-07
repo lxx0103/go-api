@@ -88,6 +88,13 @@ func (r *warehouseRepository) DeleteBay(id, byUser string) error {
 	return err
 }
 
+func (r *warehouseRepository) GetBayLocationCount(bayID, organizationID string) (int, error) {
+	var count int
+	row := r.tx.QueryRow("SELECT count(1) FROM w_locations WHERE organization_id = ? AND bay_id = ? AND status > 0 ", organizationID, bayID)
+	err := row.Scan(&count)
+	return count, err
+}
+
 //Location
 
 func (r *warehouseRepository) CheckLocationConfict(locationID, organizationID, code string) (bool, error) {

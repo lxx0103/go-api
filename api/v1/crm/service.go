@@ -224,14 +224,14 @@ func (s *crmService) ConvertLead(LeadID string, info LeadConvertNew) (*string, e
 		customer.ContactFirstName = oldLead.FirstName
 		customer.ContactLastName = oldLead.LastName
 		customer.ContactEmail = oldLead.Email
-		customer.ContactPhone = oldLead.Phone
+		customer.ContactPhone = oldLead.Mobile
 		customer.Country = oldLead.Country
 		customer.State = oldLead.State
 		customer.City = oldLead.City
 		customer.Address1 = oldLead.Address1
 		customer.Address2 = oldLead.Address2
 		customer.Zip = oldLead.Zip
-		customer.Phone = oldLead.Mobile
+		customer.Phone = oldLead.Phone
 		customer.Fax = oldLead.Fax
 		customer.Status = 1
 		customer.Created = time.Now()

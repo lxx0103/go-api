@@ -271,11 +271,20 @@ func (s *itemService) DeleteItem(itemID, organizationID, email, user string) err
 	}
 	locationItemCount, err := repo.GetLocationItemCount(itemID, organizationID)
 	if err != nil {
-		msg := "get so item count error"
+		msg := "get location item count error"
 		return errors.New(msg)
 	}
 	if locationItemCount > 0 {
 		msg := "Item in location can not be deleted"
+		return errors.New(msg)
+	}
+	barcodeItemCount, err := repo.GetBarcodeItemCount(itemID, organizationID)
+	if err != nil {
+		msg := "get barcode item count error"
+		return errors.New(msg)
+	}
+	if barcodeItemCount > 0 {
+		msg := "Item in barcode can not be deleted"
 		return errors.New(msg)
 	}
 	err = repo.DeleteItem(itemID, email)

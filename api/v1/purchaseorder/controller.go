@@ -321,3 +321,29 @@ func GetPurchasereceiveDetailList(c *gin.Context) {
 	}
 	response.Response(c, list)
 }
+
+// @Summary 根据ID删除收货单
+// @Id 412
+// @Tags 采购单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "收货单ID"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /purchasereceives/:id [DELETE]
+func DeletePurchasereceive(c *gin.Context) {
+	var uri PurchasereceiveID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	purchaseorderService := NewPurchaseorderService()
+	err := purchaseorderService.DeletePurchasereceive(uri.ID, claims.OrganizationID, claims.UserName, claims.Email)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, "OK")
+}

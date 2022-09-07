@@ -355,3 +355,92 @@ func (r purchaseorderRepository) CreatePurchasereceive(info Purchasereceive) err
 	`, info.OrganizationID, info.PurchaseorderID, info.PurchasereceiveID, info.PurchasereceiveNumber, info.PurchasereceiveDate, info.Notes, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	return err
 }
+
+func (r *purchaseorderRepository) GetPurchasereceiveDetailList(organizationID, purchasereceiveID string) (*[]PurchasereceiveDetailResponse, error) {
+	var purchasereceiveDetails []PurchasereceiveDetailResponse
+	rows, err := r.tx.Query(`
+		SELECT
+		s.organization_id,
+		s.purchasereceive_detail_id,
+		s.purchasereceive_id,
+		s.purchaseorder_item_id,
+		s.purchasereceive_item_id,
+		s.location_id,
+		l.code as location_code,
+		s.item_id,
+		i.name as item_name,
+		i.sku,
+		s.quantity,
+		s.status
+		FROM p_purchasereceive_details s
+		LEFT JOIN i_items i
+		ON s.item_id = i.item_id
+		LEFT JOIN w_locations l
+		ON s.location_id = l.location_id
+		WHERE s.organization_id = ? AND s.purchasereceive_id = ? AND s.status > 0
+	`, organizationID, purchasereceiveID)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var res PurchasereceiveDetailResponse
+		err = rows.Scan(&res.OrganizationID, &res.PurchasereceiveDetailID, &res.PurchasereceiveID, &res.PurchaseorderItemID, &res.PurchasereceiveItemID, &res.LocationID, &res.LocationCode, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity, &res.Status)
+		purchasereceiveDetails = append(purchasereceiveDetails, res)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &purchasereceiveDetails, err
+}
+
+func (r *purchaseorderRepository) GetPurchasereceiveByID(organizationID, purchasereceiveID string) (*PurchasereceiveResponse, error) {
+	var res PurchasereceiveResponse
+	row := r.tx.QueryRow(`
+		SELECT 
+		r.purchasereceive_id,
+		r.purchaseorder_id,
+		p.purchaseorder_number,
+		r.organization_id,
+		r.purchasereceive_number, 
+		r.purchasereceive_date, 
+		r.notes,
+		r.status
+		FROM p_purchasereceives r
+		LEFT JOIN p_purchaseorders p
+		ON p.purchaseorder_id = r.purchaseorder_id
+		WHERE r.organization_id = ? AND r.purchasereceive_id = ? AND r.status > 0 LIMIT 1
+	`, organizationID, purchasereceiveID)
+	err := row.Scan(&res.PurchasereceiveID, &res.PurchaseorderID, &res.PurchaseorderNumber, &res.OrganizationID, &res.PurchasereceiveNumber, &res.PurchasereceiveDate, &res.Notes, &res.Status)
+	return &res, err
+}
+
+func (r *purchaseorderRepository) DeletePurchasereceive(id, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update p_purchasereceives SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE purchasereceive_id = ?
+	`, time.Now(), byUser, id)
+	if err != nil {
+		return err
+	}
+	_, err = r.tx.Exec(`
+		UPDATE p_purchasereceive_items SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE purchasereceive_id = ?
+	`, time.Now(), byUser, id)
+	if err != nil {
+		return err
+	}
+	_, err = r.tx.Exec(`
+		UPDATE p_purchasereceive_details SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE purchasereceive_id = ?
+	`, time.Now(), byUser, id)
+	return err
+}

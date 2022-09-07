@@ -15,5 +15,6 @@ func AuthRouter(g *gin.RouterGroup) {
 	g.GET("/purchasereceives", GetPurchasereceiveList)
 	g.GET("/purchasereceives/:id/items", GetPurchasereceiveItemList)
 	g.GET("/purchasereceives/:id/details", GetPurchasereceiveDetailList)
+	g.DELETE("/purchasereceives/:id", DeletePurchasereceive)
 
 }
