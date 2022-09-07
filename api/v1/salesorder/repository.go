@@ -941,3 +941,24 @@ func (r *salesorderRepository) DeleteShippingorder(id, byUser string) error {
 	`, time.Now(), byUser, id)
 	return err
 }
+
+func (r *salesorderRepository) DeletePackage(id, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update s_packages SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE package_id = ?
+	`, time.Now(), byUser, id)
+	if err != nil {
+		return err
+	}
+	_, err = r.tx.Exec(`
+		UPDATE s_package_items SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE package_id = ?
+	`, time.Now(), byUser, id)
+	return err
+}

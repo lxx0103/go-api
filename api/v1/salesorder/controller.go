@@ -669,3 +669,29 @@ func DeleteShippingorder(c *gin.Context) {
 	}
 	response.Response(c, "OK")
 }
+
+// @Summary 根据ID删除包裹
+// @Id 624
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "包裹ID"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /packages/:id [DELETE]
+func DeletePackage(c *gin.Context) {
+	var uri PackageID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	salesorderService := NewSalesorderService()
+	err := salesorderService.DeletePackage(uri.ID, claims.OrganizationID, claims.UserName, claims.Email)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, "OK")
+}

@@ -23,6 +23,7 @@ func AuthRouter(g *gin.RouterGroup) {
 	g.POST("/salesorders/:id/packages", NewPackage)
 	g.GET("/packages", GetPackageList)
 	g.GET("/packages/:id/items", GetPackageItemList)
+	g.DELETE("/packages/:id", DeletePackage)
 
 	g.POST("/shippingorders", BatchShippingorder)
 	g.GET("/shippingorders", GetShippingorderList)

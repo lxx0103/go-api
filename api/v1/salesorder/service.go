@@ -34,7 +34,7 @@ func (s *salesorderService) NewSalesorder(info SalesorderNew) (*string, error) {
 	repo := NewSalesorderRepository(tx)
 	isConflict, err := repo.CheckSONumberConfict("", info.OrganizationID, info.SalesorderNumber)
 	if err != nil {
-		msg := "check conflict error: " + err.Error()
+		msg := "check conflict error: "
 		return nil, errors.New(msg)
 	}
 	if isConflict {
@@ -90,7 +90,7 @@ func (s *salesorderService) NewSalesorder(info SalesorderNew) (*string, error) {
 
 		err = repo.CreateSalesorderItem(soItem)
 		if err != nil {
-			msg := "create salesorder item error: " + err.Error()
+			msg := "create salesorder item error: "
 			return nil, errors.New(msg)
 		}
 	}
@@ -135,7 +135,7 @@ func (s *salesorderService) NewSalesorder(info SalesorderNew) (*string, error) {
 
 	err = repo.CreateSalesorder(salesorder)
 	if err != nil {
-		msg := "create salesorder error: " + err.Error()
+		msg := "create salesorder error: "
 		return nil, errors.New(msg)
 	}
 	var newEvent common.NewHistoryCreated
@@ -181,7 +181,7 @@ func (s *salesorderService) UpdateSalesorder(salesorderID string, info Salesorde
 	repo := NewSalesorderRepository(tx)
 	isConflict, err := repo.CheckSONumberConfict(salesorderID, info.OrganizationID, info.SalesorderNumber)
 	if err != nil {
-		msg := "check conflict error: " + err.Error()
+		msg := "check conflict error: "
 		return nil, errors.New(msg)
 	}
 	if isConflict {
@@ -262,7 +262,7 @@ func (s *salesorderService) UpdateSalesorder(salesorderID string, info Salesorde
 			soItem.UpdatedBy = info.Email
 			err = repo.UpdateSalesorderItem(item.SalesorderItemID, soItem)
 			if err != nil {
-				msg := "update salesorder item error: " + err.Error()
+				msg := "update salesorder item error: "
 				return nil, errors.New(msg)
 			}
 		} else {
@@ -288,7 +288,7 @@ func (s *salesorderService) UpdateSalesorder(salesorderID string, info Salesorde
 			soItem.UpdatedBy = info.Email
 			err = repo.CreateSalesorderItem(soItem)
 			if err != nil {
-				msg := "create salesorder item error: " + err.Error()
+				msg := "create salesorder item error: "
 				return nil, errors.New(msg)
 			}
 		}
@@ -298,7 +298,7 @@ func (s *salesorderService) UpdateSalesorder(salesorderID string, info Salesorde
 	}
 	itemDeletedError, err := repo.CheckSOItem(salesorderID, info.OrganizationID)
 	if err != nil {
-		msg := "check salesorder item error: " + err.Error()
+		msg := "check salesorder item error: "
 		return nil, errors.New(msg)
 	}
 	if itemDeletedError {
@@ -382,7 +382,7 @@ func (s *salesorderService) UpdateSalesorder(salesorderID string, info Salesorde
 
 	err = repo.UpdateSalesorder(salesorderID, salesorder)
 	if err != nil {
-		msg := "update salesorder error: " + err.Error()
+		msg := "update salesorder error: "
 		return nil, errors.New(msg)
 	}
 	var newEvent common.NewHistoryCreated
@@ -409,7 +409,7 @@ func (s *salesorderService) GetSalesorderByID(organizationID, id string) (*Sales
 	query := NewSalesorderQuery(db)
 	salesorder, err := query.GetSalesorderByID(organizationID, id)
 	if err != nil {
-		msg := "get salesorder error: " + err.Error()
+		msg := "get salesorder error: "
 		return nil, errors.New(msg)
 	}
 	return salesorder, nil
@@ -472,7 +472,7 @@ func (s *salesorderService) GetSalesorderItemList(salesorderID, organizationID s
 	query := NewSalesorderQuery(db)
 	_, err := query.GetSalesorderByID(organizationID, salesorderID)
 	if err != nil {
-		msg := "get salesorder error: " + err.Error()
+		msg := "get salesorder error: "
 		return nil, errors.New(msg)
 	}
 	list, err := query.GetSalesorderItemList(salesorderID)
@@ -498,7 +498,7 @@ func (s *salesorderService) ConfirmSalesorder(salesorderID, organizationID, user
 	}
 	err = repo.UpdateSalesorderStatus(salesorderID, 2, email) //CONFIRMED
 	if err != nil {
-		msg := "update salesorder error: " + err.Error()
+		msg := "update salesorder error: "
 		return errors.New(msg)
 	}
 	var newEvent common.NewHistoryCreated
@@ -533,7 +533,7 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 	repo := NewSalesorderRepository(tx)
 	isConflict, err := repo.CheckPickingorderNumberConfict("", info.OrganizationID, info.PickingorderNumber)
 	if err != nil {
-		msg := "check conflict error: " + err.Error()
+		msg := "check conflict error: "
 		return nil, errors.New(msg)
 	}
 	if isConflict {
@@ -564,7 +564,7 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 			for quantityToPick > 0 {
 				nextBatch, err := itemRepo.GetItemNextBatch(itemRow.ItemID, info.OrganizationID)
 				if err != nil {
-					msg := "get next batch error" + err.Error()
+					msg := "get next batch error"
 					return nil, errors.New(msg)
 				}
 				if nextBatch.Balance >= quantityToPick {
@@ -589,12 +589,12 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 					pickingorderLog.UpdatedBy = info.Email
 					err = repo.CreatePickingorderLog(pickingorderLog)
 					if err != nil {
-						msg := "create picking order log error1" + err.Error()
+						msg := "create picking order log error1"
 						return nil, errors.New(msg)
 					}
 					err = warehouseRepo.UpdateLocationCanPick(nextBatch.LocationID, quantityToPick, info.Email)
 					if err != nil {
-						msg := "update location canpick error: " + err.Error()
+						msg := "update location canpick error: "
 						return nil, errors.New(msg)
 					}
 					quantityToPick = 0
@@ -620,12 +620,12 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 					pickingorderLog.UpdatedBy = info.Email
 					err = repo.CreatePickingorderLog(pickingorderLog)
 					if err != nil {
-						msg := "create picking order log error" + err.Error()
+						msg := "create picking order log error"
 						return nil, errors.New(msg)
 					}
 					err = warehouseRepo.UpdateLocationCanPick(nextBatch.LocationID, nextBatch.Balance, info.Email)
 					if err != nil {
-						msg := "update location canpick error: " + err.Error()
+						msg := "update location canpick error: "
 						return nil, errors.New(msg)
 					}
 					quantityToPick = quantityToPick - nextBatch.Balance
@@ -644,7 +644,7 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 
 		err = repo.PickSalesorderItem(soItem)
 		if err != nil {
-			msg := "pick salesorder item error: " + err.Error()
+			msg := "pick salesorder item error: "
 			return nil, errors.New(msg)
 		}
 		var poItem PickingorderItem
@@ -662,18 +662,18 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 
 		err = repo.CreatePickingorderItem(poItem)
 		if err != nil {
-			msg := "create picking order item error: " + err.Error()
+			msg := "create picking order item error: "
 			return nil, errors.New(msg)
 		}
 		err = itemRepo.UpdateItemPickingStock(itemRow.ItemID, itemRow.Quantity, info.Email)
 		if err != nil {
-			msg := "update item stock error: " + err.Error()
+			msg := "update item stock error: "
 			return nil, errors.New(msg)
 		}
 	}
 	logs, err := repo.GetPickingorderLogSum(pickingorderID)
 	if err != nil {
-		msg := "get picking order logs  error: " + err.Error()
+		msg := "get picking order logs  error: "
 		return nil, errors.New(msg)
 	}
 	fmt.Println(logs)
@@ -693,7 +693,7 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 		pickingorderDetail.UpdatedBy = info.Email
 		err = repo.CreatePickingorderDetail(pickingorderDetail)
 		if err != nil {
-			msg := "create picking order detail error: " + err.Error()
+			msg := "create picking order detail error: "
 			return nil, errors.New(msg)
 		}
 	}
@@ -711,17 +711,17 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 	pickingorder.UpdatedBy = info.Email
 	err = repo.CreatePickingorder(pickingorder)
 	if err != nil {
-		msg := "create picking order error: " + err.Error()
+		msg := "create picking order error: "
 		return nil, errors.New(msg)
 	}
 	so, err := repo.GetSalesorderByID(info.OrganizationID, salesorderID)
 	if err != nil {
-		msg := "get sales order error: " + err.Error()
+		msg := "get sales order error: "
 		return nil, errors.New(msg)
 	}
 	receivedCount, err := repo.GetSalesorderPickedCount(info.OrganizationID, salesorderID)
 	if err != nil {
-		msg := "get sales order received count error: " + err.Error()
+		msg := "get sales order received count error: "
 		return nil, errors.New(msg)
 	}
 	picking_status := 1
@@ -732,12 +732,12 @@ func (s *salesorderService) NewPickingorder(salesorderID string, info Pickingord
 	}
 	err = repo.UpdateSalesorderPickingStatus(salesorderID, picking_status, info.Email)
 	if err != nil {
-		msg := "update sales order receive status error: " + err.Error()
+		msg := "update sales order receive status error: "
 		return nil, errors.New(msg)
 	}
 	err = repo.UpdateSalesorderStatus(salesorderID, 2, info.Email)
 	if err != nil {
-		msg := "update sales order status error: " + err.Error()
+		msg := "update sales order status error: "
 		return nil, errors.New(msg)
 	}
 	tx.Commit()
@@ -778,7 +778,7 @@ func (s *salesorderService) GetPickingorderItemList(salesorderID, organizationID
 	query := NewSalesorderQuery(db)
 	_, err := query.GetPickingorderByID(organizationID, salesorderID)
 	if err != nil {
-		msg := "get pickingorder error: " + err.Error()
+		msg := "get pickingorder error: "
 		return nil, errors.New(msg)
 	}
 	list, err := query.GetPickingorderItemList(salesorderID)
@@ -790,7 +790,7 @@ func (s *salesorderService) GetPickingorderDetailList(pickingorderID, organizati
 	query := NewSalesorderQuery(db)
 	_, err := query.GetPickingorderByID(organizationID, pickingorderID)
 	if err != nil {
-		msg := "get pickingorder error: " + err.Error()
+		msg := "get pickingorder error: "
 		return nil, errors.New(msg)
 	}
 	list, err := query.GetPickingorderDetailList(pickingorderID)
@@ -808,7 +808,7 @@ func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, 
 	repo := NewSalesorderRepository(tx)
 	isConflict, err := repo.CheckPickingorderNumberConfict("", info.OrganizationID, info.PickingorderNumber)
 	if err != nil {
-		msg := "check conflict error: " + err.Error()
+		msg := "check conflict error: "
 		return nil, errors.New(msg)
 	}
 	if isConflict {
@@ -822,12 +822,12 @@ func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, 
 	for _, soID := range info.SOID {
 		salesorder, err := repo.GetSalesorderByID(info.OrganizationID, soID)
 		if err != nil {
-			msg := "get salesorder error: " + err.Error()
+			msg := "get salesorder error: "
 			return nil, errors.New(msg)
 		}
 		items, err := repo.GetSalesorderItemList(info.OrganizationID, soID)
 		if err != nil {
-			msg := "get salesorder items error: " + err.Error()
+			msg := "get salesorder items error: "
 			return nil, errors.New(msg)
 		}
 		for _, itemRow := range *items {
@@ -847,7 +847,7 @@ func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, 
 				for quantityToPick > 0 {
 					nextBatch, err := itemRepo.GetItemNextBatch(itemRow.ItemID, info.OrganizationID)
 					if err != nil {
-						msg := "get next batch error" + err.Error()
+						msg := "get next batch error"
 						return nil, errors.New(msg)
 					}
 					if nextBatch.Balance >= quantityToPick {
@@ -872,12 +872,12 @@ func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, 
 						pickingorderLog.UpdatedBy = info.Email
 						err = repo.CreatePickingorderLog(pickingorderLog)
 						if err != nil {
-							msg := "create picking order detail error1" + err.Error()
+							msg := "create picking order detail error1"
 							return nil, errors.New(msg)
 						}
 						err = warehouseRepo.UpdateLocationCanPick(nextBatch.LocationID, quantityToPick, info.Email)
 						if err != nil {
-							msg := "update location canpick error: " + err.Error()
+							msg := "update location canpick error: "
 							return nil, errors.New(msg)
 						}
 						quantityToPick = 0
@@ -903,12 +903,12 @@ func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, 
 						pickingorderLog.UpdatedBy = info.Email
 						err = repo.CreatePickingorderLog(pickingorderLog)
 						if err != nil {
-							msg := "create picking order detail error" + err.Error()
+							msg := "create picking order detail error"
 							return nil, errors.New(msg)
 						}
 						err = warehouseRepo.UpdateLocationCanPick(nextBatch.LocationID, nextBatch.Balance, info.Email)
 						if err != nil {
-							msg := "update location canpick error: " + err.Error()
+							msg := "update location canpick error: "
 							return nil, errors.New(msg)
 						}
 						quantityToPick = quantityToPick - nextBatch.Balance
@@ -923,7 +923,7 @@ func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, 
 
 			err = repo.PickSalesorderItem(soItem)
 			if err != nil {
-				msg := "pick salesorder item error: " + err.Error()
+				msg := "pick salesorder item error: "
 				return nil, errors.New(msg)
 			}
 			var poItem PickingorderItem
@@ -941,24 +941,24 @@ func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, 
 
 			err = repo.CreatePickingorderItem(poItem)
 			if err != nil {
-				msg := "create picking order item error: " + err.Error()
+				msg := "create picking order item error: "
 				return nil, errors.New(msg)
 			}
 			err = itemRepo.UpdateItemPickingStock(itemRow.ItemID, toPick, info.Email)
 			if err != nil {
-				msg := "update item stock error: " + err.Error()
+				msg := "update item stock error: "
 				return nil, errors.New(msg)
 			}
 		}
 		picking_status := 3
 		err = repo.UpdateSalesorderPickingStatus(soID, picking_status, info.Email)
 		if err != nil {
-			msg := "update sales order picking status error: " + err.Error()
+			msg := "update sales order picking status error: "
 			return nil, errors.New(msg)
 		}
 		err = repo.UpdateSalesorderStatus(soID, 2, info.Email)
 		if err != nil {
-			msg := "update sales order status error: " + err.Error()
+			msg := "update sales order status error: "
 			return nil, errors.New(msg)
 		}
 		var newEvent common.NewHistoryCreated
@@ -975,7 +975,7 @@ func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, 
 	fmt.Println(pickingorderID)
 	logs, err := repo.GetPickingorderLogSum(pickingorderID)
 	if err != nil {
-		msg := "get picking order logs  error: " + err.Error()
+		msg := "get picking order logs  error: "
 		return nil, errors.New(msg)
 	}
 	fmt.Println(logs)
@@ -995,7 +995,7 @@ func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, 
 		pickingorderDetail.UpdatedBy = info.Email
 		err = repo.CreatePickingorderDetail(pickingorderDetail)
 		if err != nil {
-			msg := "create picking order detail error: " + err.Error()
+			msg := "create picking order detail error: "
 			return nil, errors.New(msg)
 		}
 	}
@@ -1013,7 +1013,7 @@ func (s *salesorderService) BatchPickingorder(info PickingorderBatch) (*string, 
 	pickingorder.UpdatedBy = info.Email
 	err = repo.CreatePickingorder(pickingorder)
 	if err != nil {
-		msg := "create picking order error: " + err.Error()
+		msg := "create picking order error: "
 		return nil, errors.New(msg)
 	}
 	tx.Commit()
@@ -1041,7 +1041,7 @@ func (s *salesorderService) NewPickingFromLocation(pickingorderID string, info P
 	warehouseRepo := warehouse.NewWarehouseRepository(tx)
 	pickingorderDetail, err := repo.GetPickingorderDetailByLocationID(info.OrganizationID, pickingorderID, info.LocationID)
 	if err != nil {
-		msg := "picking order detail not exist" + err.Error()
+		msg := "picking order detail not exist"
 		return nil, errors.New(msg)
 	}
 	itemInfo, err := itemRepo.GetItemByID(pickingorderDetail.ItemID, info.OrganizationID)
@@ -1173,7 +1173,7 @@ func (s *salesorderService) UpdatePickingorderPicked(pickingorderID, organizatio
 	}
 	err = repo.UpdatePickingorderStatus(pickingorderID, 3, email) //CONFIRMED
 	if err != nil {
-		msg := "update pickingorder error: " + err.Error()
+		msg := "update pickingorder error: "
 		return errors.New(msg)
 	}
 	var newEvent common.NewHistoryCreated
@@ -1208,7 +1208,7 @@ func (s *salesorderService) NewPackage(salesorderID string, info PackageNew) (*s
 	repo := NewSalesorderRepository(tx)
 	isConflict, err := repo.CheckPackageNumberConfict("", info.OrganizationID, info.PackageNumber)
 	if err != nil {
-		msg := "check conflict error: " + err.Error()
+		msg := "check conflict error: "
 		return nil, errors.New(msg)
 	}
 	if isConflict {
@@ -1245,7 +1245,7 @@ func (s *salesorderService) NewPackage(salesorderID string, info PackageNew) (*s
 
 		err = repo.PackSalesorderItem(soItem)
 		if err != nil {
-			msg := "pack salesorder item error: " + err.Error()
+			msg := "pack salesorder item error: "
 			return nil, errors.New(msg)
 		}
 		var packageItem PackageItem
@@ -1263,12 +1263,12 @@ func (s *salesorderService) NewPackage(salesorderID string, info PackageNew) (*s
 
 		err = repo.CreatePackageItem(packageItem)
 		if err != nil {
-			msg := "create package item error: " + err.Error()
+			msg := "create package item error: "
 			return nil, errors.New(msg)
 		}
 		err = itemRepo.UpdateItemPackedStock(itemRow.ItemID, itemRow.Quantity, info.Email)
 		if err != nil {
-			msg := "update item stock error: " + err.Error()
+			msg := "update item stock error: "
 			return nil, errors.New(msg)
 		}
 	}
@@ -1286,17 +1286,17 @@ func (s *salesorderService) NewPackage(salesorderID string, info PackageNew) (*s
 	newPackage.UpdatedBy = info.Email
 	err = repo.CreatePackage(newPackage)
 	if err != nil {
-		msg := "create package error: " + err.Error()
+		msg := "create package error: "
 		return nil, errors.New(msg)
 	}
 	so, err := repo.GetSalesorderByID(info.OrganizationID, salesorderID)
 	if err != nil {
-		msg := "get sales order error: " + err.Error()
+		msg := "get sales order error: "
 		return nil, errors.New(msg)
 	}
 	packedCount, err := repo.GetSalesorderPackedCount(info.OrganizationID, salesorderID)
 	if err != nil {
-		msg := "get sales order packed count error: " + err.Error()
+		msg := "get sales order packed count error: "
 		return nil, errors.New(msg)
 	}
 	packing_status := 1
@@ -1307,12 +1307,12 @@ func (s *salesorderService) NewPackage(salesorderID string, info PackageNew) (*s
 	}
 	err = repo.UpdateSalesorderPackingStatus(salesorderID, packing_status, info.Email)
 	if err != nil {
-		msg := "update sales order packing status error: " + err.Error()
+		msg := "update sales order packing status error: "
 		return nil, errors.New(msg)
 	}
 	err = repo.UpdateSalesorderStatus(salesorderID, 2, info.Email)
 	if err != nil {
-		msg := "update sales order status error: " + err.Error()
+		msg := "update sales order status error: "
 		return nil, errors.New(msg)
 	}
 	tx.Commit()
@@ -1353,7 +1353,7 @@ func (s *salesorderService) GetPackageItemList(salesorderID, organizationID stri
 	query := NewSalesorderQuery(db)
 	_, err := query.GetPackageByID(organizationID, salesorderID)
 	if err != nil {
-		msg := "get package error: " + err.Error()
+		msg := "get package error: "
 		return nil, errors.New(msg)
 	}
 	list, err := query.GetPackageItemList(salesorderID)
@@ -1371,7 +1371,7 @@ func (s *salesorderService) BatchShippingorder(info ShippingorderBatch) (*string
 	repo := NewSalesorderRepository(tx)
 	isConflict, err := repo.CheckShippingorderNumberConfict("", info.OrganizationID, info.ShippingorderNumber)
 	if err != nil {
-		msg := "check conflict error: " + err.Error()
+		msg := "check conflict error: "
 		return nil, errors.New(msg)
 	}
 	if isConflict {
@@ -1394,7 +1394,7 @@ func (s *salesorderService) BatchShippingorder(info ShippingorderBatch) (*string
 	for _, packageID := range info.PackageID {
 		packageInfo, err := repo.GetPackageByID(info.OrganizationID, packageID)
 		if err != nil {
-			msg := "get package error: " + err.Error()
+			msg := "get package error: "
 			return nil, errors.New(msg)
 		}
 		if packageInfo.Status != 1 {
@@ -1403,7 +1403,7 @@ func (s *salesorderService) BatchShippingorder(info ShippingorderBatch) (*string
 		}
 		items, err := repo.GetPackageItemList(info.OrganizationID, packageID)
 		if err != nil {
-			msg := "get package items error: " + err.Error()
+			msg := "get package items error: "
 			return nil, errors.New(msg)
 		}
 		for _, itemRow := range *items {
@@ -1436,7 +1436,7 @@ func (s *salesorderService) BatchShippingorder(info ShippingorderBatch) (*string
 
 			err = repo.ShipSalesorderItem(soItem)
 			if err != nil {
-				msg := "ship salesorder item error: " + err.Error()
+				msg := "ship salesorder item error: "
 				return nil, errors.New(msg)
 			}
 			var shippingorderDetail ShippingorderDetail
@@ -1455,7 +1455,7 @@ func (s *salesorderService) BatchShippingorder(info ShippingorderBatch) (*string
 
 			err = repo.CreateShippingorderDetail(shippingorderDetail)
 			if err != nil {
-				msg := "create shipping order item error: " + err.Error()
+				msg := "create shipping order item error: "
 				return nil, errors.New(msg)
 			}
 			salesorderUpdated := false
@@ -1500,7 +1500,7 @@ func (s *salesorderService) BatchShippingorder(info ShippingorderBatch) (*string
 			}
 			shippedCount, err := repo.GetSalesorderShippedCount(info.OrganizationID, packageInfo.SalesorderID)
 			if err != nil {
-				msg := "get sales order packed count error: " + err.Error()
+				msg := "get sales order packed count error: "
 				return nil, errors.New(msg)
 			}
 			shippingStatus := 1
@@ -1511,26 +1511,26 @@ func (s *salesorderService) BatchShippingorder(info ShippingorderBatch) (*string
 			}
 			err = repo.UpdateSalesorderShippingStatus(packageInfo.SalesorderID, shippingStatus, info.Email)
 			if err != nil {
-				msg := "update salesorder shipping status error: " + err.Error()
+				msg := "update salesorder shipping status error: "
 				return nil, errors.New(msg)
 			}
 			if salesorderInfo.InvoiceStatus == 3 && shippingStatus == 3 {
 				err = repo.UpdateSalesorderStatus(packageInfo.SalesorderID, 3, info.Email)
 				if err != nil {
-					msg := "update sales order status error: " + err.Error()
+					msg := "update sales order status error: "
 					return nil, errors.New(msg)
 				}
 			}
 		}
 		err = repo.UpdatePackageStatus(packageID, 2, info.Email)
 		if err != nil {
-			msg := "update package status error: " + err.Error()
+			msg := "update package status error: "
 			return nil, errors.New(msg)
 		}
 	}
 	details, err := repo.GetShippingorderDetailSum(shippingorderID)
 	if err != nil {
-		msg := "get picking order detail  error: " + err.Error()
+		msg := "get picking order detail  error: "
 		return nil, errors.New(msg)
 	}
 	for _, detailRow := range *details {
@@ -1547,7 +1547,7 @@ func (s *salesorderService) BatchShippingorder(info ShippingorderBatch) (*string
 		shippingorderItem.UpdatedBy = info.Email
 		err = repo.CreateShippingorderItem(shippingorderItem)
 		if err != nil {
-			msg := "create picking order item error: " + err.Error()
+			msg := "create picking order item error: "
 			return nil, errors.New(msg)
 		}
 	}
@@ -1567,7 +1567,7 @@ func (s *salesorderService) BatchShippingorder(info ShippingorderBatch) (*string
 	shippingorder.UpdatedBy = info.Email
 	err = repo.CreateShippingorder(shippingorder)
 	if err != nil {
-		msg := "create shipping order error: " + err.Error()
+		msg := "create shipping order error: "
 		return nil, errors.New(msg)
 	}
 	tx.Commit()
@@ -1601,7 +1601,7 @@ func (s *salesorderService) GetShippingorderItemList(salesorderID, organizationI
 	query := NewSalesorderQuery(db)
 	_, err := query.GetShippingorderByID(organizationID, salesorderID)
 	if err != nil {
-		msg := "get package error: " + err.Error()
+		msg := "get package error: "
 		return nil, errors.New(msg)
 	}
 	list, err := query.GetShippingorderItemList(salesorderID)
@@ -1613,7 +1613,7 @@ func (s *salesorderService) GetShippingorderDetailList(salesorderID, organizatio
 	query := NewSalesorderQuery(db)
 	_, err := query.GetShippingorderByID(organizationID, salesorderID)
 	if err != nil {
-		msg := "get package error: " + err.Error()
+		msg := "get package error: "
 		return nil, errors.New(msg)
 	}
 	list, err := query.GetShippingorderDetailList(salesorderID)
@@ -1684,7 +1684,7 @@ func (s *salesorderService) DeleteShippingorder(shippingorderID, organizationID,
 	for _, detail := range *shippingorderDetails {
 		packageInfo, err := repo.GetPackageByID(organizationID, detail.PackageID)
 		if err != nil {
-			msg := "get package error: " + err.Error()
+			msg := "get package error: "
 			return errors.New(msg)
 		}
 		// fmt.Println(packageInfo.Status)
@@ -1720,7 +1720,7 @@ func (s *salesorderService) DeleteShippingorder(shippingorderID, organizationID,
 
 		err = repo.ShipSalesorderItem(soItem)
 		if err != nil {
-			msg := "ship salesorder item error: " + err.Error()
+			msg := "ship salesorder item error: "
 			return errors.New(msg)
 		}
 
@@ -1766,7 +1766,7 @@ func (s *salesorderService) DeleteShippingorder(shippingorderID, organizationID,
 		}
 		shippedCount, err := repo.GetSalesorderShippedCount(organizationID, packageInfo.SalesorderID)
 		if err != nil {
-			msg := "get sales order shipped count error: " + err.Error()
+			msg := "get sales order shipped count error: "
 			return errors.New(msg)
 		}
 		shippingStatus := 2
@@ -1777,17 +1777,17 @@ func (s *salesorderService) DeleteShippingorder(shippingorderID, organizationID,
 		}
 		err = repo.UpdateSalesorderShippingStatus(packageInfo.SalesorderID, shippingStatus, email)
 		if err != nil {
-			msg := "update salesorder shipping status error: " + err.Error()
+			msg := "update salesorder shipping status error: "
 			return errors.New(msg)
 		}
 		err = repo.UpdateSalesorderStatus(packageInfo.SalesorderID, 2, email)
 		if err != nil {
-			msg := "update sales order status error: " + err.Error()
+			msg := "update sales order status error: "
 			return errors.New(msg)
 		}
 		err = repo.UpdatePackageStatus(detail.PackageID, 1, email)
 		if err != nil {
-			msg := "update package status error: " + err.Error()
+			msg := "update package status error: "
 			return errors.New(msg)
 		}
 	}
@@ -1802,6 +1802,120 @@ func (s *salesorderService) DeleteShippingorder(shippingorderID, organizationID,
 	newEvent.HistoryBy = user
 	newEvent.ReferenceID = shippingorderID
 	newEvent.Description = "Shipping order Deleted"
+	newEvent.OrganizationID = organizationID
+	newEvent.Email = email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return errors.New(msg)
+	}
+	for _, msgRow := range msgs {
+		err = rabbit.Publish("NewHistoryCreated", msgRow)
+		if err != nil {
+			msg := "create event NewHistoryCreated error"
+			return errors.New(msg)
+		}
+	}
+	return nil
+}
+
+func (s *salesorderService) DeletePackage(packageID, organizationID, user, email string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	repo := NewSalesorderRepository(tx)
+	itemRepo := item.NewItemRepository(tx)
+	oldPackage, err := repo.GetPackageByID(organizationID, packageID)
+	if err != nil {
+		msg := "package not exist"
+		return errors.New(msg)
+	}
+	packageItems, err := repo.GetPackageItemList(organizationID, packageID)
+	if err != nil {
+		msg := "get package items error"
+		return errors.New(msg)
+	}
+	var msgs [][]byte
+	for _, itemRow := range *packageItems {
+		oldSoItem, err := repo.GetSalesorderItemByID(organizationID, oldPackage.SalesorderID, itemRow.ItemID)
+		if err != nil {
+			msg := "sales order item not exist"
+			return errors.New(msg)
+		}
+		_, err = itemRepo.GetItemByID(itemRow.ItemID, organizationID)
+		if err != nil {
+			msg := "item not exist"
+			return errors.New(msg)
+		}
+		if oldSoItem.QuantityPacked < itemRow.Quantity {
+			msg := "sales order packed quantity error"
+			return errors.New(msg)
+		}
+		var soItem SalesorderItem
+		soItem.SalesorderItemID = oldSoItem.SalesorderItemID
+		soItem.QuantityPacked = oldSoItem.QuantityPacked - itemRow.Quantity
+		soItem.Updated = time.Now()
+		soItem.UpdatedBy = email
+
+		err = repo.PackSalesorderItem(soItem)
+		if err != nil {
+			msg := "update salesorder item packed error: "
+			return errors.New(msg)
+		}
+		err = itemRepo.UpdateItemPackedStock(itemRow.ItemID, -itemRow.Quantity, email)
+		if err != nil {
+			msg := "update item stock error: "
+			return errors.New(msg)
+		}
+		var newEvent common.NewHistoryCreated
+		newEvent.HistoryType = "item"
+		newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+		newEvent.HistoryBy = user
+		newEvent.ReferenceID = oldPackage.SalesorderID
+		newEvent.Description = "Package Deleted"
+		newEvent.OrganizationID = organizationID
+		newEvent.Email = email
+		msg, _ := json.Marshal(newEvent)
+		msgs = append(msgs, msg)
+	}
+	packedCount, err := repo.GetSalesorderPackedCount(organizationID, oldPackage.SalesorderID)
+	if err != nil {
+		msg := "get sales order packed count error: "
+		return errors.New(msg)
+	}
+	packing_status := 1
+	if packedCount == 0 {
+		packing_status = 1
+	} else {
+		packing_status = 2
+	}
+	err = repo.UpdateSalesorderPackingStatus(oldPackage.SalesorderID, packing_status, email)
+	if err != nil {
+		msg := "update sales order packing status error: "
+		return errors.New(msg)
+	}
+	err = repo.UpdateSalesorderStatus(oldPackage.SalesorderID, 2, email)
+	if err != nil {
+		msg := "update sales order status error: "
+		return errors.New(msg)
+	}
+	err = repo.DeletePackage(packageID, email)
+	if err != nil {
+		msg := "delete package error: "
+		return errors.New(msg)
+	}
+	tx.Commit()
+	var newEvent common.NewHistoryCreated
+	newEvent.HistoryType = "salesorder"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = user
+	newEvent.ReferenceID = oldPackage.SalesorderID
+	newEvent.Description = "Package Deleted"
 	newEvent.OrganizationID = organizationID
 	newEvent.Email = email
 	rabbit, _ := queue.GetConn()
