@@ -3,6 +3,7 @@ package warehouse
 import (
 	"errors"
 	"go-api/api/v1/item"
+	"go-api/api/v1/setting"
 	"go-api/core/database"
 	"time"
 
@@ -330,6 +331,7 @@ func (s *warehouseService) NewAdjustment(info AdjustmentNew) error {
 	defer tx.Rollback()
 	repo := NewWarehouseRepository(tx)
 	itemRepo := item.NewItemRepository(tx)
+	settingRepo := setting.NewSettingRepository(tx)
 	oldLocation, err := repo.GetLocationByID(info.LocationID, info.OrganizationID)
 	if err != nil {
 		msg := "Location not exist"
@@ -345,6 +347,11 @@ func (s *warehouseService) NewAdjustment(info AdjustmentNew) error {
 	}
 	if oldLocation.Quantity+info.Quantity > oldLocation.Capacity {
 		msg := "not enough space to adjust"
+		return errors.New(msg)
+	}
+	_, err = settingRepo.GetAdjustmentReasonByID(info.OrganizationID, info.AdjustmentReasonID)
+	if err != nil {
+		msg := "adjustment reason not exist"
 		return errors.New(msg)
 	}
 	itemInfo, err := itemRepo.GetItemByID(oldLocation.ItemID, info.OrganizationID)
@@ -431,7 +438,7 @@ func (s *warehouseService) NewAdjustment(info AdjustmentNew) error {
 	adjustment.AdjustmentID = adjustmentID
 	adjustment.Quantity = info.Quantity
 	adjustment.Rate = info.Rate
-	adjustment.Reason = info.Reason
+	adjustment.AdjustmentReasonID = info.AdjustmentReasonID
 	adjustment.Remark = info.Remark
 	adjustment.Status = 1
 	adjustment.Created = time.Now()

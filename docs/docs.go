@@ -26,6 +26,277 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/adjustmentreasons": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "库存调整原因管理"
+                ],
+                "summary": "库存调整原因列表",
+                "operationId": "336",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "库存调整原因名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/setting.AdjustmentReasonResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "库存调整原因管理"
+                ],
+                "summary": "新建库存调整原因",
+                "operationId": "337",
+                "parameters": [
+                    {
+                        "description": "库存调整原因信息",
+                        "name": "adjustmentreason_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/setting.AdjustmentReasonNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/setting.AdjustmentReasonResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/adjustmentreasons/:id": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "库存调整原因管理"
+                ],
+                "summary": "根据ID获取库存调整原因",
+                "operationId": "339",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "库存调整原因ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/setting.AdjustmentReasonResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "库存调整原因管理"
+                ],
+                "summary": "根据ID更新库存调整原因",
+                "operationId": "338",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "库存调整原因ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "库存调整原因信息",
+                        "name": "adjustmentreason_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/setting.AdjustmentReasonNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/setting.AdjustmentReason"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "库存调整原因管理"
+                ],
+                "summary": "根据ID删除库存调整原因",
+                "operationId": "340",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "库存调整原因ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/adjustments": {
             "get": {
                 "consumes": [
@@ -3195,7 +3466,7 @@ var doc = `{
                     "销售单管理"
                 ],
                 "summary": "根据ID删除拣货单",
-                "operationId": "605",
+                "operationId": "626",
                 "parameters": [
                     {
                         "type": "string",
@@ -6357,6 +6628,9 @@ var doc = `{
                 "company": {
                     "type": "string"
                 },
+                "converted_to": {
+                    "type": "string"
+                },
                 "country": {
                     "type": "string"
                 },
@@ -7935,6 +8209,76 @@ var doc = `{
                 }
             }
         },
+        "setting.AdjustmentReason": {
+            "type": "object",
+            "properties": {
+                "adjustment_reason_id": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "setting.AdjustmentReasonNew": {
+            "type": "object",
+            "required": [
+                "name",
+                "status"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                },
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
+                }
+            }
+        },
+        "setting.AdjustmentReasonResponse": {
+            "type": "object",
+            "properties": {
+                "adjustment_reason_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
         "setting.Brand": {
             "type": "object",
             "properties": {
@@ -8702,12 +9046,15 @@ var doc = `{
         "warehouse.AdjustmentNew": {
             "type": "object",
             "required": [
+                "adjustment_reason_id",
                 "location_id",
                 "quantity",
-                "reason",
                 "remark"
             ],
             "properties": {
+                "adjustment_reason_id": {
+                    "type": "string"
+                },
                 "location_id": {
                     "type": "string"
                 },
@@ -8716,9 +9063,6 @@ var doc = `{
                 },
                 "rate": {
                     "type": "number"
-                },
-                "reason": {
-                    "type": "string"
                 },
                 "remark": {
                     "type": "string"
@@ -8729,6 +9073,12 @@ var doc = `{
             "type": "object",
             "properties": {
                 "adjustment_id": {
+                    "type": "string"
+                },
+                "adjustment_reason_id": {
+                    "type": "string"
+                },
+                "adjustment_reason_name": {
                     "type": "string"
                 },
                 "item_id": {
@@ -8751,9 +9101,6 @@ var doc = `{
                 },
                 "rate": {
                     "type": "number"
-                },
-                "reason": {
-                    "type": "string"
                 },
                 "remark": {
                     "type": "string"

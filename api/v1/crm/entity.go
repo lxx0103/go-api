@@ -22,6 +22,7 @@ type Lead struct {
 	Address2       string    `db:"address2" json:"address2"`
 	Zip            string    `db:"zip" json:"zip"`
 	Notes          string    `db:"notes" json:"notes"`
+	CovertedTo     string    `db:"converted_to" json:"converted_to"`
 	Status         int       `db:"status" json:"status"`
 	Created        time.Time `db:"created" json:"created"`
 	CreatedBy      string    `db:"created_by" json:"created_by"`

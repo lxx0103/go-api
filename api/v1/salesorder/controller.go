@@ -722,7 +722,7 @@ func MarkPickingorderUnPicked(c *gin.Context) {
 }
 
 // @Summary 根据ID删除拣货单
-// @Id 605
+// @Id 626
 // @Tags 销售单管理
 // @version 1.0
 // @Accept application/json

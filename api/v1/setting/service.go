@@ -993,3 +993,132 @@ func (s *settingService) DeleteCarrier(carrierID, organizationID, user string) e
 	tx.Commit()
 	return nil
 }
+
+//adjustmentReason
+
+func (s *settingService) GetAdjustmentReasonByID(organizationID, id string) (*AdjustmentReasonResponse, error) {
+	db := database.RDB()
+	query := NewSettingQuery(db)
+	adjustmentReason, err := query.GetAdjustmentReasonByID(organizationID, id)
+	if err != nil {
+		msg := "get adjustmentReason error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	return adjustmentReason, nil
+}
+
+func (s *settingService) NewAdjustmentReason(info AdjustmentReasonNew) (*AdjustmentReasonResponse, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	isConflict, err := repo.CheckAdjustmentReasonConfict("", info.OrganizationID, info.Name)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "AdjustmentReason name conflict"
+		return nil, errors.New(msg)
+	}
+	var adjustmentReason AdjustmentReason
+	adjustmentReason.AdjustmentReasonID = "rea-" + xid.New().String()
+	adjustmentReason.OrganizationID = info.OrganizationID
+	adjustmentReason.Name = info.Name
+	adjustmentReason.Status = info.Status
+	adjustmentReason.Created = time.Now()
+	adjustmentReason.CreatedBy = info.User
+	adjustmentReason.Updated = time.Now()
+	adjustmentReason.UpdatedBy = info.User
+	err = repo.CreateAdjustmentReason(adjustmentReason)
+	if err != nil {
+		return nil, err
+	}
+	res, err := repo.GetAdjustmentReasonByID(info.OrganizationID, adjustmentReason.AdjustmentReasonID)
+	tx.Commit()
+	return res, err
+}
+
+func (s *settingService) GetAdjustmentReasonList(filter AdjustmentReasonFilter) (int, *[]AdjustmentReasonResponse, error) {
+	db := database.RDB()
+	query := NewSettingQuery(db)
+	count, err := query.GetAdjustmentReasonCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := query.GetAdjustmentReasonList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *settingService) UpdateAdjustmentReason(adjustmentReasonID string, info AdjustmentReasonNew) (*AdjustmentReasonResponse, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	isConflict, err := repo.CheckAdjustmentReasonConfict(adjustmentReasonID, info.OrganizationID, info.Name)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "adjustmentReason name conflict"
+		return nil, errors.New(msg)
+	}
+	_, err = repo.GetAdjustmentReasonByID(info.OrganizationID, adjustmentReasonID)
+	if err != nil {
+		msg := "AdjustmentReason not exist"
+		return nil, errors.New(msg)
+	}
+	var adjustmentReason AdjustmentReason
+	adjustmentReason.Name = info.Name
+	adjustmentReason.UpdatedBy = info.User
+	adjustmentReason.Updated = time.Now()
+	adjustmentReason.Status = info.Status
+	err = repo.UpdateAdjustmentReason(adjustmentReasonID, adjustmentReason)
+	if err != nil {
+		msg := "update adjustmentReason error"
+		return nil, errors.New(msg)
+	}
+	res, err := repo.GetAdjustmentReasonByID(info.OrganizationID, adjustmentReasonID)
+	tx.Commit()
+	return res, err
+}
+
+func (s *settingService) DeleteAdjustmentReason(adjustmentReasonID, organizationID, user string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	_, err = repo.GetAdjustmentReasonByID(organizationID, adjustmentReasonID)
+	if err != nil {
+		msg := "AdjustmentReason not exist"
+		return errors.New(msg)
+	}
+	usedCount, err := repo.GetAdjustmentAdjustmentReasonCount(adjustmentReasonID, organizationID)
+	if err != nil {
+		msg := "get adjustment reason count error"
+		return errors.New(msg)
+	}
+	if usedCount > 0 {
+		msg := "AdjustmentReason used in Shipping order can not be deleted"
+		return errors.New(msg)
+	}
+	err = repo.DeleteAdjustmentReason(adjustmentReasonID, user)
+	if err != nil {
+		return err
+	}
+	tx.Commit()
+	return nil
+}

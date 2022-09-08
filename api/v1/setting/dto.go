@@ -232,3 +232,29 @@ type CarrierNew struct {
 type CarrierID struct {
 	ID string `uri:"id" binding:"required,min=1"`
 }
+
+//adjustment_reason
+
+type AdjustmentReasonFilter struct {
+	Name           string `form:"name" binding:"omitempty,max=64,min=1"`
+	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
+	request.PageInfo
+}
+
+type AdjustmentReasonResponse struct {
+	AdjustmentReasonID string `db:"adjustment_reason_id" json:"adjustment_reason_id"`
+	OrganizationID     string `db:"organization_id" json:"organization_id"`
+	Name               string `db:"name" json:"name"`
+	Status             int    `db:"status" json:"status"`
+}
+
+type AdjustmentReasonNew struct {
+	Name           string `json:"name" binding:"required,min=1,max=64"`
+	Status         int    `json:"status" binding:"required,oneof=1 2"`
+	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
+	User           string `json:"user" swaggerignore:"true"`
+}
+
+type AdjustmentReasonID struct {
+	ID string `uri:"id" binding:"required,min=1"`
+}

@@ -277,6 +277,11 @@ func (s *crmService) ConvertLead(LeadID string, info LeadConvertNew) (*string, e
 		msg := "update lead error: " + err.Error()
 		return nil, errors.New(msg)
 	}
+	err = repo.UpdateLeadConverted(LeadID, info.Type, info.Email)
+	if err != nil {
+		msg := "update lead error: " + err.Error()
+		return nil, errors.New(msg)
+	}
 	var newEvent common.NewHistoryCreated
 	newEvent.HistoryType = "crm"
 	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")

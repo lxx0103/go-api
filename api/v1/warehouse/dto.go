@@ -77,14 +77,14 @@ type LocationCode struct {
 }
 
 type AdjustmentNew struct {
-	LocationID     string  `json:"location_id" binding:"required"`
-	Reason         string  `json:"reason" binding:"required"`
-	Quantity       int     `json:"quantity" binding:"required"`
-	Rate           float64 `json:"rate" binding:"omitempty"`
-	Remark         string  `json:"remark" binding:"required"`
-	OrganizationID string  `json:"organiztion_id" swaggerignore:"true"`
-	User           string  `json:"user" swaggerignore:"true"`
-	Email          string  `json:"email" swaggerignore:"true"`
+	LocationID         string  `json:"location_id" binding:"required"`
+	AdjustmentReasonID string  `json:"adjustment_reason_id" binding:"required"`
+	Quantity           int     `json:"quantity" binding:"required"`
+	Rate               float64 `json:"rate" binding:"omitempty"`
+	Remark             string  `json:"remark" binding:"required"`
+	OrganizationID     string  `json:"organiztion_id" swaggerignore:"true"`
+	User               string  `json:"user" swaggerignore:"true"`
+	Email              string  `json:"email" swaggerignore:"true"`
 }
 
 type AdjustmentFilter struct {
@@ -95,16 +95,17 @@ type AdjustmentFilter struct {
 }
 
 type AdjustmentResponse struct {
-	OrganizationID string  `db:"organization_id" json:"organization_id"`
-	LocationID     string  `db:"location_id" json:"location_id"`
-	LocationCode   string  `db:"location_code" json:"location_code"`
-	ItemID         string  `db:"item_id" json:"item_id"`
-	ItemName       string  `db:"item_name" json:"item_name"`
-	SKU            string  `db:"sku" json:"sku"`
-	AdjustmentID   string  `db:"adjustment_id" json:"adjustment_id"`
-	Quantity       int     `db:"quantity" json:"quantity"`
-	Rate           float64 `db:"rate" json:"rate"`
-	Reason         string  `db:"reason" json:"reason"`
-	Remark         string  `db:"remark" json:"remark"`
-	Status         int     `db:"status" json:"status"`
+	OrganizationID       string  `db:"organization_id" json:"organization_id"`
+	LocationID           string  `db:"location_id" json:"location_id"`
+	LocationCode         string  `db:"location_code" json:"location_code"`
+	ItemID               string  `db:"item_id" json:"item_id"`
+	ItemName             string  `db:"item_name" json:"item_name"`
+	SKU                  string  `db:"sku" json:"sku"`
+	AdjustmentID         string  `db:"adjustment_id" json:"adjustment_id"`
+	Quantity             int     `db:"quantity" json:"quantity"`
+	Rate                 float64 `db:"rate" json:"rate"`
+	AdjustmentReasonID   string  `db:"adjustment_reason_id" json:"adjustment_reason_id"`
+	AdjustmentReasonName string  `db:"adjustment_reason_name" json:"adjustment_reason_name"`
+	Remark               string  `db:"remark" json:"remark"`
+	Status               int     `db:"status" json:"status"`
 }

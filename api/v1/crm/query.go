@@ -37,7 +37,9 @@ func (r *crmQuery) GetLeadByID(organizationID, id string) (*LeadResponse, error)
 	address1, 
 	address2, 
 	zip, 
-	status
+	status,
+	converted_to,
+	notes
 	FROM c_leads
 	WHERE organization_id = ? AND lead_id = ? AND status > 0
 	`, organizationID, id)
@@ -91,6 +93,7 @@ func (r *crmQuery) GetLeadList(filter LeadFilter) (*[]LeadResponse, error) {
 		address2, 
 		zip, 
 		status,
+		converted_to,
 		notes
 		FROM c_leads
 		WHERE `+strings.Join(where, " AND ")+`

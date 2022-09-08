@@ -327,3 +327,47 @@ func (r *settingQuery) GetCarrierList(filter CarrierFilter) (*[]CarrierResponse,
 	`, args...)
 	return &carriers, err
 }
+
+//AdjustmentReason
+
+func (r *settingQuery) GetAdjustmentReasonByID(organizationID, id string) (*AdjustmentReasonResponse, error) {
+	var adjustmentReason AdjustmentReasonResponse
+	err := r.conn.Get(&adjustmentReason, "SELECT adjustment_reason_id, organization_id, name, status FROM s_adjustment_reasons WHERE organization_id = ? AND adjustment_reason_id = ? AND status > 0", organizationID, id)
+	return &adjustmentReason, err
+}
+
+func (r *settingQuery) GetAdjustmentReasonCount(filter AdjustmentReasonFilter) (int, error) {
+	where, args := []string{"status > 0"}, []interface{}{}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	if v := filter.Name; v != "" {
+		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
+	}
+	var count int
+	err := r.conn.Get(&count, `
+		SELECT count(1) as count
+		FROM s_adjustment_reasons
+		WHERE `+strings.Join(where, " AND "), args...)
+	return count, err
+}
+
+func (r *settingQuery) GetAdjustmentReasonList(filter AdjustmentReasonFilter) (*[]AdjustmentReasonResponse, error) {
+	where, args := []string{"status > 0"}, []interface{}{}
+	if v := filter.Name; v != "" {
+		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	args = append(args, filter.PageID*filter.PageSize-filter.PageSize)
+	args = append(args, filter.PageSize)
+	var adjustmentReasons []AdjustmentReasonResponse
+	err := r.conn.Select(&adjustmentReasons, `
+		SELECT adjustment_reason_id, organization_id, name, status
+		FROM s_adjustment_reasons
+		WHERE `+strings.Join(where, " AND ")+`
+		LIMIT ?, ?
+	`, args...)
+	return &adjustmentReasons, err
+}

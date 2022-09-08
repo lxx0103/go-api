@@ -211,7 +211,8 @@ func (r *warehouseQuery) GetAdjustmentList(filter AdjustmentFilter) (*[]Adjustme
 		a.adjustment_id,
 		a.quantity, 
 		a.rate,
-		a.reason,
+		a.adjustment_reason_id,
+		IFNULL(r.name, "") as adjustment_reason_name,
 		a.remark, 
 		a.status
 		FROM i_adjustments a
@@ -219,6 +220,8 @@ func (r *warehouseQuery) GetAdjustmentList(filter AdjustmentFilter) (*[]Adjustme
 		ON l.location_id = a.location_id
 		LEFT join i_items i
 		ON a.item_id = i.item_id
+		LEFT JOIN s_adjustment_reasons r
+		ON a.adjustment_reason_id = r.adjustment_reason_id
 		WHERE `+strings.Join(where, " AND ")+`
 		LIMIT ?, ?
 	`, args...)

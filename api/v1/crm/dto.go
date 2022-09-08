@@ -53,6 +53,7 @@ type LeadResponse struct {
 	Zip            string `db:"zip" json:"zip"`
 	Notes          string `db:"notes" json:"notes"`
 	Status         int    `db:"status" json:"status"`
+	ConvertedTo    string `db:"converted_to" json:"converted_to"`
 }
 
 type LeadID struct {

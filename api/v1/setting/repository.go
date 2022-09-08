@@ -591,3 +591,70 @@ func (r *settingRepository) GetShppingCarrierCount(carrierID, organizationID str
 	err := row.Scan(&count)
 	return count, err
 }
+
+// AdjustmentReason
+
+func (r *settingRepository) GetAdjustmentReasonByID(organizationID, adjustmentReasonID string) (*AdjustmentReasonResponse, error) {
+	var res AdjustmentReasonResponse
+	row := r.tx.QueryRow(`SELECT adjustment_reason_id, organization_id, name, status FROM s_adjustment_reasons WHERE organization_id = ? AND adjustment_reason_id = ? AND status > 0 LIMIT 1`, organizationID, adjustmentReasonID)
+	err := row.Scan(&res.AdjustmentReasonID, &res.OrganizationID, &res.Name, &res.Status)
+	return &res, err
+}
+
+func (r *settingRepository) CheckAdjustmentReasonConfict(adjustmentReasonID, organizationID, name string) (bool, error) {
+	var existed int
+	row := r.tx.QueryRow("SELECT count(1) FROM s_adjustment_reasons WHERE organization_id = ? AND adjustment_reason_id != ? AND name = ? AND status > 0", organizationID, adjustmentReasonID, name)
+	err := row.Scan(&existed)
+	if err != nil {
+		return true, err
+	}
+	return existed != 0, nil
+}
+
+func (r *settingRepository) CreateAdjustmentReason(info AdjustmentReason) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO s_adjustment_reasons
+		(
+			adjustment_reason_id,
+			organization_id,
+			name,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.AdjustmentReasonID, info.OrganizationID, info.Name, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}
+
+func (r *settingRepository) UpdateAdjustmentReason(id string, info AdjustmentReason) error {
+	_, err := r.tx.Exec(`
+		Update s_adjustment_reasons SET
+		name = ?,
+		status = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE adjustment_reason_id = ?
+	`, info.Name, info.Status, info.Updated, info.UpdatedBy, id)
+	return err
+}
+
+func (r *settingRepository) DeleteAdjustmentReason(id, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update s_adjustment_reasons SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE adjustment_reason_id = ?
+	`, time.Now(), byUser, id)
+	return err
+}
+
+func (r *settingRepository) GetAdjustmentAdjustmentReasonCount(adjustmentReasonID, organizationID string) (int, error) {
+	var count int
+	row := r.tx.QueryRow("SELECT count(1) FROM i_adjustments WHERE organization_id = ? AND adjustment_reason_Id = ? AND status > 0 ", organizationID, adjustmentReasonID)
+	err := row.Scan(&count)
+	return count, err
+}

@@ -180,6 +180,8 @@ definitions:
         type: string
       company:
         type: string
+      converted_to:
+        type: string
       country:
         type: string
       email:
@@ -1247,6 +1249,53 @@ definitions:
       tracking_number:
         type: string
     type: object
+  setting.AdjustmentReason:
+    properties:
+      adjustment_reason_id:
+        type: string
+      created:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      organization_id:
+        type: string
+      status:
+        type: integer
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  setting.AdjustmentReasonNew:
+    properties:
+      name:
+        maxLength: 64
+        minLength: 1
+        type: string
+      status:
+        enum:
+        - 1
+        - 2
+        type: integer
+    required:
+    - name
+    - status
+    type: object
+  setting.AdjustmentReasonResponse:
+    properties:
+      adjustment_reason_id:
+        type: string
+      name:
+        type: string
+      organization_id:
+        type: string
+      status:
+        type: integer
+    type: object
   setting.Brand:
     properties:
       brand_id:
@@ -1770,25 +1819,29 @@ definitions:
     type: object
   warehouse.AdjustmentNew:
     properties:
+      adjustment_reason_id:
+        type: string
       location_id:
         type: string
       quantity:
         type: integer
       rate:
         type: number
-      reason:
-        type: string
       remark:
         type: string
     required:
+    - adjustment_reason_id
     - location_id
     - quantity
-    - reason
     - remark
     type: object
   warehouse.AdjustmentResponse:
     properties:
       adjustment_id:
+        type: string
+      adjustment_reason_id:
+        type: string
+      adjustment_reason_name:
         type: string
       item_id:
         type: string
@@ -1804,8 +1857,6 @@ definitions:
         type: integer
       rate:
         type: number
-      reason:
-        type: string
       remark:
         type: string
       sku:
@@ -1952,6 +2003,171 @@ info:
   title: go-api API
   version: "1.0"
 paths:
+  /adjustmentreasons:
+    get:
+      consumes:
+      - application/json
+      operationId: "336"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 库存调整原因名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/setting.AdjustmentReasonResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 库存调整原因列表
+      tags:
+      - 库存调整原因管理
+    post:
+      consumes:
+      - application/json
+      operationId: "337"
+      parameters:
+      - description: 库存调整原因信息
+        in: body
+        name: adjustmentreason_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.AdjustmentReasonNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.AdjustmentReasonResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建库存调整原因
+      tags:
+      - 库存调整原因管理
+  /adjustmentreasons/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "340"
+      parameters:
+      - description: 库存调整原因ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除库存调整原因
+      tags:
+      - 库存调整原因管理
+    get:
+      consumes:
+      - application/json
+      operationId: "339"
+      parameters:
+      - description: 库存调整原因ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.AdjustmentReasonResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取库存调整原因
+      tags:
+      - 库存调整原因管理
+    put:
+      consumes:
+      - application/json
+      operationId: "338"
+      parameters:
+      - description: 库存调整原因ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 库存调整原因信息
+        in: body
+        name: adjustmentreason_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.AdjustmentReasonNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.AdjustmentReason'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新库存调整原因
+      tags:
+      - 库存调整原因管理
   /adjustments:
     get:
       consumes:
@@ -3881,7 +4097,7 @@ paths:
     delete:
       consumes:
       - application/json
-      operationId: "605"
+      operationId: "626"
       parameters:
       - description: 拣货单ID
         in: path

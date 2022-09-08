@@ -124,3 +124,14 @@ func (r *crmRepository) UpdateLeadStatus(id string, status int, byUser string) e
 	`, status, time.Now(), byUser, id)
 	return err
 }
+
+func (r *crmRepository) UpdateLeadConverted(id, convertedTo, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update c_leads SET
+		converted_to = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE lead_id = ?
+	`, convertedTo, time.Now(), byUser, id)
+	return err
+}
