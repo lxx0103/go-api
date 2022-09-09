@@ -175,6 +175,8 @@ func GetBarcodeList(c *gin.Context) {
 		return
 	}
 	itemService := NewItemService()
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	filter.OrganizationID = claims.OrganizationID
 	count, list, err := itemService.GetBarcodeList(filter)
 	if err != nil {
 		response.ResponseError(c, "DatabaseError", err)
