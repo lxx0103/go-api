@@ -27,6 +27,8 @@ func GetBayList(c *gin.Context) {
 		return
 	}
 	warehouseService := NewWarehouseService()
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	filter.OrganizationID = claims.OrganizationID
 	count, list, err := warehouseService.GetBayList(filter)
 	if err != nil {
 		response.ResponseError(c, "DatabaseError", err)
