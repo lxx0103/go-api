@@ -1890,6 +1890,131 @@
                 }
             }
         },
+        "/invoices": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "Invoice列表",
+                "operationId": "628",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "invoice编码",
+                        "name": "invoice_number",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "销售订单ID",
+                        "name": "salesorder_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/salesorder.InvoiceResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/invoices/:id/items": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "invoice产品列表",
+                "operationId": "629",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "invoiceID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/salesorder.InvoiceItemResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/items": {
             "get": {
                 "consumes": [
@@ -5034,6 +5159,58 @@
                 }
             }
         },
+        "/salesorders/:id/invoices": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "销售单管理"
+                ],
+                "summary": "新建Invoice",
+                "operationId": "627",
+                "parameters": [
+                    {
+                        "description": "销售单信息",
+                        "name": "invoice",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/salesorder.InvoiceNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/salesorders/:id/items": {
             "get": {
                 "consumes": [
@@ -7500,6 +7677,186 @@
             "type": "object",
             "properties": {
                 "data": {}
+            }
+        },
+        "salesorder.InvoiceItemNew": {
+            "type": "object",
+            "required": [
+                "item_id",
+                "quantity",
+                "rate",
+                "salesorder_item_id"
+            ],
+            "properties": {
+                "item_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "rate": {
+                    "type": "number"
+                },
+                "salesorder_item_id": {
+                    "type": "string"
+                },
+                "tax_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "salesorder.InvoiceItemResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "invoice_id": {
+                    "type": "string"
+                },
+                "invoice_item_id": {
+                    "type": "string"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "rate": {
+                    "type": "number"
+                },
+                "salesorder_item_id": {
+                    "type": "string"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "tax_amount": {
+                    "type": "number"
+                },
+                "tax_id": {
+                    "type": "string"
+                },
+                "tax_value": {
+                    "type": "number"
+                }
+            }
+        },
+        "salesorder.InvoiceNew": {
+            "type": "object",
+            "required": [
+                "customer_id",
+                "due_date",
+                "invoice_date",
+                "invoice_number",
+                "items"
+            ],
+            "properties": {
+                "customer_id": {
+                    "type": "string"
+                },
+                "discount_type": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
+                },
+                "discount_value": {
+                    "type": "number"
+                },
+                "due_date": {
+                    "type": "string"
+                },
+                "invoice_date": {
+                    "type": "string"
+                },
+                "invoice_number": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 6
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/salesorder.InvoiceItemNew"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "shipping_fee": {
+                    "type": "number"
+                }
+            }
+        },
+        "salesorder.InvoiceResponse": {
+            "type": "object",
+            "properties": {
+                "customer_id": {
+                    "type": "string"
+                },
+                "customer_name": {
+                    "type": "string"
+                },
+                "discount_type": {
+                    "type": "integer"
+                },
+                "discount_value": {
+                    "type": "number"
+                },
+                "due_date": {
+                    "type": "string"
+                },
+                "invoice_date": {
+                    "type": "string"
+                },
+                "invoice_id": {
+                    "type": "string"
+                },
+                "invoice_number": {
+                    "type": "string"
+                },
+                "item_count": {
+                    "type": "number"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "salesorder_id": {
+                    "type": "string"
+                },
+                "salesorder_number": {
+                    "type": "string"
+                },
+                "shipping_fee": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "sub_total": {
+                    "type": "number"
+                },
+                "tax_total": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                }
             }
         },
         "salesorder.PackageItemNew": {

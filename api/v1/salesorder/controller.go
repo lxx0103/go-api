@@ -746,3 +746,94 @@ func DeletePickingorder(c *gin.Context) {
 	}
 	response.Response(c, "OK")
 }
+
+// @Summary 新建Invoice
+// @Id 627
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param invoice body InvoiceNew true "销售单信息"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /salesorders/:id/invoices [POST]
+func NewInvoice(c *gin.Context) {
+	var uri SalesorderID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	var invoice InvoiceNew
+	if err := c.ShouldBindJSON(&invoice); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	invoice.OrganizationID = claims.OrganizationID
+	invoice.User = claims.UserName
+	invoice.Email = claims.Email
+	salesorderService := NewSalesorderService()
+	new, err := salesorderService.NewInvoice(uri.ID, invoice)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
+
+// @Summary Invoice列表
+// @Id 628
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数（5/10/15/20）"
+// @Param invoice_number query string false "invoice编码"
+// @Param salesorder_id query string false "销售订单ID"
+// @Success 200 object response.ListRes{data=[]InvoiceResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /invoices [GET]
+func GetInvoiceList(c *gin.Context) {
+	var filter InvoiceFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	filter.OrganizationID = claims.OrganizationID
+	salesorderService := NewSalesorderService()
+	count, list, err := salesorderService.GetInvoiceList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageID, filter.PageSize, count, list)
+}
+
+// @Summary invoice产品列表
+// @Id 629
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "invoiceID"
+// @Success 200 object response.ListRes{data=[]InvoiceItemResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /invoices/:id/items [GET]
+func GetInvoiceItemList(c *gin.Context) {
+	var uri InvoiceID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	salesorderService := NewSalesorderService()
+	list, err := salesorderService.GetInvoiceItemList(uri.ID, claims.OrganizationID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, list)
+}

@@ -783,6 +783,128 @@ definitions:
     properties:
       data: {}
     type: object
+  salesorder.InvoiceItemNew:
+    properties:
+      item_id:
+        type: string
+      quantity:
+        type: integer
+      rate:
+        type: number
+      salesorder_item_id:
+        type: string
+      tax_id:
+        type: string
+    required:
+    - item_id
+    - quantity
+    - rate
+    - salesorder_item_id
+    type: object
+  salesorder.InvoiceItemResponse:
+    properties:
+      amount:
+        type: number
+      invoice_id:
+        type: string
+      invoice_item_id:
+        type: string
+      item_id:
+        type: string
+      item_name:
+        type: string
+      organization_id:
+        type: string
+      quantity:
+        type: integer
+      rate:
+        type: number
+      salesorder_item_id:
+        type: string
+      sku:
+        type: string
+      status:
+        type: integer
+      tax_amount:
+        type: number
+      tax_id:
+        type: string
+      tax_value:
+        type: number
+    type: object
+  salesorder.InvoiceNew:
+    properties:
+      customer_id:
+        type: string
+      discount_type:
+        enum:
+        - 1
+        - 2
+        type: integer
+      discount_value:
+        type: number
+      due_date:
+        type: string
+      invoice_date:
+        type: string
+      invoice_number:
+        maxLength: 64
+        minLength: 6
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/salesorder.InvoiceItemNew'
+        type: array
+      notes:
+        type: string
+      shipping_fee:
+        type: number
+    required:
+    - customer_id
+    - due_date
+    - invoice_date
+    - invoice_number
+    - items
+    type: object
+  salesorder.InvoiceResponse:
+    properties:
+      customer_id:
+        type: string
+      customer_name:
+        type: string
+      discount_type:
+        type: integer
+      discount_value:
+        type: number
+      due_date:
+        type: string
+      invoice_date:
+        type: string
+      invoice_id:
+        type: string
+      invoice_number:
+        type: string
+      item_count:
+        type: number
+      notes:
+        type: string
+      organization_id:
+        type: string
+      salesorder_id:
+        type: string
+      salesorder_number:
+        type: string
+      shipping_fee:
+        type: number
+      status:
+        type: integer
+      sub_total:
+        type: number
+      tax_total:
+        type: number
+      total:
+        type: number
+    type: object
   salesorder.PackageItemNew:
     properties:
       item_id:
@@ -3149,6 +3271,83 @@ paths:
       summary: 历史记录列表
       tags:
       - 历史记录管理
+  /invoices:
+    get:
+      consumes:
+      - application/json
+      operationId: "628"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: invoice编码
+        in: query
+        name: invoice_number
+        type: string
+      - description: 销售订单ID
+        in: query
+        name: salesorder_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/salesorder.InvoiceResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: Invoice列表
+      tags:
+      - 销售单管理
+  /invoices/:id/items:
+    get:
+      consumes:
+      - application/json
+      operationId: "629"
+      parameters:
+      - description: invoiceID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/salesorder.InvoiceItemResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: invoice产品列表
+      tags:
+      - 销售单管理
   /items:
     get:
       consumes:
@@ -5056,6 +5255,37 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorRes'
       summary: 更新销售单为ISSUED
+      tags:
+      - 销售单管理
+  /salesorders/:id/invoices:
+    post:
+      consumes:
+      - application/json
+      operationId: "627"
+      parameters:
+      - description: 销售单信息
+        in: body
+        name: invoice
+        required: true
+        schema:
+          $ref: '#/definitions/salesorder.InvoiceNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建Invoice
       tags:
       - 销售单管理
   /salesorders/:id/items:

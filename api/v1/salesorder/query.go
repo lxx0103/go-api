@@ -487,3 +487,125 @@ func (r *salesorderQuery) GetRequisitionList(filter RequsitionFilter) (*[]Requsi
 	return &res, err
 
 }
+
+func (r *salesorderQuery) GetInvoiceCount(filter InvoiceFilter) (int, error) {
+	where, args := []string{"status > 0"}, []interface{}{}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	if v := filter.InvoiceNumber; v != "" {
+		where, args = append(where, "invoice_number like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.SalesorderID; v != "" {
+		where, args = append(where, "salesorder_id = ?"), append(args, v)
+	}
+	var count int
+	err := r.conn.Get(&count, `
+		SELECT count(1) as count
+		FROM s_invoices
+		WHERE `+strings.Join(where, " AND "), args...)
+	return count, err
+}
+
+func (r *salesorderQuery) GetInvoiceList(filter InvoiceFilter) (*[]InvoiceResponse, error) {
+	where, args := []string{"i.status > 0"}, []interface{}{}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "i.organization_id = ?"), append(args, v)
+	}
+	if v := filter.InvoiceNumber; v != "" {
+		where, args = append(where, "i.invoice_number like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.SalesorderID; v != "" {
+		where, args = append(where, "i.salesorder_id = ?"), append(args, v)
+	}
+	args = append(args, filter.PageID*filter.PageSize-filter.PageSize)
+	args = append(args, filter.PageSize)
+	var salesorders []InvoiceResponse
+	err := r.conn.Select(&salesorders, `
+		SELECT 
+		i.organization_id,
+		i.salesorder_id,
+		IFNULL(s.salesorder_number, "") as salesorder_number, 
+		i.invoice_id, 
+		i.invoice_number, 
+		i.invoice_date,
+		i.due_date,
+		i.customer_id,
+		IFNULL(c.name, "") as customer_name,
+		i.item_count,
+		i.sub_total,
+		i.discount_type,
+		i.discount_value,
+		i.tax_total,
+		i.shipping_fee,
+		i.total,
+		i.notes,
+		i.status
+		FROM s_invoices i
+		LEFT JOIN s_salesorders s
+		ON s.salesorder_id = i.salesorder_id
+		LEFT JOIN s_customers c
+		ON i.customer_id = c.customer_id
+		WHERE `+strings.Join(where, " AND ")+`
+		LIMIT ?, ?
+	`, args...)
+	return &salesorders, err
+}
+
+func (r *salesorderQuery) GetInvoiceByID(organizationID, id string) (*InvoiceResponse, error) {
+	var salesorder InvoiceResponse
+	err := r.conn.Get(&salesorder, `
+	SELECT 
+	i.organization_id,
+	i.salesorder_id,
+	IFNULL(s.salesorder_number, "") as salesorder_number, 
+	i.invoice_id, 
+	i.invoice_number, 
+	i.invoice_date,
+	i.due_date,
+	i.customer_id,
+	IFNULL(c.name, "") as customer_name,
+	i.item_count,
+	i.sub_total,
+	i.discount_type,
+	i.discount_value,
+	i.tax_total,
+	i.shipping_fee,
+	i.total,
+	i.notes,
+	i.status
+	FROM s_invoices i
+	LEFT JOIN s_salesorders s
+	ON s.salesorder_id = i.salesorder_id
+	LEFT JOIN s_customers c
+	ON i.customer_id = c.customer_id
+	WHERE i.organization_id = ? AND i.invoice_id = ? AND s.status > 0
+	`, organizationID, id)
+	return &salesorder, err
+}
+
+func (r *salesorderQuery) GetInvoiceItemList(invoiceID string) (*[]InvoiceItemResponse, error) {
+	var invoiceItems []InvoiceItemResponse
+	err := r.conn.Select(&invoiceItems, `
+		SELECT
+		s.organization_id,
+		s.invoice_id,
+		s.salesorder_item_id,
+		s.invoice_item_id,
+		s.item_id,
+		i.name as item_name,
+		i.sku as sku,
+		s.quantity,
+		s.rate,
+		s.tax_id,
+    	s.tax_value,
+    	s.tax_amount,
+    	s.amount,
+		s.status
+		FROM s_invoice_items s
+		LEFT JOIN i_items i
+		ON s.item_id = i.item_id
+		WHERE s.invoice_id = ? AND i.status > 0 
+	`, invoiceID)
+	return &invoiceItems, err
+}

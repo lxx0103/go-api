@@ -35,4 +35,8 @@ func AuthRouter(g *gin.RouterGroup) {
 
 	g.GET("/requisitions", GetRequisitionList)
 
+	g.POST("/salesorders/:id/invoices", NewInvoice)
+	g.GET("/invoices", GetInvoiceList)
+	g.GET("/invoices/:id/items", GetInvoiceItemList)
+
 }

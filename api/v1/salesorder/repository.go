@@ -1044,3 +1044,102 @@ func (r *salesorderRepository) DeletePickingorder(id, byUser string) error {
 	`, time.Now(), byUser, id)
 	return err
 }
+
+// invoice
+
+func (r *salesorderRepository) CheckInvoiceNumberConfict(invoiceID, organizationID, invoiceNumber string) (bool, error) {
+	var existed int
+	row := r.tx.QueryRow("SELECT count(1) FROM s_invoices WHERE organization_id = ? AND invoice_id != ? AND invoice_number = ? AND status > 0 ", organizationID, invoiceID, invoiceNumber)
+	err := row.Scan(&existed)
+	if err != nil {
+		return true, err
+	}
+	return existed != 0, nil
+}
+
+func (r salesorderRepository) InvoiceSalesorderItem(info SalesorderItem) error {
+	_, err := r.tx.Exec(`
+		UPDATE s_salesorder_items set
+		quantity_invoiced = ?,
+		updated = ?,
+		updated_by =?
+		WHERE salesorder_item_id = ?
+	`, info.QuantityInvoiced, info.Updated, info.UpdatedBy, info.SalesorderItemID)
+	return err
+}
+
+func (r salesorderRepository) CreateInvoiceItem(info InvoiceItem) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO s_invoice_items 
+		(
+			organization_id,
+			invoice_id,
+			invoice_item_id,
+			salesorder_item_id,
+			item_id,
+			quantity,
+			rate,
+			tax_id,
+			tax_value,
+			tax_amount,
+			amount,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.InvoiceID, info.InvoiceItemID, info.SalesorderItemID, info.ItemID, info.Quantity, info.Rate, info.TaxID, info.TaxValue, info.TaxAmount, info.Amount, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}
+
+func (r salesorderRepository) CreateInvoice(info Invoice) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO s_invoices 
+		(
+			organization_id,
+			invoice_id,
+			salesorder_id,
+			invoice_number,
+			invoice_date,
+			due_date,
+			customer_id,
+			item_count,
+			sub_total,
+			discount_type,
+			discount_value,
+			tax_total,
+			shipping_fee,
+			total,
+			notes,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.InvoiceID, info.SalesorderID, info.InvoiceNumber, info.InvoiceDate, info.DueDate, info.CustomerID, info.ItemCount, info.Subtotal, info.DiscountType, info.DiscountValue, info.TaxTotal, info.ShippingFee, info.Total, info.Notes, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}
+
+func (r *salesorderRepository) GetSalesorderInvoicedCount(organizationID, salesorderID string) (float64, error) {
+	var sum float64
+	row := r.tx.QueryRow("SELECT SUM(quantity_invoiced) FROM s_salesorder_items WHERE organization_id = ? AND salesorder_id = ? AND status > 0", organizationID, salesorderID)
+	err := row.Scan(&sum)
+	return sum, err
+}
+
+func (r *salesorderRepository) UpdateSalesorderInvoiceStatus(id string, status int, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update s_salesorders SET
+		invoice_status = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE salesorder_id = ?
+	`, status, time.Now(), byUser, id)
+	return err
+}

@@ -304,3 +304,74 @@ type RequsitionResponse struct {
 	Quantity    int    `db:"quantity" json:"quantity"`
 	Unit        string `db:"unit" json:"unit"`
 }
+
+type InvoiceNew struct {
+	InvoiceNumber  string           `json:"invoice_number" binding:"required,min=6,max=64"`
+	InvoiceDate    string           `json:"invoice_date" binding:"required,datetime=2006-01-02"`
+	DueDate        string           `json:"due_date" binding:"required,datetime=2006-01-02"`
+	CustomerID     string           `json:"customer_id" binding:"required"`
+	DiscountType   int              `json:"discount_type" binding:"omitempty,oneof=1 2"`
+	DiscountValue  float64          `json:"discount_value" binding:"omitempty"`
+	ShippingFee    float64          `json:"shipping_fee" binding:"omitempty"`
+	Notes          string           `json:"notes" binding:"omitempty"`
+	Items          []InvoiceItemNew `json:"items" binding:"required"`
+	OrganizationID string           `json:"organiztion_id" swaggerignore:"true"`
+	User           string           `json:"user" swaggerignore:"true"`
+	Email          string           `json:"email" swaggerignore:"true"`
+}
+
+type InvoiceItemNew struct {
+	SalesorderItemID string  `json:"salesorder_item_id" binding:"required"`
+	ItemID           string  `json:"item_id" binding:"required"`
+	Quantity         int     `json:"quantity" binding:"required"`
+	Rate             float64 `json:"rate" binding:"required"`
+	TaxID            string  `json:"tax_id" binding:"omitempty"`
+}
+
+type InvoiceResponse struct {
+	OrganizationID   string  `db:"organization_id" json:"organization_id"`
+	SalesorderID     string  `db:"salesorder_id" json:"salesorder_id"`
+	SalesorderNumber string  `db:"salesorder_number" json:"salesorder_number"`
+	InvoiceID        string  `db:"invoice_id" json:"invoice_id"`
+	InvoiceNumber    string  `db:"invoice_number" json:"invoice_number"`
+	InvoiceDate      string  `db:"invoice_date" json:"invoice_date"`
+	DueDate          string  `db:"due_date" json:"due_date"`
+	CustomerID       string  `db:"customer_id" json:"customer_id"`
+	CustomerName     string  `db:"customer_name" json:"customer_name"`
+	ItemCount        float64 `db:"item_count" json:"item_count"`
+	Subtotal         float64 `db:"sub_total" json:"sub_total"`
+	DiscountType     int     `db:"discount_type" json:"discount_type"`
+	DiscountValue    float64 `db:"discount_value" json:"discount_value"`
+	TaxTotal         float64 `db:"tax_total" json:"tax_total"`
+	ShippingFee      float64 `db:"shipping_fee" json:"shipping_fee"`
+	Total            float64 `db:"total" json:"total"`
+	Notes            string  `db:"notes" json:"notes"`
+	Status           int     `db:"status" json:"status"`
+}
+
+type InvoiceFilter struct {
+	SalesorderID   string `form:"salesorder_id" binding:"omitempty,max=64"`
+	InvoiceNumber  string `form:"invoice_number" binding:"omitempty,max=64,min=1"`
+	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
+	request.PageInfo
+}
+
+type InvoiceID struct {
+	ID string `uri:"id" binding:"required,min=1"`
+}
+type InvoiceItemResponse struct {
+	OrganizationID   string  `db:"organization_id" json:"organization_id"`
+	InvoiceID        string  `db:"invoice_id" json:"invoice_id"`
+	SalesorderItemID string  `db:"salesorder_item_id" json:"salesorder_item_id"`
+	InvoiceItemID    string  `db:"invoice_item_id" json:"invoice_item_id"`
+	ItemID           string  `db:"item_id" json:"item_id"`
+	ItemName         string  `db:"item_name" json:"item_name"`
+	SKU              string  `db:"sku" json:"sku"`
+	Quantity         int     `db:"quantity" json:"quantity"`
+	Rate             float64 `db:"rate" json:"rate"`
+	TaxID            string  `db:"tax_id" json:"tax_id"`
+	TaxValue         float64 `db:"tax_value" json:"tax_value"`
+	TaxAmount        float64 `db:"tax_amount" json:"tax_amount"`
+	Amount           float64 `db:"amount" json:"amount"`
+	Status           int     `db:"status" json:"status"`
+}
