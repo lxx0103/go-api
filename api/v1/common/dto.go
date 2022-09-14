@@ -31,6 +31,6 @@ type HistoryResponse struct {
 }
 
 type NumberFilter struct {
-	NumberType     string `form:"number_type" binding:"required,oneof=purchaseorder salesorder purchasereceive pickingorder package shippingorder"`
+	NumberType     string `form:"number_type" binding:"required,oneof=purchaseorder salesorder purchasereceive pickingorder package shippingorder invoice"`
 	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
 }

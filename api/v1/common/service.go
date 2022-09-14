@@ -94,6 +94,8 @@ func (s *commonService) GetNextNumber(filter NumberFilter) (*string, error) {
 		prefix = "PAC"
 	case "shippingorder":
 		prefix = "SHIP"
+	case "invoice":
+		prefix = "INV"
 	default:
 		msg := "number type error"
 		return nil, errors.New(msg)

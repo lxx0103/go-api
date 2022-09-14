@@ -38,5 +38,7 @@ func AuthRouter(g *gin.RouterGroup) {
 	g.POST("/salesorders/:id/invoices", NewInvoice)
 	g.GET("/invoices", GetInvoiceList)
 	g.GET("/invoices/:id/items", GetInvoiceItemList)
+	g.PUT("/invoices/:id", UpdateInvoice)
+	g.DELETE("/invoices/:id", DeleteInvoice)
 
 }

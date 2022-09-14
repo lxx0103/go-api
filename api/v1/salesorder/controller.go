@@ -837,3 +837,64 @@ func GetInvoiceItemList(c *gin.Context) {
 	}
 	response.Response(c, list)
 }
+
+// @Summary 根据ID更新Invoice
+// @Id 630
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "invoiceID"
+// @Param invoice_info body InvoiceNew true "invoice信息"
+// @Success 200 object response.SuccessRes{data=Invoice} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /invoices/:id [PUT]
+func UpdateInvoice(c *gin.Context) {
+	var uri InvoiceID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	var info InvoiceNew
+	if err := c.ShouldBindJSON(&info); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	info.User = claims.UserName
+	info.Email = claims.Email
+	info.OrganizationID = claims.OrganizationID
+	salesorderService := NewSalesorderService()
+	new, err := salesorderService.UpdateInvoice(uri.ID, info)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
+
+// @Summary 根据ID删除invoice
+// @Id 631
+// @Tags 销售单管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path string true "invoiceID"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /invoices/:id [DELETE]
+func DeleteInvoice(c *gin.Context) {
+	var uri InvoiceID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	salesorderService := NewSalesorderService()
+	err := salesorderService.DeleteInvoice(uri.ID, claims.OrganizationID, claims.UserName, claims.Email)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, "OK")
+}

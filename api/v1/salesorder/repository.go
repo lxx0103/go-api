@@ -436,7 +436,6 @@ func (r salesorderRepository) CreatePickingorder(info Pickingorder) error {
 }
 
 func (r salesorderRepository) GetPickingorderLogSum(pickingorderID string) (*[]PickingorderLogResponse, error) {
-
 	var pickingorderLogs []PickingorderLogResponse
 	rows, err := r.tx.Query(`
 	SELECT
@@ -1141,5 +1140,143 @@ func (r *salesorderRepository) UpdateSalesorderInvoiceStatus(id string, status i
 		updated_by = ?
 		WHERE salesorder_id = ?
 	`, status, time.Now(), byUser, id)
+	return err
+}
+
+func (r *salesorderRepository) GetInvoiceByID(organizationID, id string) (*InvoiceResponse, error) {
+	var res InvoiceResponse
+	row := r.tx.QueryRow(`
+		SELECT 
+		i.organization_id,
+		i.salesorder_id,
+		IFNULL(s.salesorder_number, "") as salesorder_number, 
+		i.invoice_id, 
+		i.invoice_number, 
+		i.invoice_date,
+		i.due_date,
+		i.customer_id,
+		IFNULL(c.name, "") as customer_name,
+		i.item_count,
+		i.sub_total,
+		i.discount_type,
+		i.discount_value,
+		i.tax_total,
+		i.shipping_fee,
+		i.total,
+		i.notes,
+		i.status
+		FROM s_invoices i
+		LEFT JOIN s_salesorders s
+		ON s.salesorder_id = i.salesorder_id
+		LEFT JOIN s_customers c
+		ON i.customer_id = c.customer_id
+		WHERE i.organization_id = ? AND i.invoice_id = ? AND s.status > 0  LIMIT 1
+	`, organizationID, id)
+	err := row.Scan(&res.OrganizationID, &res.SalesorderID, &res.SalesorderNumber, &res.InvoiceID, &res.InvoiceNumber, &res.InvoiceDate, &res.DueDate, &res.CustomerID, &res.CustomerName, &res.ItemCount, &res.Subtotal, &res.DiscountType, &res.DiscountValue, &res.TaxTotal, &res.ShippingFee, &res.Total, &res.Notes, &res.Status)
+	return &res, err
+}
+
+func (r *salesorderRepository) DeleteInvoice(id, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update s_invoices SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE invoice_id = ?
+	`, time.Now(), byUser, id)
+	if err != nil {
+		return err
+	}
+	_, err = r.tx.Exec(`
+		UPDATE s_invoice_items SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE invoice_id = ?
+	`, time.Now(), byUser, id)
+	return err
+}
+
+func (r *salesorderRepository) GetInvoiceItemByIDAll(organizationID, invoiceID, invoiceItemID string) (*InvoiceItemResponse, error) {
+	var res InvoiceItemResponse
+	row := r.tx.QueryRow(`
+		SELECT
+		s.organization_id,
+		s.invoice_id,
+		s.salesorder_item_id,
+		s.invoice_item_id,
+		s.item_id,
+		i.name as item_name,
+		i.sku as sku,
+		s.quantity,
+		s.rate,
+		s.tax_id,
+    	s.tax_value,
+    	s.tax_amount,
+    	s.amount,
+		s.status
+		FROM s_invoice_items s
+		LEFT JOIN i_items i
+		ON s.item_id = i.item_id
+		WHERE s.invoice_item_id = ? AND s.organization_id = ? AND s.invoice_id = ? LIMIT 1
+	`, invoiceItemID, organizationID, invoiceID)
+	err := row.Scan(&res.OrganizationID, &res.InvoiceID, &res.SalesorderItemID, &res.InvoiceItemID, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity, &res.Rate, &res.TaxID, &res.TaxValue, &res.TaxAmount, &res.Amount, &res.Status)
+	return &res, err
+}
+
+func (r *salesorderRepository) GetInvoiceItemList(organizationID, invoiceID string) (*[]InvoiceItemResponse, error) {
+	var invoiceItems []InvoiceItemResponse
+	rows, err := r.tx.Query(`
+		SELECT
+		s.organization_id,
+		s.invoice_id,
+		s.salesorder_item_id,
+		s.invoice_item_id,
+		s.item_id,
+		i.name as item_name,
+		i.sku as sku,
+		s.quantity,
+		s.rate,
+		s.tax_id,
+    	s.tax_value,
+    	s.tax_amount,
+    	s.amount,
+		s.status
+		FROM s_invoice_items s
+		LEFT JOIN i_items i
+		ON s.item_id = i.item_id
+		WHERE s.organization_id = ? AND s.invoice_id = ? AND s.status > 0 
+	`, organizationID, invoiceID)
+	for rows.Next() {
+		var res InvoiceItemResponse
+		err = rows.Scan(&res.OrganizationID, &res.InvoiceID, &res.SalesorderItemID, &res.InvoiceItemID, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity, &res.Rate, &res.TaxID, &res.TaxValue, &res.TaxAmount, &res.Amount, &res.Status)
+		invoiceItems = append(invoiceItems, res)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &invoiceItems, err
+}
+
+func (r salesorderRepository) UpdateInvoice(id string, info Invoice) error {
+	_, err := r.tx.Exec(`
+		UPDATE s_invoices set 
+		invoice_number = ?,
+		invoice_date = ?,
+		due_date = ?,
+		customer_id = ?,
+		item_count = ?,
+		sub_total = ?,
+		discount_type = ?,
+		discount_value = ?,
+		tax_total = ?,
+		shipping_fee = ?,
+		total = ?,
+		notes = ?,
+		status = ?,
+		updated = ?,
+		updated_by =?
+		WHERE invoice_id = ?
+	`, info.InvoiceNumber, info.InvoiceDate, info.DueDate, info.CustomerID, info.ItemCount, info.Subtotal, info.DiscountType, info.DiscountValue, info.TaxTotal, info.ShippingFee, info.Total, info.Notes, info.Status, info.Updated, info.UpdatedBy, id)
 	return err
 }

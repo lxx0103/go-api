@@ -2201,13 +2201,13 @@ func (s *salesorderService) NewInvoice(salesorderID string, info InvoiceNew) (*s
 	}
 	defer tx.Rollback()
 	repo := NewSalesorderRepository(tx)
-	isConflict, err := repo.CheckPickingorderNumberConfict("", info.OrganizationID, info.InvoiceNumber)
+	isConflict, err := repo.CheckInvoiceNumberConfict("", info.OrganizationID, info.InvoiceNumber)
 	if err != nil {
 		msg := "check conflict error: "
 		return nil, errors.New(msg)
 	}
 	if isConflict {
-		msg := "picking order number exists"
+		msg := "invoice number exists"
 		return nil, errors.New(msg)
 	}
 	invoiceID := "inv-" + xid.New().String()
@@ -2405,4 +2405,307 @@ func (s *salesorderService) GetInvoiceItemList(invoiceID, organizationID string)
 	}
 	list, err := query.GetInvoiceItemList(invoiceID)
 	return list, err
+}
+
+func (s *salesorderService) UpdateInvoice(invoiceID string, info InvoiceNew) (*string, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return nil, errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewSalesorderRepository(tx)
+	isConflict, err := repo.CheckInvoiceNumberConfict(invoiceID, info.OrganizationID, info.InvoiceNumber)
+	if err != nil {
+		msg := "check conflict error: "
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "invoice number exists"
+		return nil, errors.New(msg)
+	}
+	settingRepo := setting.NewSettingRepository(tx)
+	_, err = settingRepo.GetCustomerByID(info.CustomerID, info.OrganizationID)
+	if err != nil {
+		msg := "customer not exists"
+		return nil, errors.New(msg)
+	}
+	oldInvoice, err := repo.GetInvoiceByID(info.OrganizationID, invoiceID)
+	if err != nil {
+		msg := "get invoice error"
+		return nil, errors.New(msg)
+	}
+	oldInvoiceItems, err := repo.GetInvoiceItemList(info.OrganizationID, invoiceID)
+	if err != nil {
+		msg := "get invoice item error"
+		return nil, errors.New(msg)
+	}
+	for _, oldInvoiceItem := range *oldInvoiceItems {
+		oldSoItem, err := repo.GetSalesorderItemByID(info.OrganizationID, oldInvoice.SalesorderID, oldInvoiceItem.ItemID)
+		if err != nil {
+			msg := "sales order item not exist"
+			return nil, errors.New(msg)
+		}
+		var soItem SalesorderItem
+		soItem.SalesorderItemID = oldInvoiceItem.SalesorderItemID
+		soItem.QuantityInvoiced = oldSoItem.QuantityInvoiced - oldInvoiceItem.Quantity
+		soItem.Updated = time.Now()
+		soItem.UpdatedBy = info.Email
+
+		err = repo.InvoiceSalesorderItem(soItem)
+		if err != nil {
+			msg := "cancel invoice salesorder item error: "
+			return nil, errors.New(msg)
+		}
+
+	}
+	err = repo.DeleteInvoice(invoiceID, info.User)
+	if err != nil {
+		msg := "Invoice Update error"
+		return nil, errors.New(msg)
+	}
+	itemCount := 0
+	itemTotal := 0.0
+	taxTotal := 0.0
+	itemRepo := item.NewItemRepository(tx)
+	for _, itemRow := range info.Items {
+		oldSoItem, err := repo.GetSalesorderItemByID(info.OrganizationID, oldInvoice.SalesorderID, itemRow.ItemID)
+		if err != nil {
+			msg := "sales order item not exist"
+			return nil, errors.New(msg)
+		}
+		if oldSoItem.SalesorderItemID != itemRow.SalesorderItemID {
+			msg := "sales order item id error"
+			return nil, errors.New(msg)
+		}
+		_, err = itemRepo.GetItemByID(itemRow.ItemID, info.OrganizationID)
+		if err != nil {
+			msg := "item not exist"
+			return nil, errors.New(msg)
+		}
+
+		taxValue := 0.0
+		if itemRow.TaxID != "" {
+			tax, err := settingRepo.GetTaxByID(itemRow.TaxID, info.OrganizationID)
+			if err != nil {
+				msg := "tax not exist"
+				return nil, errors.New(msg)
+			}
+			taxValue = tax.TaxValue
+		}
+		itemCount += itemRow.Quantity
+		itemTotal += itemRow.Rate * float64(itemRow.Quantity)
+		taxTotal += itemRow.Rate * float64(itemRow.Quantity) * taxValue / 100
+
+		invoiceItemID := "invi-" + xid.New().String()
+		if oldSoItem.Quantity < oldSoItem.QuantityInvoiced+itemRow.Quantity {
+			fmt.Println(oldSoItem.Quantity, oldSoItem.QuantityInvoiced, itemRow.Quantity)
+			msg := "invoicing quantity greater than not invoiced"
+			return nil, errors.New(msg)
+		}
+		var soItem SalesorderItem
+		soItem.SalesorderItemID = oldSoItem.SalesorderItemID
+		soItem.QuantityInvoiced = oldSoItem.QuantityInvoiced + itemRow.Quantity
+		soItem.Updated = time.Now()
+		soItem.UpdatedBy = info.Email
+
+		err = repo.InvoiceSalesorderItem(soItem)
+		if err != nil {
+			msg := "invoice salesorder item error: "
+			return nil, errors.New(msg)
+		}
+		var invoiceItem InvoiceItem
+		invoiceItem.OrganizationID = info.OrganizationID
+		invoiceItem.InvoiceID = invoiceID
+		invoiceItem.InvoiceItemID = invoiceItemID
+		invoiceItem.SalesorderItemID = oldSoItem.SalesorderItemID
+		invoiceItem.ItemID = oldSoItem.ItemID
+		invoiceItem.Quantity = itemRow.Quantity
+		invoiceItem.Rate = itemRow.Rate
+		invoiceItem.TaxID = itemRow.TaxID
+		invoiceItem.TaxValue = taxValue
+		invoiceItem.TaxAmount = float64(itemRow.Quantity) * itemRow.Rate * taxValue / 100
+		invoiceItem.Amount = float64(itemRow.Quantity) * itemRow.Rate
+		invoiceItem.Status = 1
+		invoiceItem.CreatedBy = info.Email
+		invoiceItem.Created = time.Now()
+		invoiceItem.Updated = time.Now()
+		invoiceItem.UpdatedBy = info.Email
+
+		err = repo.CreateInvoiceItem(invoiceItem)
+		if err != nil {
+			msg := "create invoice item error: "
+			return nil, errors.New(msg)
+		}
+	}
+	var invoice Invoice
+	invoice.InvoiceNumber = info.InvoiceNumber
+	invoice.InvoiceDate = info.InvoiceDate
+	invoice.DueDate = info.DueDate
+	invoice.CustomerID = info.CustomerID
+	invoice.ItemCount = itemCount
+	invoice.Subtotal = itemTotal
+	invoice.DiscountType = info.DiscountType
+	invoice.DiscountValue = info.DiscountValue
+	invoice.TaxTotal = taxTotal
+	invoice.ShippingFee = info.ShippingFee
+	if info.DiscountType == 1 {
+		if info.DiscountValue < 0 || info.DiscountValue > 100 {
+			msg := "discount value error"
+			return nil, errors.New(msg)
+		}
+		invoice.Total = (itemTotal+taxTotal)*(1-info.DiscountValue/100) + info.ShippingFee
+	} else if info.DiscountType == 2 {
+		if info.DiscountValue > (itemTotal + taxTotal + info.ShippingFee) {
+			msg := "discount value error"
+			return nil, errors.New(msg)
+		}
+		invoice.Total = itemTotal - info.DiscountValue + info.ShippingFee + taxTotal
+	} else {
+		invoice.Total = itemTotal + info.ShippingFee + taxTotal
+	}
+	invoice.Notes = info.Notes
+	invoice.Status = 1
+	invoice.Updated = time.Now()
+	invoice.UpdatedBy = info.Email
+	err = repo.UpdateInvoice(invoiceID, invoice)
+	if err != nil {
+		msg := "update invoice error: "
+		return nil, errors.New(msg)
+	}
+	so, err := repo.GetSalesorderByID(info.OrganizationID, oldInvoice.SalesorderID)
+	if err != nil {
+		msg := "get sales order error: "
+		return nil, errors.New(msg)
+	}
+	invoicedCount, err := repo.GetSalesorderInvoicedCount(info.OrganizationID, oldInvoice.SalesorderID)
+	if err != nil {
+		msg := "get sales order invoiced count error: "
+		return nil, errors.New(msg)
+	}
+	invoiceStatus := 1
+	if so.ItemCount == invoicedCount {
+		invoiceStatus = 3
+	} else {
+		invoiceStatus = 2
+	}
+	err = repo.UpdateSalesorderInvoiceStatus(oldInvoice.SalesorderID, invoiceStatus, info.Email)
+	if err != nil {
+		msg := "update sales order invoice status error: "
+		return nil, errors.New(msg)
+	}
+	soStatus := 1
+	if so.ShippingStatus == 3 && invoiceStatus == 3 {
+		soStatus = 3
+	} else {
+		soStatus = 2
+	}
+	err = repo.UpdateSalesorderStatus(oldInvoice.SalesorderID, soStatus, info.Email)
+	if err != nil {
+		msg := "update sales order status error: "
+		return nil, errors.New(msg)
+	}
+	tx.Commit()
+	var newEvent common.NewHistoryCreated
+	newEvent.HistoryType = "salesorder"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = info.User
+	newEvent.ReferenceID = oldInvoice.SalesorderID
+	newEvent.Description = "Invoice Updated"
+	newEvent.OrganizationID = info.OrganizationID
+	newEvent.Email = info.Email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return nil, errors.New(msg)
+	}
+	return &invoiceID, err
+}
+
+func (s *salesorderService) DeleteInvoice(invoiceID, organizationID, user, email string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewSalesorderRepository(tx)
+	oldInvoice, err := repo.GetInvoiceByID(organizationID, invoiceID)
+	if err != nil {
+		msg := "get picking order error"
+		return errors.New(msg)
+	}
+	if oldInvoice.Status != 1 {
+		msg := " invoice status error"
+		return errors.New(msg)
+	}
+	invoiceItems, err := repo.GetInvoiceItemList(organizationID, invoiceID)
+	if err != nil {
+		msg := "get picking order log error"
+		return errors.New(msg)
+	}
+	for _, invoiceItem := range *invoiceItems {
+		oldSoItem, err := repo.GetSalesorderItemByID(organizationID, oldInvoice.SalesorderID, invoiceItem.ItemID)
+		if err != nil {
+			msg := "sales order item not exist"
+			return errors.New(msg)
+		}
+		if oldSoItem.QuantityInvoiced < invoiceItem.Quantity {
+			msg := "sales order itme invoiced quantity error"
+			return errors.New(msg)
+		}
+		var soItem SalesorderItem
+		soItem.SalesorderItemID = oldSoItem.SalesorderItemID
+		soItem.QuantityInvoiced = oldSoItem.QuantityInvoiced - invoiceItem.Quantity
+		soItem.Updated = time.Now()
+		soItem.UpdatedBy = email
+
+		err = repo.InvoiceSalesorderItem(soItem)
+		if err != nil {
+			msg := "cancel invoice salesorder item error: "
+			return errors.New(msg)
+		}
+	}
+	err = repo.DeleteInvoice(invoiceID, email)
+	if err != nil {
+		msg := "delete picking order error: "
+		return errors.New(msg)
+	}
+	invoicedCount, err := repo.GetSalesorderInvoicedCount(organizationID, oldInvoice.SalesorderID)
+	if err != nil {
+		msg := "get sales order received count error: "
+		return errors.New(msg)
+	}
+	invoiceStatus := 1
+	if invoicedCount == 0 {
+		invoiceStatus = 1
+	} else {
+		invoiceStatus = 2
+	}
+	err = repo.UpdateSalesorderInvoiceStatus(oldInvoice.SalesorderID, invoiceStatus, email)
+	if err != nil {
+		msg := "update sales order receive status error: "
+		return errors.New(msg)
+	}
+	tx.Commit()
+	rabbit, _ := queue.GetConn()
+	var newEvent common.NewHistoryCreated
+	newEvent.HistoryType = "salesorder"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = user
+	newEvent.ReferenceID = oldInvoice.SalesorderID
+	newEvent.Description = "Invoice Deleted"
+	newEvent.OrganizationID = organizationID
+	newEvent.Email = email
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return errors.New(msg)
+	}
+	return err
 }
