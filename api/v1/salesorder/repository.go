@@ -1280,3 +1280,114 @@ func (r salesorderRepository) UpdateInvoice(id string, info Invoice) error {
 	`, info.InvoiceNumber, info.InvoiceDate, info.DueDate, info.CustomerID, info.ItemCount, info.Subtotal, info.DiscountType, info.DiscountValue, info.TaxTotal, info.ShippingFee, info.Total, info.Notes, info.Status, info.Updated, info.UpdatedBy, id)
 	return err
 }
+
+// payment
+func (r *salesorderRepository) CheckPaymentReceivedNumberConfict(paymentReceivedID, organizationID, paymentReceivedNumber string) (bool, error) {
+	var existed int
+	row := r.tx.QueryRow("SELECT count(1) FROM s_payment_receiveds WHERE organization_id = ? AND payment_received_id != ? AND payment_received_number = ? AND status > 0 ", organizationID, paymentReceivedID, paymentReceivedNumber)
+	err := row.Scan(&existed)
+	if err != nil {
+		return true, err
+	}
+	return existed != 0, nil
+}
+
+func (r salesorderRepository) CreatePaymentReceived(info PaymentReceived) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO s_payment_receiveds 
+		(
+			organization_id,
+			invoice_id,
+			customer_id,
+			payment_received_id,
+			payment_received_number,
+			payment_received_date,
+			payment_method_id,
+			amount,
+			notes,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.InvoiceID, info.CustomerID, info.PaymentReceivedID, info.PaymentReceivedNumber, info.PaymentReceivedDate, info.PaymentMethodID, info.Amount, info.Notes, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}
+
+func (r *salesorderRepository) GetInvoicePaidCount(organizationID, invoiceID string) (float64, error) {
+	var sum float64
+	row := r.tx.QueryRow("SELECT IFNULL(SUM(amount), 0) FROM s_payment_receiveds WHERE organization_id = ? AND invoice_id = ? AND status > 0", organizationID, invoiceID)
+	err := row.Scan(&sum)
+	return sum, err
+}
+
+func (r *salesorderRepository) UpdateInvoiceStatus(id string, status int, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update s_invoices SET
+		status = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE invoice_id = ?
+	`, status, time.Now(), byUser, id)
+	return err
+}
+
+func (r *salesorderRepository) GetPaymentReceivedByID(organizationID, id string) (*PaymentReceivedResponse, error) {
+	var res PaymentReceivedResponse
+	row := r.tx.QueryRow(`		
+		SELECT 
+		p.organization_id,
+		p.invoice_id,
+		IFNULL(i.invoice_number, "") as invoice_number, 
+		p.customer_id,
+		IFNULL(c.name, "") as customer_name,
+		p.payment_received_id, 
+		p.payment_received_number, 
+		p.payment_received_date,
+		p.payment_method_id,
+		IFNULL(pm.name, "") as payment_method_name,
+		p.amount,
+		p.notes,
+		p.status
+		FROM s_payment_receiveds p
+		LEFT JOIN s_invoices i
+		ON p.invoice_id = i.invoice_id
+		LEFT JOIN s_customers c
+		ON p.customer_id = c.customer_id
+		LEFT JOIN s_payment_methods pm
+		ON p.payment_method_id = pm.payment_method_id
+		WHERE p.organization_id = ? AND p.payment_received_id = ? AND p.status > 0  LIMIT 1
+	`, organizationID, id)
+	err := row.Scan(&res.OrganizationID, &res.InvoiceID, &res.InvoiceNumber, &res.CustomerID, &res.CustomerName, &res.PaymentReceivedID, &res.PaymentReceivedNumber, &res.PaymentReceivedDate, &res.PaymentMethodID, &res.PaymentMethodName, &res.Amount, &res.Notes, &res.Status)
+	return &res, err
+}
+
+func (r salesorderRepository) UpdatePaymentReceived(id string, info PaymentReceived) error {
+	_, err := r.tx.Exec(`
+		UPDATE s_payment_receiveds set 
+		payment_received_number = ?,
+		payment_received_date = ?,
+		payment_method_id = ?,
+		amount = ?,
+		notes = ?,
+		status = ?,
+		updated = ?,
+		updated_by =?
+		WHERE payment_received_id = ?
+	`, info.PaymentReceivedNumber, info.PaymentReceivedDate, info.PaymentMethodID, info.Amount, info.Notes, info.Status, info.Updated, info.UpdatedBy, id)
+	return err
+}
+
+func (r *salesorderRepository) DeletePaymentReceived(id, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update s_payment_receiveds SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE payment_received_id = ?
+	`, time.Now(), byUser, id)
+	return err
+}

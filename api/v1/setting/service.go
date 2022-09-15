@@ -1122,3 +1122,132 @@ func (s *settingService) DeleteAdjustmentReason(adjustmentReasonID, organization
 	tx.Commit()
 	return nil
 }
+
+//paymentMethod
+
+func (s *settingService) GetPaymentMethodByID(organizationID, id string) (*PaymentMethodResponse, error) {
+	db := database.RDB()
+	query := NewSettingQuery(db)
+	paymentMethod, err := query.GetPaymentMethodByID(organizationID, id)
+	if err != nil {
+		msg := "get paymentMethod error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	return paymentMethod, nil
+}
+
+func (s *settingService) NewPaymentMethod(info PaymentMethodNew) (*PaymentMethodResponse, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	isConflict, err := repo.CheckPaymentMethodConfict("", info.OrganizationID, info.Name)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "PaymentMethod name conflict"
+		return nil, errors.New(msg)
+	}
+	var paymentMethod PaymentMethod
+	paymentMethod.PaymentMethodID = "pm-" + xid.New().String()
+	paymentMethod.OrganizationID = info.OrganizationID
+	paymentMethod.Name = info.Name
+	paymentMethod.Status = info.Status
+	paymentMethod.Created = time.Now()
+	paymentMethod.CreatedBy = info.User
+	paymentMethod.Updated = time.Now()
+	paymentMethod.UpdatedBy = info.User
+	err = repo.CreatePaymentMethod(paymentMethod)
+	if err != nil {
+		return nil, err
+	}
+	res, err := repo.GetPaymentMethodByID(info.OrganizationID, paymentMethod.PaymentMethodID)
+	tx.Commit()
+	return res, err
+}
+
+func (s *settingService) GetPaymentMethodList(filter PaymentMethodFilter) (int, *[]PaymentMethodResponse, error) {
+	db := database.RDB()
+	query := NewSettingQuery(db)
+	count, err := query.GetPaymentMethodCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := query.GetPaymentMethodList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *settingService) UpdatePaymentMethod(paymentMethodID string, info PaymentMethodNew) (*PaymentMethodResponse, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	isConflict, err := repo.CheckPaymentMethodConfict(paymentMethodID, info.OrganizationID, info.Name)
+	if err != nil {
+		msg := "check conflict error: " + err.Error()
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "paymentMethod name conflict"
+		return nil, errors.New(msg)
+	}
+	_, err = repo.GetPaymentMethodByID(info.OrganizationID, paymentMethodID)
+	if err != nil {
+		msg := "PaymentMethod not exist"
+		return nil, errors.New(msg)
+	}
+	var paymentMethod PaymentMethod
+	paymentMethod.Name = info.Name
+	paymentMethod.UpdatedBy = info.User
+	paymentMethod.Updated = time.Now()
+	paymentMethod.Status = info.Status
+	err = repo.UpdatePaymentMethod(paymentMethodID, paymentMethod)
+	if err != nil {
+		msg := "update paymentMethod error"
+		return nil, errors.New(msg)
+	}
+	res, err := repo.GetPaymentMethodByID(info.OrganizationID, paymentMethodID)
+	tx.Commit()
+	return res, err
+}
+
+func (s *settingService) DeletePaymentMethod(paymentMethodID, organizationID, user string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	repo := NewSettingRepository(tx)
+	_, err = repo.GetPaymentMethodByID(organizationID, paymentMethodID)
+	if err != nil {
+		msg := "PaymentMethod not exist"
+		return errors.New(msg)
+	}
+	usedCount, err := repo.GetPaymentPaymentMethodCount(paymentMethodID, organizationID)
+	if err != nil {
+		msg := "get payment method count error"
+		return errors.New(msg)
+	}
+	if usedCount > 0 {
+		msg := "PaymentMethod used in payment can not be deleted"
+		return errors.New(msg)
+	}
+	err = repo.DeletePaymentMethod(paymentMethodID, user)
+	if err != nil {
+		return err
+	}
+	tx.Commit()
+	return nil
+}

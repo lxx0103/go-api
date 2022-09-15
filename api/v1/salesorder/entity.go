@@ -237,3 +237,21 @@ type InvoiceItem struct {
 	Updated          time.Time `db:"updated" json:"updated"`
 	UpdatedBy        string    `db:"updated_by" json:"updated_by"`
 }
+
+type PaymentReceived struct {
+	ID                    int64     `db:"id" json:"id"`
+	OrganizationID        string    `db:"organization_id" json:"organization_id"`
+	InvoiceID             string    `db:"invoice_id" json:"invoice_id"`
+	CustomerID            string    `db:"customer_id" json:"customer_id"`
+	PaymentReceivedID     string    `db:"payment_received_id" json:"payment_received_id"`
+	PaymentReceivedNumber string    `db:"payment_received_number" json:"payment_received_number"`
+	PaymentReceivedDate   string    `db:"payment_received_date" json:"payment_received_date"`
+	PaymentMethodID       string    `db:"payment_method_id" json:"payment_method_id"`
+	Amount                float64   `db:"amount" json:"amount"`
+	Notes                 string    `db:"notes" json:"notes"`
+	Status                int       `db:"status" json:"status"`
+	Created               time.Time `db:"created" json:"created"`
+	CreatedBy             string    `db:"created_by" json:"created_by"`
+	Updated               time.Time `db:"updated" json:"updated"`
+	UpdatedBy             string    `db:"updated_by" json:"updated_by"`
+}

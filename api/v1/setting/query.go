@@ -371,3 +371,47 @@ func (r *settingQuery) GetAdjustmentReasonList(filter AdjustmentReasonFilter) (*
 	`, args...)
 	return &adjustmentReasons, err
 }
+
+//PaymentMethod
+
+func (r *settingQuery) GetPaymentMethodByID(organizationID, id string) (*PaymentMethodResponse, error) {
+	var paymentMethod PaymentMethodResponse
+	err := r.conn.Get(&paymentMethod, "SELECT payment_method_id, organization_id, name, status FROM s_payment_methods WHERE organization_id = ? AND payment_method_id = ? AND status > 0", organizationID, id)
+	return &paymentMethod, err
+}
+
+func (r *settingQuery) GetPaymentMethodCount(filter PaymentMethodFilter) (int, error) {
+	where, args := []string{"status > 0"}, []interface{}{}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	if v := filter.Name; v != "" {
+		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
+	}
+	var count int
+	err := r.conn.Get(&count, `
+		SELECT count(1) as count
+		FROM s_payment_methods
+		WHERE `+strings.Join(where, " AND "), args...)
+	return count, err
+}
+
+func (r *settingQuery) GetPaymentMethodList(filter PaymentMethodFilter) (*[]PaymentMethodResponse, error) {
+	where, args := []string{"status > 0"}, []interface{}{}
+	if v := filter.Name; v != "" {
+		where, args = append(where, "name like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	args = append(args, filter.PageID*filter.PageSize-filter.PageSize)
+	args = append(args, filter.PageSize)
+	var paymentMethods []PaymentMethodResponse
+	err := r.conn.Select(&paymentMethods, `
+		SELECT payment_method_id, organization_id, name, status
+		FROM s_payment_methods
+		WHERE `+strings.Join(where, " AND ")+`
+		LIMIT ?, ?
+	`, args...)
+	return &paymentMethods, err
+}

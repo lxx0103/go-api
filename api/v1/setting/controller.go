@@ -1167,3 +1167,148 @@ func DeleteAdjustmentReason(c *gin.Context) {
 	}
 	response.Response(c, "OK")
 }
+
+// @Summary 新建付款方式
+// @Id 341
+// @Tags 付款方式管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param paymentmethod_info body PaymentMethodNew true "付款方式信息"
+// @Success 200 object response.SuccessRes{data=PaymentMethodResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /paymentmethods [POST]
+func NewPaymentMethod(c *gin.Context) {
+	var info PaymentMethodNew
+	if err := c.ShouldBindJSON(&info); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	info.User = claims.Email
+	info.OrganizationID = claims.OrganizationID
+	settingService := NewSettingService()
+	new, err := settingService.NewPaymentMethod(info)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
+
+// @Summary 根据ID更新付款方式
+// @Id 342
+// @Tags 付款方式管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "付款方式ID"
+// @Param paymentmethod_info body PaymentMethodNew true "付款方式信息"
+// @Success 200 object response.SuccessRes{data=PaymentMethod} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /paymentmethods/:id [PUT]
+func UpdatePaymentMethod(c *gin.Context) {
+	var uri PaymentMethodID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	var info PaymentMethodNew
+	if err := c.ShouldBindJSON(&info); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	info.User = claims.Email
+	info.OrganizationID = claims.OrganizationID
+	settingService := NewSettingService()
+	new, err := settingService.UpdatePaymentMethod(uri.ID, info)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, new)
+}
+
+// @Summary 根据ID获取付款方式
+// @Id 343
+// @Tags 付款方式管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "付款方式ID"
+// @Success 200 object response.SuccessRes{data=PaymentMethodResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /paymentmethods/:id [GET]
+func GetPaymentMethodByID(c *gin.Context) {
+	var uri PaymentMethodID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	settingService := NewSettingService()
+	paymentmethod, err := settingService.GetPaymentMethodByID(claims.OrganizationID, uri.ID)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, paymentmethod)
+
+}
+
+// @Summary 根据ID删除付款方式
+// @Id 344
+// @Tags 付款方式管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param id path int true "付款方式ID"
+// @Success 200 object response.SuccessRes{data=string} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /paymentmethods/:id [DELETE]
+func DeletePaymentMethod(c *gin.Context) {
+	var uri PaymentMethodID
+	if err := c.ShouldBindUri(&uri); err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	settingService := NewSettingService()
+	err := settingService.DeletePaymentMethod(uri.ID, claims.OrganizationID, claims.Email)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.Response(c, "OK")
+}
+
+// @Summary 付款方式列表
+// @Id 345
+// @Tags 付款方式管理
+// @version 1.0
+// @Accept application/json
+// @Produce application/json
+// @Param page_id query int true "页码"
+// @Param page_size query int true "每页行数（5/10/15/20）"
+// @Param name query string false "付款方式名称"
+// @Success 200 object response.ListRes{data=[]PaymentMethodResponse} 成功
+// @Failure 400 object response.ErrorRes 内部错误
+// @Router /paymentmethods [GET]
+func GetPaymentMethodList(c *gin.Context) {
+	var filter PaymentMethodFilter
+	err := c.ShouldBindQuery(&filter)
+	if err != nil {
+		response.ResponseError(c, "BindingError", err)
+		return
+	}
+	claims := c.MustGet("claims").(*service.CustomClaims)
+	filter.OrganizationID = claims.OrganizationID
+	settingService := NewSettingService()
+	count, list, err := settingService.GetPaymentMethodList(filter)
+	if err != nil {
+		response.ResponseError(c, "DatabaseError", err)
+		return
+	}
+	response.ResponseList(c, filter.PageID, filter.PageSize, count, list)
+}

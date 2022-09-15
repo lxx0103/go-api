@@ -1021,6 +1021,57 @@ definitions:
       status:
         type: integer
     type: object
+  salesorder.PaymentReceivedNew:
+    properties:
+      amount:
+        type: number
+      notes:
+        type: string
+      payment_method_id:
+        maxLength: 64
+        minLength: 6
+        type: string
+      payment_received_date:
+        type: string
+      payment_received_number:
+        maxLength: 64
+        minLength: 6
+        type: string
+    required:
+    - amount
+    - payment_method_id
+    - payment_received_date
+    - payment_received_number
+    type: object
+  salesorder.PaymentReceivedResponse:
+    properties:
+      amount:
+        type: number
+      customer_id:
+        type: string
+      customer_name:
+        type: string
+      invoice_id:
+        type: string
+      invoice_number:
+        type: string
+      notes:
+        type: string
+      organization_id:
+        type: string
+      payment_method_id:
+        type: string
+      payment_method_name:
+        type: string
+      payment_received_date:
+        type: string
+      payment_received_id:
+        type: string
+      payment_received_number:
+        type: string
+      status:
+        type: integer
+    type: object
   salesorder.PickingFromLocationNew:
     properties:
       location_id:
@@ -1738,6 +1789,53 @@ definitions:
       name:
         type: string
       organization_id:
+        type: string
+      status:
+        type: integer
+    type: object
+  setting.PaymentMethod:
+    properties:
+      created:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      organization_id:
+        type: string
+      payment_method_id:
+        type: string
+      status:
+        type: integer
+      updated:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  setting.PaymentMethodNew:
+    properties:
+      name:
+        maxLength: 64
+        minLength: 1
+        type: string
+      status:
+        enum:
+        - 1
+        - 2
+        type: integer
+    required:
+    - name
+    - status
+    type: object
+  setting.PaymentMethodResponse:
+    properties:
+      name:
+        type: string
+      organization_id:
+        type: string
+      payment_method_id:
         type: string
       status:
         type: integer
@@ -3458,6 +3556,67 @@ paths:
       summary: invoice产品列表
       tags:
       - 销售单管理
+  /invoices/:id/paid:
+    get:
+      consumes:
+      - application/json
+      operationId: "633"
+      parameters:
+      - description: invoiceID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: number
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 获取Invoice已付款金额
+      tags:
+      - 销售单管理
+  /invoices/:id/payments:
+    post:
+      consumes:
+      - application/json
+      operationId: "632"
+      parameters:
+      - description: 付款信息
+        in: body
+        name: invoice
+        required: true
+        schema:
+          $ref: '#/definitions/salesorder.PaymentReceivedNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建Payment
+      tags:
+      - 销售单管理
   /items:
     get:
       consumes:
@@ -4325,6 +4484,285 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorRes'
       summary: 拣货单产品列表
+      tags:
+      - 销售单管理
+  /paymentmethods:
+    get:
+      consumes:
+      - application/json
+      operationId: "345"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 付款方式名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/setting.PaymentMethodResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 付款方式列表
+      tags:
+      - 付款方式管理
+    post:
+      consumes:
+      - application/json
+      operationId: "341"
+      parameters:
+      - description: 付款方式信息
+        in: body
+        name: paymentmethod_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.PaymentMethodNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.PaymentMethodResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建付款方式
+      tags:
+      - 付款方式管理
+  /paymentmethods/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "344"
+      parameters:
+      - description: 付款方式ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除付款方式
+      tags:
+      - 付款方式管理
+    get:
+      consumes:
+      - application/json
+      operationId: "343"
+      parameters:
+      - description: 付款方式ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.PaymentMethodResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID获取付款方式
+      tags:
+      - 付款方式管理
+    put:
+      consumes:
+      - application/json
+      operationId: "342"
+      parameters:
+      - description: 付款方式ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 付款方式信息
+        in: body
+        name: paymentmethod_info
+        required: true
+        schema:
+          $ref: '#/definitions/setting.PaymentMethodNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/setting.PaymentMethod'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新付款方式
+      tags:
+      - 付款方式管理
+  /paymentreceiveds:
+    get:
+      consumes:
+      - application/json
+      operationId: "634"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 付款单编码
+        in: query
+        name: payment_received_number
+        type: string
+      - description: invoiceID
+        in: query
+        name: invoice_id
+        type: string
+      - description: 付款方式ID
+        in: query
+        name: payment_method_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/salesorder.PaymentReceivedResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: Payment列表
+      tags:
+      - 销售单管理
+  /paymentreceiveds/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "636"
+      parameters:
+      - description: paymentID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除payment
+      tags:
+      - 销售单管理
+    put:
+      consumes:
+      - application/json
+      operationId: "635"
+      parameters:
+      - description: paymentID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: payment信息
+        in: body
+        name: payment_info
+        required: true
+        schema:
+          $ref: '#/definitions/salesorder.PaymentReceivedNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新Payment
       tags:
       - 销售单管理
   /pickingorders:

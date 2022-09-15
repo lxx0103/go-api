@@ -2,6 +2,7 @@ package setting
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 )
 
@@ -655,6 +656,74 @@ func (r *settingRepository) DeleteAdjustmentReason(id, byUser string) error {
 func (r *settingRepository) GetAdjustmentAdjustmentReasonCount(adjustmentReasonID, organizationID string) (int, error) {
 	var count int
 	row := r.tx.QueryRow("SELECT count(1) FROM i_adjustments WHERE organization_id = ? AND adjustment_reason_Id = ? AND status > 0 ", organizationID, adjustmentReasonID)
+	err := row.Scan(&count)
+	return count, err
+}
+
+// PaymentMethod
+
+func (r *settingRepository) GetPaymentMethodByID(organizationID, paymentMethodID string) (*PaymentMethodResponse, error) {
+	var res PaymentMethodResponse
+	fmt.Println(organizationID, paymentMethodID)
+	row := r.tx.QueryRow(`SELECT payment_method_id, organization_id, name, status FROM s_payment_methods WHERE organization_id = ? AND payment_method_id = ? AND status > 0 LIMIT 1`, organizationID, paymentMethodID)
+	err := row.Scan(&res.PaymentMethodID, &res.OrganizationID, &res.Name, &res.Status)
+	return &res, err
+}
+
+func (r *settingRepository) CheckPaymentMethodConfict(paymentMethodID, organizationID, name string) (bool, error) {
+	var existed int
+	row := r.tx.QueryRow("SELECT count(1) FROM s_payment_methods WHERE organization_id = ? AND payment_method_id != ? AND name = ? AND status > 0", organizationID, paymentMethodID, name)
+	err := row.Scan(&existed)
+	if err != nil {
+		return true, err
+	}
+	return existed != 0, nil
+}
+
+func (r *settingRepository) CreatePaymentMethod(info PaymentMethod) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO s_payment_methods
+		(
+			payment_method_id,
+			organization_id,
+			name,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.PaymentMethodID, info.OrganizationID, info.Name, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}
+
+func (r *settingRepository) UpdatePaymentMethod(id string, info PaymentMethod) error {
+	_, err := r.tx.Exec(`
+		Update s_payment_methods SET
+		name = ?,
+		status = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE payment_method_id = ?
+	`, info.Name, info.Status, info.Updated, info.UpdatedBy, id)
+	return err
+}
+
+func (r *settingRepository) DeletePaymentMethod(id, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update s_payment_methods SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE payment_method_id = ?
+	`, time.Now(), byUser, id)
+	return err
+}
+
+func (r *settingRepository) GetPaymentPaymentMethodCount(paymentMethodID, organizationID string) (int, error) {
+	var count int
+	row := r.tx.QueryRow("SELECT count(1) FROM s_payment_receiveds WHERE organization_id = ? AND payment_method_id = ? AND status > 0 ", organizationID, paymentMethodID)
 	err := row.Scan(&count)
 	return count, err
 }

@@ -258,3 +258,29 @@ type AdjustmentReasonNew struct {
 type AdjustmentReasonID struct {
 	ID string `uri:"id" binding:"required,min=1"`
 }
+
+//payment_method
+
+type PaymentMethodFilter struct {
+	Name           string `form:"name" binding:"omitempty,max=64,min=1"`
+	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
+	request.PageInfo
+}
+
+type PaymentMethodResponse struct {
+	PaymentMethodID string `db:"payment_method_id" json:"payment_method_id"`
+	OrganizationID  string `db:"organization_id" json:"organization_id"`
+	Name            string `db:"name" json:"name"`
+	Status          int    `db:"status" json:"status"`
+}
+
+type PaymentMethodNew struct {
+	Name           string `json:"name" binding:"required,min=1,max=64"`
+	Status         int    `json:"status" binding:"required,oneof=1 2"`
+	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
+	User           string `json:"user" swaggerignore:"true"`
+}
+
+type PaymentMethodID struct {
+	ID string `uri:"id" binding:"required,min=1"`
+}

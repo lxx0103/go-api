@@ -2709,3 +2709,259 @@ func (s *salesorderService) DeleteInvoice(invoiceID, organizationID, user, email
 	}
 	return err
 }
+
+func (s *salesorderService) NewPaymentReceived(invoiceID string, info PaymentReceivedNew) (*string, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return nil, errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewSalesorderRepository(tx)
+	isConflict, err := repo.CheckPaymentReceivedNumberConfict("", info.OrganizationID, info.PaymentReceivedNumber)
+	if err != nil {
+		msg := "check conflict error: "
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "payment number exists"
+		return nil, errors.New(msg)
+	}
+	paymentReceivedID := "payr-" + xid.New().String()
+	settingRepo := setting.NewSettingRepository(tx)
+
+	invoice, err := repo.GetInvoiceByID(info.OrganizationID, invoiceID)
+	if err != nil {
+		msg := "get invoice error: "
+		return nil, errors.New(msg)
+	}
+	invoicedPaid, err := repo.GetInvoicePaidCount(info.OrganizationID, invoiceID)
+	if err != nil {
+		msg := "get invoice paid count error: "
+		return nil, errors.New(msg)
+	}
+	if invoice.Total < invoicedPaid+info.Amount {
+		msg := "pay too much error: "
+		return nil, errors.New(msg)
+	}
+	_, err = settingRepo.GetPaymentMethodByID(info.OrganizationID, info.PaymentMethodID)
+	if err != nil {
+		msg := "payment method not exists"
+		return nil, errors.New(msg)
+	}
+	var paymentReceived PaymentReceived
+	paymentReceived.OrganizationID = info.OrganizationID
+	paymentReceived.InvoiceID = invoiceID
+	paymentReceived.CustomerID = invoice.CustomerID
+	paymentReceived.PaymentReceivedID = paymentReceivedID
+	paymentReceived.PaymentReceivedNumber = info.PaymentReceivedNumber
+	paymentReceived.PaymentReceivedDate = info.PaymentReceivedDate
+	paymentReceived.PaymentMethodID = info.PaymentMethodID
+	paymentReceived.Amount = info.Amount
+	paymentReceived.Notes = info.Notes
+	paymentReceived.Status = 1
+	paymentReceived.Created = time.Now()
+	paymentReceived.CreatedBy = info.Email
+	paymentReceived.Updated = time.Now()
+	paymentReceived.UpdatedBy = info.Email
+	err = repo.CreatePaymentReceived(paymentReceived)
+	if err != nil {
+		msg := "create payment error: "
+		return nil, errors.New(msg)
+	}
+	invoicedPaid, err = repo.GetInvoicePaidCount(info.OrganizationID, invoiceID)
+	if err != nil {
+		msg := "get invoice paid count error: "
+		return nil, errors.New(msg)
+	}
+	invoiceStatus := 1
+	if invoice.Total == invoicedPaid {
+		invoiceStatus = 3
+	} else {
+		invoiceStatus = 2
+	}
+	err = repo.UpdateInvoiceStatus(invoiceID, invoiceStatus, info.Email)
+	if err != nil {
+		msg := "update invoice status error: "
+		return nil, errors.New(msg)
+	}
+	tx.Commit()
+	var newEvent common.NewHistoryCreated
+	newEvent.HistoryType = "invoice"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = info.User
+	newEvent.ReferenceID = invoiceID
+	newEvent.Description = "Payment Received Created"
+	newEvent.OrganizationID = info.OrganizationID
+	newEvent.Email = info.Email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return nil, errors.New(msg)
+	}
+	return &paymentReceivedID, err
+}
+
+func (s *salesorderService) GeInvoicePaymentReceived(organizationID, invoiceID string) (float64, error) {
+	db := database.RDB()
+	query := NewSalesorderQuery(db)
+	res, err := query.GeInvoicePaymentReceived(organizationID, invoiceID)
+	return res, err
+}
+
+func (s *salesorderService) GetPaymentReceivedList(filter PaymentReceivedFilter) (int, *[]PaymentReceivedResponse, error) {
+	db := database.RDB()
+	query := NewSalesorderQuery(db)
+	count, err := query.GetPaymentReceivedCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := query.GetPaymentReceivedList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *salesorderService) UpdatePaymentReceived(paymentReceivedID string, info PaymentReceivedNew) (*string, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return nil, errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewSalesorderRepository(tx)
+	isConflict, err := repo.CheckPaymentReceivedNumberConfict(paymentReceivedID, info.OrganizationID, info.PaymentReceivedNumber)
+	if err != nil {
+		msg := "check conflict error: "
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "payment number exists"
+		return nil, errors.New(msg)
+	}
+	settingRepo := setting.NewSettingRepository(tx)
+	oldPayment, err := repo.GetPaymentReceivedByID(info.OrganizationID, paymentReceivedID)
+	if err != nil {
+		msg := "payment not exist"
+		return nil, errors.New(msg)
+	}
+	invoice, err := repo.GetInvoiceByID(info.OrganizationID, oldPayment.InvoiceID)
+	if err != nil {
+		msg := "get invoice error: "
+		return nil, errors.New(msg)
+	}
+	_, err = settingRepo.GetPaymentMethodByID(info.OrganizationID, info.PaymentMethodID)
+	if err != nil {
+		msg := "payment method not exists"
+		return nil, errors.New(msg)
+	}
+	var paymentReceived PaymentReceived
+	paymentReceived.PaymentReceivedNumber = info.PaymentReceivedNumber
+	paymentReceived.PaymentReceivedDate = info.PaymentReceivedDate
+	paymentReceived.PaymentMethodID = info.PaymentMethodID
+	paymentReceived.Amount = info.Amount
+	paymentReceived.Notes = info.Notes
+	paymentReceived.Status = 1
+	paymentReceived.Updated = time.Now()
+	paymentReceived.UpdatedBy = info.Email
+	err = repo.UpdatePaymentReceived(paymentReceivedID, paymentReceived)
+	if err != nil {
+		msg := "create payment error: "
+		return nil, errors.New(msg)
+	}
+	invoicedPaid, err := repo.GetInvoicePaidCount(info.OrganizationID, oldPayment.InvoiceID)
+	if err != nil {
+		msg := "get invoice paid count error: "
+		return nil, errors.New(msg)
+	}
+	invoiceStatus := 1
+	if invoice.Total < invoicedPaid {
+		msg := "pay too much"
+		return nil, errors.New(msg)
+	} else if invoice.Total == invoicedPaid {
+		invoiceStatus = 3
+	} else {
+		invoiceStatus = 2
+	}
+	err = repo.UpdateInvoiceStatus(oldPayment.InvoiceID, invoiceStatus, info.Email)
+	if err != nil {
+		msg := "update invoice status error: "
+		return nil, errors.New(msg)
+	}
+	tx.Commit()
+	var newEvent common.NewHistoryCreated
+	newEvent.HistoryType = "invoice"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = info.User
+	newEvent.ReferenceID = oldPayment.InvoiceID
+	newEvent.Description = "Payment Received Created"
+	newEvent.OrganizationID = info.OrganizationID
+	newEvent.Email = info.Email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return nil, errors.New(msg)
+	}
+	return &paymentReceivedID, err
+}
+
+func (s *salesorderService) DeletePaymentReceived(paymentReceivedID, organizationID, user, email string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewSalesorderRepository(tx)
+	oldPaymentReceived, err := repo.GetPaymentReceivedByID(organizationID, paymentReceivedID)
+	if err != nil {
+		msg := "get payment error"
+		return errors.New(msg)
+	}
+	err = repo.DeletePaymentReceived(paymentReceivedID, email)
+	if err != nil {
+		msg := "delete picking order error: "
+		return errors.New(msg)
+	}
+	invoicedPaid, err := repo.GetInvoicePaidCount(organizationID, oldPaymentReceived.InvoiceID)
+	if err != nil {
+		msg := "get invoice error: "
+		return errors.New(msg)
+	}
+	invoiceStatus := 1
+	if invoicedPaid == 0 {
+		invoiceStatus = 1
+	} else {
+		invoiceStatus = 2
+	}
+	err = repo.UpdateInvoiceStatus(oldPaymentReceived.InvoiceID, invoiceStatus, email)
+	if err != nil {
+		msg := "update invoice status error: "
+		return errors.New(msg)
+	}
+	tx.Commit()
+	rabbit, _ := queue.GetConn()
+	var newEvent common.NewHistoryCreated
+	newEvent.HistoryType = "invoice"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = user
+	newEvent.ReferenceID = oldPaymentReceived.InvoiceID
+	newEvent.Description = "Payment Deleted"
+	newEvent.OrganizationID = organizationID
+	newEvent.Email = email
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return errors.New(msg)
+	}
+	return err
+}

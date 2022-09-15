@@ -359,6 +359,7 @@ type InvoiceFilter struct {
 type InvoiceID struct {
 	ID string `uri:"id" binding:"required,min=1"`
 }
+
 type InvoiceItemResponse struct {
 	OrganizationID   string  `db:"organization_id" json:"organization_id"`
 	InvoiceID        string  `db:"invoice_id" json:"invoice_id"`
@@ -374,4 +375,43 @@ type InvoiceItemResponse struct {
 	TaxAmount        float64 `db:"tax_amount" json:"tax_amount"`
 	Amount           float64 `db:"amount" json:"amount"`
 	Status           int     `db:"status" json:"status"`
+}
+
+type PaymentReceivedNew struct {
+	PaymentReceivedNumber string  `json:"payment_received_number" binding:"required,min=6,max=64"`
+	PaymentReceivedDate   string  `json:"payment_received_date" binding:"required,datetime=2006-01-02"`
+	PaymentMethodID       string  `json:"payment_method_id" binding:"required,min=6,max=64"`
+	Amount                float64 `json:"amount" binding:"required"`
+	Notes                 string  `json:"notes" binding:"omitempty"`
+	OrganizationID        string  `json:"organiztion_id" swaggerignore:"true"`
+	User                  string  `json:"user" swaggerignore:"true"`
+	Email                 string  `json:"email" swaggerignore:"true"`
+}
+
+type PaymentReceivedFilter struct {
+	InvoiceID             string `form:"invoice_id" binding:"omitempty,max=64"`
+	PaymentReceivedNumber string `form:"payment_received_number" binding:"omitempty,max=64,min=1"`
+	PaymentMethodID       string `form:"payment_method_id" binding:"omitempty,max=64"`
+	OrganizationID        string `json:"organiztion_id" swaggerignore:"true"`
+	request.PageInfo
+}
+
+type PaymentReceivedResponse struct {
+	OrganizationID        string  `db:"organization_id" json:"organization_id"`
+	InvoiceID             string  `db:"invoice_id" json:"invoice_id"`
+	InvoiceNumber         string  `db:"invoice_number" json:"invoice_number"`
+	CustomerID            string  `db:"customer_id" json:"customer_id"`
+	CustomerName          string  `db:"customer_name" json:"customer_name"`
+	PaymentReceivedID     string  `db:"payment_received_id" json:"payment_received_id"`
+	PaymentReceivedNumber string  `db:"payment_received_number" json:"payment_received_number"`
+	PaymentReceivedDate   string  `db:"payment_received_date" json:"payment_received_date"`
+	PaymentMethodID       string  `db:"payment_method_id" json:"payment_method_id"`
+	PaymentMethodName     string  `db:"payment_method_name" json:"payment_method_name"`
+	Amount                float64 `db:"amount" json:"amount"`
+	Notes                 string  `db:"notes" json:"notes"`
+	Status                int     `db:"status" json:"status"`
+}
+
+type PaymentReceivedID struct {
+	ID string `uri:"id" binding:"required,min=1"`
 }

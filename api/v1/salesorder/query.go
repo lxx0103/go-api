@@ -609,3 +609,79 @@ func (r *salesorderQuery) GetInvoiceItemList(invoiceID string) (*[]InvoiceItemRe
 	`, invoiceID)
 	return &invoiceItems, err
 }
+
+func (r *salesorderQuery) GeInvoicePaymentReceived(organizationID, invoiceID string) (float64, error) {
+	var count float64
+	err := r.conn.Get(&count, `
+		SELECT IFNULL(SUM(amount),0) FROM s_payment_receiveds 
+		WHERE organization_id = ? AND invoice_id = ? AND status > 0 
+		`, organizationID, invoiceID)
+	return count, err
+}
+
+func (r *salesorderQuery) GetPaymentReceivedCount(filter PaymentReceivedFilter) (int, error) {
+	where, args := []string{"status > 0"}, []interface{}{}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "organization_id = ?"), append(args, v)
+	}
+	if v := filter.PaymentReceivedNumber; v != "" {
+		where, args = append(where, "payment_received_number like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.InvoiceID; v != "" {
+		where, args = append(where, "invoice_id = ?"), append(args, v)
+	}
+	if v := filter.PaymentMethodID; v != "" {
+		where, args = append(where, "payment_method_id = ?"), append(args, v)
+	}
+	var count int
+	err := r.conn.Get(&count, `
+		SELECT count(1) as count
+		FROM s_payment_receiveds
+		WHERE `+strings.Join(where, " AND "), args...)
+	return count, err
+}
+
+func (r *salesorderQuery) GetPaymentReceivedList(filter PaymentReceivedFilter) (*[]PaymentReceivedResponse, error) {
+	where, args := []string{"p.status > 0"}, []interface{}{}
+	if v := filter.OrganizationID; v != "" {
+		where, args = append(where, "p.organization_id = ?"), append(args, v)
+	}
+	if v := filter.PaymentReceivedNumber; v != "" {
+		where, args = append(where, "p.payment_received_number like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.InvoiceID; v != "" {
+		where, args = append(where, "p.invoice_id = ?"), append(args, v)
+	}
+	if v := filter.PaymentMethodID; v != "" {
+		where, args = append(where, "p.payment_method_id = ?"), append(args, v)
+	}
+	args = append(args, filter.PageID*filter.PageSize-filter.PageSize)
+	args = append(args, filter.PageSize)
+	var paymentReceiveds []PaymentReceivedResponse
+	err := r.conn.Select(&paymentReceiveds, `
+		SELECT 
+		p.organization_id,
+		p.invoice_id,
+		IFNULL(i.invoice_number, "") as invoice_number, 
+		p.customer_id,
+		IFNULL(c.name, "") as customer_name,
+		p.payment_received_id, 
+		p.payment_received_number, 
+		p.payment_received_date,
+		p.payment_method_id,
+		IFNULL(pm.name, "") as payment_method_name,
+		p.amount,
+		p.notes,
+		p.status
+		FROM s_payment_receiveds p
+		LEFT JOIN s_invoices i
+		ON p.invoice_id = i.invoice_id
+		LEFT JOIN s_customers c
+		ON p.customer_id = c.customer_id
+		LEFT JOIN s_payment_methods pm
+		ON p.payment_method_id = pm.payment_method_id
+		WHERE `+strings.Join(where, " AND ")+`
+		LIMIT ?, ?
+	`, args...)
+	return &paymentReceiveds, err
+}
