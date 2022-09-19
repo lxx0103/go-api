@@ -1003,6 +1003,340 @@
                 }
             }
         },
+        "/bills": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "Bill列表",
+                "operationId": "414",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "bill编码",
+                        "name": "bill_number",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "销售订单ID",
+                        "name": "purchaseorder_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/purchaseorder.BillResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/bills/:id": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "根据ID更新Bill",
+                "operationId": "416",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "billID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "bill信息",
+                        "name": "bill_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/purchaseorder.BillNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/purchaseorder.Bill"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "根据ID删除bill",
+                "operationId": "417",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "billID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/bills/:id/items": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "bill产品列表",
+                "operationId": "415",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "billID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/purchaseorder.BillItemResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/bills/:id/paid": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "获取Bill已付款金额",
+                "operationId": "419",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "billID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "number"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/bills/:id/payments": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "新建Payment",
+                "operationId": "418",
+                "parameters": [
+                    {
+                        "description": "付款信息",
+                        "name": "bill",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/purchaseorder.PaymentMadeNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/brands": {
             "get": {
                 "consumes": [
@@ -2864,6 +3198,18 @@
                         "description": "货架ID",
                         "name": "bay_id",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否警告",
+                        "name": "is_alert",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "第几层",
+                        "name": "level",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3637,6 +3983,191 @@
                                             "items": {
                                                 "$ref": "#/definitions/salesorder.PackageItemResponse"
                                             }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/paymentmades": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "Payment列表",
+                "operationId": "420",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页行数（5/10/15/20）",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "付款单编码",
+                        "name": "payment_received_number",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "billID",
+                        "name": "bill_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "付款方式ID",
+                        "name": "payment_method_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ListRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/purchaseorder.PaymentMadeResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/paymentmades/:id": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "根据ID更新Payment",
+                "operationId": "421",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "paymentID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "payment信息",
+                        "name": "payment_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/purchaseorder.PaymentMadeNew"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "根据ID删除payment",
+                "operationId": "422",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "paymentID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
                                         }
                                     }
                                 }
@@ -4761,6 +5292,58 @@
                         "name": "id",
                         "in": "path",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/purchaseorders/:id/bills": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "采购单管理"
+                ],
+                "summary": "新建Bill",
+                "operationId": "413",
+                "parameters": [
+                    {
+                        "description": "采购单信息",
+                        "name": "bill",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/purchaseorder.BillNew"
+                        }
                     }
                 ],
                 "responses": {
@@ -7910,6 +8493,328 @@
                     "type": "string",
                     "maxLength": 64,
                     "minLength": 1
+                }
+            }
+        },
+        "purchaseorder.Bill": {
+            "type": "object",
+            "properties": {
+                "bill_date": {
+                    "type": "string"
+                },
+                "bill_id": {
+                    "type": "string"
+                },
+                "bill_number": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "discount_type": {
+                    "type": "integer"
+                },
+                "discount_value": {
+                    "type": "number"
+                },
+                "due_date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "item_count": {
+                    "type": "integer"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "purchaseorder_id": {
+                    "type": "string"
+                },
+                "shipping_fee": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "subtotal": {
+                    "type": "number"
+                },
+                "tax_total": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                },
+                "vendor_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "purchaseorder.BillItemNew": {
+            "type": "object",
+            "required": [
+                "item_id",
+                "purchaseorder_item_id",
+                "quantity",
+                "rate"
+            ],
+            "properties": {
+                "item_id": {
+                    "type": "string"
+                },
+                "purchaseorder_item_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "rate": {
+                    "type": "number"
+                },
+                "tax_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "purchaseorder.BillItemResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "bill_id": {
+                    "type": "string"
+                },
+                "bill_item_id": {
+                    "type": "string"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "purchaseorder_item_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "rate": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "tax_amount": {
+                    "type": "number"
+                },
+                "tax_id": {
+                    "type": "string"
+                },
+                "tax_value": {
+                    "type": "number"
+                }
+            }
+        },
+        "purchaseorder.BillNew": {
+            "type": "object",
+            "required": [
+                "bill_date",
+                "bill_number",
+                "due_date",
+                "items",
+                "vendor_id"
+            ],
+            "properties": {
+                "bill_date": {
+                    "type": "string"
+                },
+                "bill_number": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 6
+                },
+                "discount_type": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
+                },
+                "discount_value": {
+                    "type": "number"
+                },
+                "due_date": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/purchaseorder.BillItemNew"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "shipping_fee": {
+                    "type": "number"
+                },
+                "vendor_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "purchaseorder.BillResponse": {
+            "type": "object",
+            "properties": {
+                "bill_date": {
+                    "type": "string"
+                },
+                "bill_id": {
+                    "type": "string"
+                },
+                "bill_number": {
+                    "type": "string"
+                },
+                "discount_type": {
+                    "type": "integer"
+                },
+                "discount_value": {
+                    "type": "number"
+                },
+                "due_date": {
+                    "type": "string"
+                },
+                "item_count": {
+                    "type": "number"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "purchaseorder_id": {
+                    "type": "string"
+                },
+                "purchaseorder_number": {
+                    "type": "string"
+                },
+                "shipping_fee": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "sub_total": {
+                    "type": "number"
+                },
+                "tax_total": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                },
+                "vendor_id": {
+                    "type": "string"
+                },
+                "vendor_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "purchaseorder.PaymentMadeNew": {
+            "type": "object",
+            "required": [
+                "amount",
+                "payment_made_date",
+                "payment_made_number",
+                "payment_method_id"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "payment_made_date": {
+                    "type": "string"
+                },
+                "payment_made_number": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 6
+                },
+                "payment_method_id": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 6
+                }
+            }
+        },
+        "purchaseorder.PaymentMadeResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "bill_id": {
+                    "type": "string"
+                },
+                "bill_number": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "payment_made_date": {
+                    "type": "string"
+                },
+                "payment_made_id": {
+                    "type": "string"
+                },
+                "payment_made_number": {
+                    "type": "string"
+                },
+                "payment_method_id": {
+                    "type": "string"
+                },
+                "payment_method_name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "vendor_id": {
+                    "type": "string"
+                },
+                "vendor_name": {
+                    "type": "string"
                 }
             }
         },

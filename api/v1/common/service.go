@@ -98,6 +98,10 @@ func (s *commonService) GetNextNumber(filter NumberFilter) (*string, error) {
 		prefix = "INV"
 	case "paymentreceived":
 		prefix = "PAYR"
+	case "bill":
+		prefix = "BIL"
+	case "paymentmade":
+		prefix = "PAYM"
 	default:
 		msg := "number type error"
 		return nil, errors.New(msg)

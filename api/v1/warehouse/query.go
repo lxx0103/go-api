@@ -87,6 +87,12 @@ func (r *warehouseQuery) GetLocationCount(filter LocationFilter) (int, error) {
 	if v := filter.Code; v != "" {
 		where, args = append(where, "code like ?"), append(args, "%"+v+"%")
 	}
+	if v := filter.Level; v != "" {
+		where, args = append(where, "level = ?"), append(args, v)
+	}
+	if v := filter.IsAlert; v {
+		where = append(where, "quantity < alert")
+	}
 	var count int
 	err := r.conn.Get(&count, `
 		SELECT count(1) as count
@@ -105,6 +111,12 @@ func (r *warehouseQuery) GetLocationList(filter LocationFilter) (*[]LocationResp
 	}
 	if v := filter.Code; v != "" {
 		where, args = append(where, "l.code like ?"), append(args, "%"+v+"%")
+	}
+	if v := filter.Level; v != "" {
+		where, args = append(where, "l.level = ?"), append(args, v)
+	}
+	if v := filter.IsAlert; v {
+		where = append(where, "l.quantity < l.alert")
 	}
 	args = append(args, filter.PageID*filter.PageSize-filter.PageSize)
 	args = append(args, filter.PageSize)

@@ -34,6 +34,9 @@ type BayID struct {
 type LocationFilter struct {
 	Code           string `form:"code" binding:"omitempty,max=64,min=1"`
 	BayID          string `form:"bay_id" binding:"omitempty"`
+	Level          string `form:"level" binding:"omitempty,min=1,max=64"`
+	SKU            string `form:"sku" binding:"omitempty,max=64,min=1"`
+	IsAlert        bool   `form:"is_alert" binding:"omitempty"`
 	OrganizationID string `json:"organiztion_id" swaggerignore:"true"`
 	request.PageInfo
 }

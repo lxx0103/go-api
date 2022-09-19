@@ -144,13 +144,14 @@ func (r *purchaseorderRepository) GetPurchaseorderItemByID(organizationID, purch
 		p.tax_amount,
 		p.amount,
 		p.quantity_received,
+		p.quantity_billed,
 		p.status
 		FROM p_purchaseorder_items p
 		LEFT JOIN i_items i
 		ON p.item_id = i.item_id
 		WHERE p.organization_id = ? AND p.purchaseorder_id = ? AND p.item_id = ? AND p.status > 0 LIMIT 1
 	`, organizationID, purchaseorderID, itemID)
-	err := row.Scan(&res.OrganizationID, &res.PurchaseorderItemID, &res.PurchaseorderID, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity, &res.Rate, &res.TaxID, &res.TaxValue, &res.TaxAmount, &res.Amount, &res.QuantityReceived, &res.Status)
+	err := row.Scan(&res.OrganizationID, &res.PurchaseorderItemID, &res.PurchaseorderID, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity, &res.Rate, &res.TaxID, &res.TaxValue, &res.TaxAmount, &res.Amount, &res.QuantityReceived, &res.QuantityBilled, &res.Status)
 	return &res, err
 }
 
@@ -441,6 +442,354 @@ func (r *purchaseorderRepository) DeletePurchasereceive(id, byUser string) error
 		updated = ?,
 		updated_by = ?
 		WHERE purchasereceive_id = ?
+	`, time.Now(), byUser, id)
+	return err
+}
+
+// bill
+
+func (r *purchaseorderRepository) CheckBillNumberConfict(billID, organizationID, billNumber string) (bool, error) {
+	var existed int
+	row := r.tx.QueryRow("SELECT count(1) FROM p_bills WHERE organization_id = ? AND bill_id != ? AND bill_number = ? AND status > 0 ", organizationID, billID, billNumber)
+	err := row.Scan(&existed)
+	if err != nil {
+		return true, err
+	}
+	return existed != 0, nil
+}
+
+func (r purchaseorderRepository) BillPurchaseorderItem(info PurchaseorderItem) error {
+	_, err := r.tx.Exec(`
+		UPDATE p_purchaseorder_items set
+		quantity_billed = ?,
+		updated = ?,
+		updated_by =?
+		WHERE purchaseorder_item_id = ?
+	`, info.QuantityBilled, info.Updated, info.UpdatedBy, info.PurchaseorderItemID)
+	return err
+}
+
+func (r purchaseorderRepository) CreateBillItem(info BillItem) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO p_bill_items 
+		(
+			organization_id,
+			bill_id,
+			bill_item_id,
+			purchaseorder_item_id,
+			item_id,
+			quantity,
+			rate,
+			tax_id,
+			tax_value,
+			tax_amount,
+			amount,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.BillID, info.BillItemID, info.PurchaseorderItemID, info.ItemID, info.Quantity, info.Rate, info.TaxID, info.TaxValue, info.TaxAmount, info.Amount, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}
+
+func (r purchaseorderRepository) CreateBill(info Bill) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO p_bills 
+		(
+			organization_id,
+			bill_id,
+			purchaseorder_id,
+			bill_number,
+			bill_date,
+			due_date,
+			vendor_id,
+			item_count,
+			sub_total,
+			discount_type,
+			discount_value,
+			tax_total,
+			shipping_fee,
+			total,
+			notes,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.BillID, info.PurchaseorderID, info.BillNumber, info.BillDate, info.DueDate, info.VendorID, info.ItemCount, info.Subtotal, info.DiscountType, info.DiscountValue, info.TaxTotal, info.ShippingFee, info.Total, info.Notes, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}
+
+func (r *purchaseorderRepository) GetPurchaseorderBilledCount(organizationID, purchaseorderID string) (float64, error) {
+	var sum float64
+	row := r.tx.QueryRow("SELECT SUM(quantity_billed) FROM p_purchaseorder_items WHERE organization_id = ? AND purchaseorder_id = ? AND status > 0", organizationID, purchaseorderID)
+	err := row.Scan(&sum)
+	return sum, err
+}
+
+func (r *purchaseorderRepository) UpdatePurchaseorderBillStatus(id string, status int, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update p_purchaseorders SET
+		billing_status = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE purchaseorder_id = ?
+	`, status, time.Now(), byUser, id)
+	return err
+}
+
+func (r *purchaseorderRepository) GetBillByID(organizationID, id string) (*BillResponse, error) {
+	var res BillResponse
+	row := r.tx.QueryRow(`
+		SELECT 
+		i.organization_id,
+		i.purchaseorder_id,
+		IFNULL(s.purchaseorder_number, "") as purchaseorder_number, 
+		i.bill_id, 
+		i.bill_number, 
+		i.bill_date,
+		i.due_date,
+		i.vendor_id,
+		IFNULL(c.name, "") as vendor_name,
+		i.item_count,
+		i.sub_total,
+		i.discount_type,
+		i.discount_value,
+		i.tax_total,
+		i.shipping_fee,
+		i.total,
+		i.notes,
+		i.status
+		FROM p_bills i
+		LEFT JOIN p_purchaseorders s
+		ON s.purchaseorder_id = i.purchaseorder_id
+		LEFT JOIN s_vendors c
+		ON i.vendor_id = c.vendor_id
+		WHERE i.organization_id = ? AND i.bill_id = ? AND s.status > 0  LIMIT 1
+	`, organizationID, id)
+	err := row.Scan(&res.OrganizationID, &res.PurchaseorderID, &res.PurchaseorderNumber, &res.BillID, &res.BillNumber, &res.BillDate, &res.DueDate, &res.VendorID, &res.VendorName, &res.ItemCount, &res.Subtotal, &res.DiscountType, &res.DiscountValue, &res.TaxTotal, &res.ShippingFee, &res.Total, &res.Notes, &res.Status)
+	return &res, err
+}
+
+func (r *purchaseorderRepository) DeleteBill(id, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update p_bills SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE bill_id = ?
+	`, time.Now(), byUser, id)
+	if err != nil {
+		return err
+	}
+	_, err = r.tx.Exec(`
+		UPDATE p_bill_items SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE bill_id = ?
+	`, time.Now(), byUser, id)
+	return err
+}
+
+func (r *purchaseorderRepository) GetBillItemByIDAll(organizationID, billID, billItemID string) (*BillItemResponse, error) {
+	var res BillItemResponse
+	row := r.tx.QueryRow(`
+		SELECT
+		s.organization_id,
+		s.bill_id,
+		s.purchaseorder_item_id,
+		s.bill_item_id,
+		s.item_id,
+		i.name as item_name,
+		i.sku as sku,
+		s.quantity,
+		s.rate,
+		s.tax_id,
+    	s.tax_value,
+    	s.tax_amount,
+    	s.amount,
+		s.status
+		FROM p_bill_items s
+		LEFT JOIN i_items i
+		ON s.item_id = i.item_id
+		WHERE s.bill_item_id = ? AND s.organization_id = ? AND s.bill_id = ? LIMIT 1
+	`, billItemID, organizationID, billID)
+	err := row.Scan(&res.OrganizationID, &res.BillID, &res.PurchaseorderItemID, &res.BillItemID, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity, &res.Rate, &res.TaxID, &res.TaxValue, &res.TaxAmount, &res.Amount, &res.Status)
+	return &res, err
+}
+
+func (r *purchaseorderRepository) GetBillItemList(organizationID, billID string) (*[]BillItemResponse, error) {
+	var billItems []BillItemResponse
+	rows, err := r.tx.Query(`
+		SELECT
+		s.organization_id,
+		s.bill_id,
+		s.purchaseorder_item_id,
+		s.bill_item_id,
+		s.item_id,
+		i.name as item_name,
+		i.sku as sku,
+		s.quantity,
+		s.rate,
+		s.tax_id,
+    	s.tax_value,
+    	s.tax_amount,
+    	s.amount,
+		s.status
+		FROM p_bill_items s
+		LEFT JOIN i_items i
+		ON s.item_id = i.item_id
+		WHERE s.organization_id = ? AND s.bill_id = ? AND s.status > 0 
+	`, organizationID, billID)
+	for rows.Next() {
+		var res BillItemResponse
+		err = rows.Scan(&res.OrganizationID, &res.BillID, &res.PurchaseorderItemID, &res.BillItemID, &res.ItemID, &res.ItemName, &res.SKU, &res.Quantity, &res.Rate, &res.TaxID, &res.TaxValue, &res.TaxAmount, &res.Amount, &res.Status)
+		billItems = append(billItems, res)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &billItems, err
+}
+
+func (r purchaseorderRepository) UpdateBill(id string, info Bill) error {
+	_, err := r.tx.Exec(`
+		UPDATE p_bills set 
+		bill_number = ?,
+		bill_date = ?,
+		due_date = ?,
+		vendor_id = ?,
+		item_count = ?,
+		sub_total = ?,
+		discount_type = ?,
+		discount_value = ?,
+		tax_total = ?,
+		shipping_fee = ?,
+		total = ?,
+		notes = ?,
+		status = ?,
+		updated = ?,
+		updated_by =?
+		WHERE bill_id = ?
+	`, info.BillNumber, info.BillDate, info.DueDate, info.VendorID, info.ItemCount, info.Subtotal, info.DiscountType, info.DiscountValue, info.TaxTotal, info.ShippingFee, info.Total, info.Notes, info.Status, info.Updated, info.UpdatedBy, id)
+	return err
+}
+
+// payment
+func (r *purchaseorderRepository) CheckPaymentMadeNumberConfict(paymentMadeID, organizationID, paymentMadeNumber string) (bool, error) {
+	var existed int
+	row := r.tx.QueryRow("SELECT count(1) FROM p_payment_mades WHERE organization_id = ? AND payment_made_id != ? AND payment_made_number = ? AND status > 0 ", organizationID, paymentMadeID, paymentMadeNumber)
+	err := row.Scan(&existed)
+	if err != nil {
+		return true, err
+	}
+	return existed != 0, nil
+}
+
+func (r purchaseorderRepository) CreatePaymentMade(info PaymentMade) error {
+	_, err := r.tx.Exec(`
+		INSERT INTO p_payment_mades 
+		(
+			organization_id,
+			bill_id,
+			vendor_id,
+			payment_made_id,
+			payment_made_number,
+			payment_made_date,
+			payment_method_id,
+			amount,
+			notes,
+			status,
+			created,
+			created_by,
+			updated,
+			updated_by
+		)
+		VALUES
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.BillID, info.VendorID, info.PaymentMadeID, info.PaymentMadeNumber, info.PaymentMadeDate, info.PaymentMethodID, info.Amount, info.Notes, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+	return err
+}
+
+func (r *purchaseorderRepository) GetBillPaidCount(organizationID, billID string) (float64, error) {
+	var sum float64
+	row := r.tx.QueryRow("SELECT IFNULL(SUM(amount), 0) FROM p_payment_mades WHERE organization_id = ? AND bill_id = ? AND status > 0", organizationID, billID)
+	err := row.Scan(&sum)
+	return sum, err
+}
+
+func (r *purchaseorderRepository) UpdateBillStatus(id string, status int, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update p_bills SET
+		status = ?,
+		updated = ?,
+		updated_by = ?
+		WHERE bill_id = ?
+	`, status, time.Now(), byUser, id)
+	return err
+}
+
+func (r *purchaseorderRepository) GetPaymentMadeByID(organizationID, id string) (*PaymentMadeResponse, error) {
+	var res PaymentMadeResponse
+	row := r.tx.QueryRow(`		
+		SELECT 
+		p.organization_id,
+		p.bill_id,
+		IFNULL(i.bill_number, "") as bill_number, 
+		p.vendor_id,
+		IFNULL(c.name, "") as vendor_name,
+		p.payment_made_id, 
+		p.payment_made_number, 
+		p.payment_made_date,
+		p.payment_method_id,
+		IFNULL(pm.name, "") as payment_method_name,
+		p.amount,
+		p.notes,
+		p.status
+		FROM p_payment_mades p
+		LEFT JOIN p_bills i
+		ON p.bill_id = i.bill_id
+		LEFT JOIN s_vendors c
+		ON p.vendor_id = c.vendor_id
+		LEFT JOIN s_payment_methods pm
+		ON p.payment_method_id = pm.payment_method_id
+		WHERE p.organization_id = ? AND p.payment_made_id = ? AND p.status > 0  LIMIT 1
+	`, organizationID, id)
+	err := row.Scan(&res.OrganizationID, &res.BillID, &res.BillNumber, &res.VendorID, &res.VendorName, &res.PaymentMadeID, &res.PaymentMadeNumber, &res.PaymentMadeDate, &res.PaymentMethodID, &res.PaymentMethodName, &res.Amount, &res.Notes, &res.Status)
+	return &res, err
+}
+
+func (r purchaseorderRepository) UpdatePaymentMade(id string, info PaymentMade) error {
+	_, err := r.tx.Exec(`
+		UPDATE p_payment_mades set 
+		payment_made_number = ?,
+		payment_made_date = ?,
+		payment_method_id = ?,
+		amount = ?,
+		notes = ?,
+		status = ?,
+		updated = ?,
+		updated_by =?
+		WHERE payment_made_id = ?
+	`, info.PaymentMadeNumber, info.PaymentMadeDate, info.PaymentMethodID, info.Amount, info.Notes, info.Status, info.Updated, info.UpdatedBy, id)
+	return err
+}
+
+func (r *purchaseorderRepository) DeletePaymentMade(id, byUser string) error {
+	_, err := r.tx.Exec(`
+		Update p_payment_mades SET
+		status = -1,
+		updated = ?,
+		updated_by = ?
+		WHERE payment_made_id = ?
 	`, time.Now(), byUser, id)
 	return err
 }

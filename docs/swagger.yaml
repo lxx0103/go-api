@@ -495,6 +495,224 @@ definitions:
     - phone
     - user_name
     type: object
+  purchaseorder.Bill:
+    properties:
+      bill_date:
+        type: string
+      bill_id:
+        type: string
+      bill_number:
+        type: string
+      created:
+        type: string
+      created_by:
+        type: string
+      discount_type:
+        type: integer
+      discount_value:
+        type: number
+      due_date:
+        type: string
+      id:
+        type: integer
+      item_count:
+        type: integer
+      notes:
+        type: string
+      organization_id:
+        type: string
+      purchaseorder_id:
+        type: string
+      shipping_fee:
+        type: number
+      status:
+        type: integer
+      subtotal:
+        type: number
+      tax_total:
+        type: number
+      total:
+        type: number
+      updated:
+        type: string
+      updated_by:
+        type: string
+      vendor_id:
+        type: string
+    type: object
+  purchaseorder.BillItemNew:
+    properties:
+      item_id:
+        type: string
+      purchaseorder_item_id:
+        type: string
+      quantity:
+        type: integer
+      rate:
+        type: number
+      tax_id:
+        type: string
+    required:
+    - item_id
+    - purchaseorder_item_id
+    - quantity
+    - rate
+    type: object
+  purchaseorder.BillItemResponse:
+    properties:
+      amount:
+        type: number
+      bill_id:
+        type: string
+      bill_item_id:
+        type: string
+      item_id:
+        type: string
+      item_name:
+        type: string
+      organization_id:
+        type: string
+      purchaseorder_item_id:
+        type: string
+      quantity:
+        type: integer
+      rate:
+        type: number
+      sku:
+        type: string
+      status:
+        type: integer
+      tax_amount:
+        type: number
+      tax_id:
+        type: string
+      tax_value:
+        type: number
+    type: object
+  purchaseorder.BillNew:
+    properties:
+      bill_date:
+        type: string
+      bill_number:
+        maxLength: 64
+        minLength: 6
+        type: string
+      discount_type:
+        enum:
+        - 1
+        - 2
+        type: integer
+      discount_value:
+        type: number
+      due_date:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/purchaseorder.BillItemNew'
+        type: array
+      notes:
+        type: string
+      shipping_fee:
+        type: number
+      vendor_id:
+        type: string
+    required:
+    - bill_date
+    - bill_number
+    - due_date
+    - items
+    - vendor_id
+    type: object
+  purchaseorder.BillResponse:
+    properties:
+      bill_date:
+        type: string
+      bill_id:
+        type: string
+      bill_number:
+        type: string
+      discount_type:
+        type: integer
+      discount_value:
+        type: number
+      due_date:
+        type: string
+      item_count:
+        type: number
+      notes:
+        type: string
+      organization_id:
+        type: string
+      purchaseorder_id:
+        type: string
+      purchaseorder_number:
+        type: string
+      shipping_fee:
+        type: number
+      status:
+        type: integer
+      sub_total:
+        type: number
+      tax_total:
+        type: number
+      total:
+        type: number
+      vendor_id:
+        type: string
+      vendor_name:
+        type: string
+    type: object
+  purchaseorder.PaymentMadeNew:
+    properties:
+      amount:
+        type: number
+      notes:
+        type: string
+      payment_made_date:
+        type: string
+      payment_made_number:
+        maxLength: 64
+        minLength: 6
+        type: string
+      payment_method_id:
+        maxLength: 64
+        minLength: 6
+        type: string
+    required:
+    - amount
+    - payment_made_date
+    - payment_made_number
+    - payment_method_id
+    type: object
+  purchaseorder.PaymentMadeResponse:
+    properties:
+      amount:
+        type: number
+      bill_id:
+        type: string
+      bill_number:
+        type: string
+      notes:
+        type: string
+      organization_id:
+        type: string
+      payment_made_date:
+        type: string
+      payment_made_id:
+        type: string
+      payment_made_number:
+        type: string
+      payment_method_id:
+        type: string
+      payment_method_name:
+        type: string
+      status:
+        type: integer
+      vendor_id:
+        type: string
+      vendor_name:
+        type: string
+    type: object
   purchaseorder.Purchaseorder:
     properties:
       billing_status:
@@ -2872,6 +3090,209 @@ paths:
       summary: 根据ID更新货架
       tags:
       - 货架管理
+  /bills:
+    get:
+      consumes:
+      - application/json
+      operationId: "414"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: bill编码
+        in: query
+        name: bill_number
+        type: string
+      - description: 销售订单ID
+        in: query
+        name: purchaseorder_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/purchaseorder.BillResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: Bill列表
+      tags:
+      - 采购单管理
+  /bills/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "417"
+      parameters:
+      - description: billID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除bill
+      tags:
+      - 采购单管理
+    put:
+      consumes:
+      - application/json
+      operationId: "416"
+      parameters:
+      - description: billID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: bill信息
+        in: body
+        name: bill_info
+        required: true
+        schema:
+          $ref: '#/definitions/purchaseorder.BillNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/purchaseorder.Bill'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新Bill
+      tags:
+      - 采购单管理
+  /bills/:id/items:
+    get:
+      consumes:
+      - application/json
+      operationId: "415"
+      parameters:
+      - description: billID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/purchaseorder.BillItemResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: bill产品列表
+      tags:
+      - 采购单管理
+  /bills/:id/paid:
+    get:
+      consumes:
+      - application/json
+      operationId: "419"
+      parameters:
+      - description: billID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: number
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 获取Bill已付款金额
+      tags:
+      - 采购单管理
+  /bills/:id/payments:
+    post:
+      consumes:
+      - application/json
+      operationId: "418"
+      parameters:
+      - description: 付款信息
+        in: body
+        name: bill
+        required: true
+        schema:
+          $ref: '#/definitions/purchaseorder.PaymentMadeNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建Payment
+      tags:
+      - 采购单管理
   /brands:
     get:
       consumes:
@@ -4007,6 +4428,14 @@ paths:
         in: query
         name: bay_id
         type: string
+      - description: 是否警告
+        in: query
+        name: is_alert
+        type: boolean
+      - description: 第几层
+        in: query
+        name: level
+        type: string
       produces:
       - application/json
       responses:
@@ -4486,6 +4915,120 @@ paths:
       summary: 拣货单产品列表
       tags:
       - 销售单管理
+  /paymentmades:
+    get:
+      consumes:
+      - application/json
+      operationId: "420"
+      parameters:
+      - description: 页码
+        in: query
+        name: page_id
+        required: true
+        type: integer
+      - description: 每页行数（5/10/15/20）
+        in: query
+        name: page_size
+        required: true
+        type: integer
+      - description: 付款单编码
+        in: query
+        name: payment_received_number
+        type: string
+      - description: billID
+        in: query
+        name: bill_id
+        type: string
+      - description: 付款方式ID
+        in: query
+        name: payment_method_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ListRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/purchaseorder.PaymentMadeResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: Payment列表
+      tags:
+      - 采购单管理
+  /paymentmades/:id:
+    delete:
+      consumes:
+      - application/json
+      operationId: "422"
+      parameters:
+      - description: paymentID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID删除payment
+      tags:
+      - 采购单管理
+    put:
+      consumes:
+      - application/json
+      operationId: "421"
+      parameters:
+      - description: paymentID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: payment信息
+        in: body
+        name: payment_info
+        required: true
+        schema:
+          $ref: '#/definitions/purchaseorder.PaymentMadeNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 根据ID更新Payment
+      tags:
+      - 采购单管理
   /paymentmethods:
     get:
       consumes:
@@ -5176,6 +5719,37 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorRes'
       summary: 根据ID更新采购单
+      tags:
+      - 采购单管理
+  /purchaseorders/:id/bills:
+    post:
+      consumes:
+      - application/json
+      operationId: "413"
+      parameters:
+      - description: 采购单信息
+        in: body
+        name: bill
+        required: true
+        schema:
+          $ref: '#/definitions/purchaseorder.BillNew'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 新建Bill
       tags:
       - 采购单管理
   /purchaseorders/:id/issued:

@@ -162,6 +162,8 @@ func DeleteBay(c *gin.Context) {
 // @Param page_size query int true "每页行数"
 // @Param code query string false "货位编码"
 // @Param bay_id query string false "货架ID"
+// @Param is_alert query bool false "是否警告"
+// @Param level query string false "第几层"
 // @Success 200 object response.ListRes{data=[]BayResponse} 成功
 // @Failure 400 object response.ErrorRes 内部错误
 // @Router /locations [GET]

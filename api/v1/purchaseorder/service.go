@@ -3,6 +3,7 @@ package purchaseorder
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"go-api/api/v1/common"
 	"go-api/api/v1/item"
 	"go-api/api/v1/setting"
@@ -938,6 +939,780 @@ func (s *purchaseorderService) DeletePurchasereceive(purchasereceiveID, organiza
 			msg := "create event NewBatchCreated error"
 			return errors.New(msg)
 		}
+	}
+	return err
+}
+
+func (s *purchaseorderService) NewBill(purchaseorderID string, info BillNew) (*string, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return nil, errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewPurchaseorderRepository(tx)
+	isConflict, err := repo.CheckBillNumberConfict("", info.OrganizationID, info.BillNumber)
+	if err != nil {
+		msg := "check conflict error: "
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "bill number exists"
+		return nil, errors.New(msg)
+	}
+	billID := "bil-" + xid.New().String()
+	settingRepo := setting.NewSettingRepository(tx)
+	_, err = settingRepo.GetVendorByID(info.VendorID, info.OrganizationID)
+	if err != nil {
+		msg := "vendor not exists"
+		return nil, errors.New(msg)
+	}
+	itemCount := 0
+	itemTotal := 0.0
+	taxTotal := 0.0
+	itemRepo := item.NewItemRepository(tx)
+	for _, itemRow := range info.Items {
+		oldPoItem, err := repo.GetPurchaseorderItemByID(info.OrganizationID, purchaseorderID, itemRow.ItemID)
+		if err != nil {
+			msg := "purchase order item not exist"
+			return nil, errors.New(msg)
+		}
+		if oldPoItem.PurchaseorderItemID != itemRow.PurchaseorderItemID {
+			msg := "purchase order item id error"
+			return nil, errors.New(msg)
+		}
+		_, err = itemRepo.GetItemByID(itemRow.ItemID, info.OrganizationID)
+		if err != nil {
+			msg := "item not exist"
+			return nil, errors.New(msg)
+		}
+
+		taxValue := 0.0
+		if itemRow.TaxID != "" {
+			tax, err := settingRepo.GetTaxByID(itemRow.TaxID, info.OrganizationID)
+			if err != nil {
+				msg := "tax not exist"
+				return nil, errors.New(msg)
+			}
+			taxValue = tax.TaxValue
+		}
+		itemCount += itemRow.Quantity
+		itemTotal += itemRow.Rate * float64(itemRow.Quantity)
+		taxTotal += itemRow.Rate * float64(itemRow.Quantity) * taxValue / 100
+
+		billItemID := "bili-" + xid.New().String()
+		if oldPoItem.Quantity < oldPoItem.QuantityBilled+itemRow.Quantity {
+			msg := "invoicing quantity greater than not billd"
+			return nil, errors.New(msg)
+		}
+		var poItem PurchaseorderItem
+		poItem.PurchaseorderItemID = oldPoItem.PurchaseorderItemID
+		poItem.QuantityBilled = oldPoItem.QuantityBilled + itemRow.Quantity
+		poItem.Updated = time.Now()
+		poItem.UpdatedBy = info.Email
+
+		err = repo.BillPurchaseorderItem(poItem)
+		if err != nil {
+			msg := "bill purchaseorder item error: "
+			return nil, errors.New(msg)
+		}
+		var billItem BillItem
+		billItem.OrganizationID = info.OrganizationID
+		billItem.BillID = billID
+		billItem.BillItemID = billItemID
+		billItem.PurchaseorderItemID = oldPoItem.PurchaseorderItemID
+		billItem.ItemID = oldPoItem.ItemID
+		billItem.Quantity = itemRow.Quantity
+		billItem.Rate = itemRow.Rate
+		billItem.TaxID = itemRow.TaxID
+		billItem.TaxValue = taxValue
+		billItem.TaxAmount = float64(itemRow.Quantity) * itemRow.Rate * taxValue / 100
+		billItem.Amount = float64(itemRow.Quantity) * itemRow.Rate
+		billItem.Status = 1
+		billItem.CreatedBy = info.Email
+		billItem.Created = time.Now()
+		billItem.Updated = time.Now()
+		billItem.UpdatedBy = info.Email
+
+		err = repo.CreateBillItem(billItem)
+		if err != nil {
+			msg := "create bill item error: "
+			return nil, errors.New(msg)
+		}
+	}
+	var bill Bill
+	bill.OrganizationID = info.OrganizationID
+	bill.BillID = billID
+	bill.PurchaseorderID = purchaseorderID
+	bill.BillNumber = info.BillNumber
+	bill.BillDate = info.BillDate
+	bill.DueDate = info.DueDate
+	bill.VendorID = info.VendorID
+	bill.ItemCount = itemCount
+	bill.Subtotal = itemTotal
+	bill.DiscountType = info.DiscountType
+	bill.DiscountValue = info.DiscountValue
+	bill.TaxTotal = taxTotal
+	bill.ShippingFee = info.ShippingFee
+	if info.DiscountType == 1 {
+		if info.DiscountValue < 0 || info.DiscountValue > 100 {
+			msg := "discount value error"
+			return nil, errors.New(msg)
+		}
+		bill.Total = (itemTotal+taxTotal)*(1-info.DiscountValue/100) + info.ShippingFee
+	} else if info.DiscountType == 2 {
+		if info.DiscountValue > (itemTotal + taxTotal + info.ShippingFee) {
+			msg := "discount value error"
+			return nil, errors.New(msg)
+		}
+		bill.Total = itemTotal - info.DiscountValue + info.ShippingFee + taxTotal
+	} else {
+		bill.Total = itemTotal + info.ShippingFee + taxTotal
+	}
+	bill.Notes = info.Notes
+	bill.Status = 1
+	bill.Created = time.Now()
+	bill.CreatedBy = info.Email
+	bill.Updated = time.Now()
+	bill.UpdatedBy = info.Email
+	err = repo.CreateBill(bill)
+	if err != nil {
+		msg := "create bill error: "
+		return nil, errors.New(msg)
+	}
+	so, err := repo.GetPurchaseorderByID(info.OrganizationID, purchaseorderID)
+	if err != nil {
+		msg := "get purchase order error: "
+		return nil, errors.New(msg)
+	}
+	billdCount, err := repo.GetPurchaseorderBilledCount(info.OrganizationID, purchaseorderID)
+	if err != nil {
+		msg := "get purchase order billd count error: "
+		return nil, errors.New(msg)
+	}
+	billStatus := 1
+	if so.ItemCount == billdCount {
+		billStatus = 3
+	} else {
+		billStatus = 2
+	}
+	err = repo.UpdatePurchaseorderBillStatus(purchaseorderID, billStatus, info.Email)
+	if err != nil {
+		msg := "update purchase order bill status error: "
+		return nil, errors.New(msg)
+	}
+	soStatus := 1
+	if so.ReceiveStatus == 3 && billStatus == 3 {
+		soStatus = 3
+	} else {
+		soStatus = 2
+	}
+	err = repo.UpdatePurchaseorderStatus(purchaseorderID, soStatus, info.Email)
+	if err != nil {
+		msg := "update purchase order status error: "
+		return nil, errors.New(msg)
+	}
+	tx.Commit()
+	var newEvent common.NewHistoryCreated
+	newEvent.HistoryType = "purchaseorder"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = info.User
+	newEvent.ReferenceID = purchaseorderID
+	newEvent.Description = "Bill Created"
+	newEvent.OrganizationID = info.OrganizationID
+	newEvent.Email = info.Email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return nil, errors.New(msg)
+	}
+	return &billID, err
+}
+
+func (s *purchaseorderService) GetBillList(filter BillFilter) (int, *[]BillResponse, error) {
+	db := database.RDB()
+	query := NewPurchaseorderQuery(db)
+	count, err := query.GetBillCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := query.GetBillList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *purchaseorderService) GetBillItemList(billID, organizationID string) (*[]BillItemResponse, error) {
+	db := database.RDB()
+	query := NewPurchaseorderQuery(db)
+	_, err := query.GetBillByID(organizationID, billID)
+	if err != nil {
+		msg := "get pickingorder error: "
+		return nil, errors.New(msg)
+	}
+	list, err := query.GetBillItemList(billID)
+	return list, err
+}
+
+func (s *purchaseorderService) UpdateBill(billID string, info BillNew) (*string, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return nil, errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewPurchaseorderRepository(tx)
+	isConflict, err := repo.CheckBillNumberConfict(billID, info.OrganizationID, info.BillNumber)
+	if err != nil {
+		msg := "check conflict error: "
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "bill number exists"
+		return nil, errors.New(msg)
+	}
+	settingRepo := setting.NewSettingRepository(tx)
+	_, err = settingRepo.GetVendorByID(info.VendorID, info.OrganizationID)
+	if err != nil {
+		msg := "vendor not exists"
+		return nil, errors.New(msg)
+	}
+	oldBill, err := repo.GetBillByID(info.OrganizationID, billID)
+	if err != nil {
+		msg := "get bill error"
+		return nil, errors.New(msg)
+	}
+	oldBillItems, err := repo.GetBillItemList(info.OrganizationID, billID)
+	if err != nil {
+		msg := "get bill item error"
+		return nil, errors.New(msg)
+	}
+	for _, oldBillItem := range *oldBillItems {
+		oldPoItem, err := repo.GetPurchaseorderItemByID(info.OrganizationID, oldBill.PurchaseorderID, oldBillItem.ItemID)
+		if err != nil {
+			msg := "purchase order item not exist"
+			return nil, errors.New(msg)
+		}
+		var poItem PurchaseorderItem
+		poItem.PurchaseorderItemID = oldBillItem.PurchaseorderItemID
+		poItem.QuantityBilled = oldPoItem.QuantityBilled - oldBillItem.Quantity
+		poItem.Updated = time.Now()
+		poItem.UpdatedBy = info.Email
+
+		err = repo.BillPurchaseorderItem(poItem)
+		if err != nil {
+			msg := "cancel bill purchaseorder item error: "
+			return nil, errors.New(msg)
+		}
+
+	}
+	err = repo.DeleteBill(billID, info.User)
+	if err != nil {
+		msg := "Bill Update error"
+		return nil, errors.New(msg)
+	}
+	itemCount := 0
+	itemTotal := 0.0
+	taxTotal := 0.0
+	itemRepo := item.NewItemRepository(tx)
+	for _, itemRow := range info.Items {
+		oldPoItem, err := repo.GetPurchaseorderItemByID(info.OrganizationID, oldBill.PurchaseorderID, itemRow.ItemID)
+		if err != nil {
+			msg := "purchase order item not exist"
+			return nil, errors.New(msg)
+		}
+		if oldPoItem.PurchaseorderItemID != itemRow.PurchaseorderItemID {
+			msg := "purchase order item id error"
+			return nil, errors.New(msg)
+		}
+		_, err = itemRepo.GetItemByID(itemRow.ItemID, info.OrganizationID)
+		if err != nil {
+			msg := "item not exist"
+			return nil, errors.New(msg)
+		}
+
+		taxValue := 0.0
+		if itemRow.TaxID != "" {
+			tax, err := settingRepo.GetTaxByID(itemRow.TaxID, info.OrganizationID)
+			if err != nil {
+				msg := "tax not exist"
+				return nil, errors.New(msg)
+			}
+			taxValue = tax.TaxValue
+		}
+		itemCount += itemRow.Quantity
+		itemTotal += itemRow.Rate * float64(itemRow.Quantity)
+		taxTotal += itemRow.Rate * float64(itemRow.Quantity) * taxValue / 100
+
+		billItemID := "bili-" + xid.New().String()
+		if oldPoItem.Quantity < oldPoItem.QuantityBilled+itemRow.Quantity {
+			fmt.Println(oldPoItem.Quantity, oldPoItem.QuantityBilled, itemRow.Quantity)
+			msg := "invoicing quantity greater than not billd"
+			return nil, errors.New(msg)
+		}
+		var poItem PurchaseorderItem
+		poItem.PurchaseorderItemID = oldPoItem.PurchaseorderItemID
+		poItem.QuantityBilled = oldPoItem.QuantityBilled + itemRow.Quantity
+		poItem.Updated = time.Now()
+		poItem.UpdatedBy = info.Email
+
+		err = repo.BillPurchaseorderItem(poItem)
+		if err != nil {
+			msg := "bill purchaseorder item error: "
+			return nil, errors.New(msg)
+		}
+		var billItem BillItem
+		billItem.OrganizationID = info.OrganizationID
+		billItem.BillID = billID
+		billItem.BillItemID = billItemID
+		billItem.PurchaseorderItemID = oldPoItem.PurchaseorderItemID
+		billItem.ItemID = oldPoItem.ItemID
+		billItem.Quantity = itemRow.Quantity
+		billItem.Rate = itemRow.Rate
+		billItem.TaxID = itemRow.TaxID
+		billItem.TaxValue = taxValue
+		billItem.TaxAmount = float64(itemRow.Quantity) * itemRow.Rate * taxValue / 100
+		billItem.Amount = float64(itemRow.Quantity) * itemRow.Rate
+		billItem.Status = 1
+		billItem.CreatedBy = info.Email
+		billItem.Created = time.Now()
+		billItem.Updated = time.Now()
+		billItem.UpdatedBy = info.Email
+
+		err = repo.CreateBillItem(billItem)
+		if err != nil {
+			msg := "create bill item error: "
+			return nil, errors.New(msg)
+		}
+	}
+	var bill Bill
+	bill.BillNumber = info.BillNumber
+	bill.BillDate = info.BillDate
+	bill.DueDate = info.DueDate
+	bill.VendorID = info.VendorID
+	bill.ItemCount = itemCount
+	bill.Subtotal = itemTotal
+	bill.DiscountType = info.DiscountType
+	bill.DiscountValue = info.DiscountValue
+	bill.TaxTotal = taxTotal
+	bill.ShippingFee = info.ShippingFee
+	if info.DiscountType == 1 {
+		if info.DiscountValue < 0 || info.DiscountValue > 100 {
+			msg := "discount value error"
+			return nil, errors.New(msg)
+		}
+		bill.Total = (itemTotal+taxTotal)*(1-info.DiscountValue/100) + info.ShippingFee
+	} else if info.DiscountType == 2 {
+		if info.DiscountValue > (itemTotal + taxTotal + info.ShippingFee) {
+			msg := "discount value error"
+			return nil, errors.New(msg)
+		}
+		bill.Total = itemTotal - info.DiscountValue + info.ShippingFee + taxTotal
+	} else {
+		bill.Total = itemTotal + info.ShippingFee + taxTotal
+	}
+	bill.Notes = info.Notes
+	bill.Status = 1
+	bill.Updated = time.Now()
+	bill.UpdatedBy = info.Email
+	err = repo.UpdateBill(billID, bill)
+	if err != nil {
+		msg := "update bill error: "
+		return nil, errors.New(msg)
+	}
+	po, err := repo.GetPurchaseorderByID(info.OrganizationID, oldBill.PurchaseorderID)
+	if err != nil {
+		msg := "get purchase order error: "
+		return nil, errors.New(msg)
+	}
+	billdCount, err := repo.GetPurchaseorderBilledCount(info.OrganizationID, oldBill.PurchaseorderID)
+	if err != nil {
+		msg := "get purchase order billd count error: "
+		return nil, errors.New(msg)
+	}
+	billStatus := 1
+	if po.ItemCount == billdCount {
+		billStatus = 3
+	} else {
+		billStatus = 2
+	}
+	err = repo.UpdatePurchaseorderBillStatus(oldBill.PurchaseorderID, billStatus, info.Email)
+	if err != nil {
+		msg := "update purchase order bill status error: "
+		return nil, errors.New(msg)
+	}
+	poStatus := 1
+	if po.ReceiveStatus == 3 && billStatus == 3 {
+		poStatus = 3
+	} else {
+		poStatus = 2
+	}
+	err = repo.UpdatePurchaseorderStatus(oldBill.PurchaseorderID, poStatus, info.Email)
+	if err != nil {
+		msg := "update purchase order status error: "
+		return nil, errors.New(msg)
+	}
+	tx.Commit()
+	var newEvent common.NewHistoryCreated
+	newEvent.HistoryType = "purchaseorder"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = info.User
+	newEvent.ReferenceID = oldBill.PurchaseorderID
+	newEvent.Description = "Bill Updated"
+	newEvent.OrganizationID = info.OrganizationID
+	newEvent.Email = info.Email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return nil, errors.New(msg)
+	}
+	return &billID, err
+}
+
+func (s *purchaseorderService) DeleteBill(billID, organizationID, user, email string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewPurchaseorderRepository(tx)
+	oldBill, err := repo.GetBillByID(organizationID, billID)
+	if err != nil {
+		msg := "get picking order error"
+		return errors.New(msg)
+	}
+	if oldBill.Status != 1 {
+		msg := " bill status error"
+		return errors.New(msg)
+	}
+	billItems, err := repo.GetBillItemList(organizationID, billID)
+	if err != nil {
+		msg := "get picking order log error"
+		return errors.New(msg)
+	}
+	for _, billItem := range *billItems {
+		oldPoItem, err := repo.GetPurchaseorderItemByID(organizationID, oldBill.PurchaseorderID, billItem.ItemID)
+		if err != nil {
+			msg := "purchase order item not exist"
+			return errors.New(msg)
+		}
+		if oldPoItem.QuantityBilled < billItem.Quantity {
+			msg := "purchase order itme billd quantity error"
+			return errors.New(msg)
+		}
+		var poItem PurchaseorderItem
+		poItem.PurchaseorderItemID = oldPoItem.PurchaseorderItemID
+		poItem.QuantityBilled = oldPoItem.QuantityBilled - billItem.Quantity
+		poItem.Updated = time.Now()
+		poItem.UpdatedBy = email
+
+		err = repo.BillPurchaseorderItem(poItem)
+		if err != nil {
+			msg := "cancel bill purchaseorder item error: "
+			return errors.New(msg)
+		}
+	}
+	err = repo.DeleteBill(billID, email)
+	if err != nil {
+		msg := "delete picking order error: "
+		return errors.New(msg)
+	}
+	billedCount, err := repo.GetPurchaseorderBilledCount(organizationID, oldBill.PurchaseorderID)
+	if err != nil {
+		msg := "get purchase order billed count error: "
+		return errors.New(msg)
+	}
+	billStatus := 1
+	if billedCount == 0 {
+		billStatus = 1
+	} else {
+		billStatus = 2
+	}
+	err = repo.UpdatePurchaseorderBillStatus(oldBill.PurchaseorderID, billStatus, email)
+	if err != nil {
+		msg := "update purchase order receive status error: "
+		return errors.New(msg)
+	}
+	tx.Commit()
+	rabbit, _ := queue.GetConn()
+	var newEvent common.NewHistoryCreated
+	newEvent.HistoryType = "purchaseorder"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = user
+	newEvent.ReferenceID = oldBill.PurchaseorderID
+	newEvent.Description = "Bill Deleted"
+	newEvent.OrganizationID = organizationID
+	newEvent.Email = email
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return errors.New(msg)
+	}
+	return err
+}
+
+func (s *purchaseorderService) NewPaymentMade(billID string, info PaymentMadeNew) (*string, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return nil, errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewPurchaseorderRepository(tx)
+	isConflict, err := repo.CheckPaymentMadeNumberConfict("", info.OrganizationID, info.PaymentMadeNumber)
+	if err != nil {
+		msg := "check conflict error: "
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "payment number exists"
+		return nil, errors.New(msg)
+	}
+	paymentMadeID := "paym-" + xid.New().String()
+	settingRepo := setting.NewSettingRepository(tx)
+
+	bill, err := repo.GetBillByID(info.OrganizationID, billID)
+	if err != nil {
+		msg := "get bill error: "
+		return nil, errors.New(msg)
+	}
+	billdPaid, err := repo.GetBillPaidCount(info.OrganizationID, billID)
+	if err != nil {
+		msg := "get bill paid count error: "
+		return nil, errors.New(msg)
+	}
+	if bill.Total < billdPaid+info.Amount {
+		msg := "pay too much error: "
+		return nil, errors.New(msg)
+	}
+	_, err = settingRepo.GetPaymentMethodByID(info.OrganizationID, info.PaymentMethodID)
+	if err != nil {
+		msg := "payment method not exists"
+		return nil, errors.New(msg)
+	}
+	var paymentMade PaymentMade
+	paymentMade.OrganizationID = info.OrganizationID
+	paymentMade.BillID = billID
+	paymentMade.VendorID = bill.VendorID
+	paymentMade.PaymentMadeID = paymentMadeID
+	paymentMade.PaymentMadeNumber = info.PaymentMadeNumber
+	paymentMade.PaymentMadeDate = info.PaymentMadeDate
+	paymentMade.PaymentMethodID = info.PaymentMethodID
+	paymentMade.Amount = info.Amount
+	paymentMade.Notes = info.Notes
+	paymentMade.Status = 1
+	paymentMade.Created = time.Now()
+	paymentMade.CreatedBy = info.Email
+	paymentMade.Updated = time.Now()
+	paymentMade.UpdatedBy = info.Email
+	err = repo.CreatePaymentMade(paymentMade)
+	if err != nil {
+		msg := "create payment error: "
+		return nil, errors.New(msg)
+	}
+	billdPaid, err = repo.GetBillPaidCount(info.OrganizationID, billID)
+	if err != nil {
+		msg := "get bill paid count error: "
+		return nil, errors.New(msg)
+	}
+	billStatus := 1
+	if bill.Total == billdPaid {
+		billStatus = 3
+	} else {
+		billStatus = 2
+	}
+	err = repo.UpdateBillStatus(billID, billStatus, info.Email)
+	if err != nil {
+		msg := "update bill status error: "
+		return nil, errors.New(msg)
+	}
+	tx.Commit()
+	var newEvent common.NewHistoryCreated
+	newEvent.HistoryType = "bill"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = info.User
+	newEvent.ReferenceID = billID
+	newEvent.Description = "Payment Made Created"
+	newEvent.OrganizationID = info.OrganizationID
+	newEvent.Email = info.Email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return nil, errors.New(msg)
+	}
+	return &paymentMadeID, err
+}
+
+func (s *purchaseorderService) GeBillPaymentMade(organizationID, billID string) (float64, error) {
+	db := database.RDB()
+	query := NewPurchaseorderQuery(db)
+	res, err := query.GeBillPaymentMade(organizationID, billID)
+	return res, err
+}
+
+func (s *purchaseorderService) GetPaymentMadeList(filter PaymentMadeFilter) (int, *[]PaymentMadeResponse, error) {
+	db := database.RDB()
+	query := NewPurchaseorderQuery(db)
+	count, err := query.GetPaymentMadeCount(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	list, err := query.GetPaymentMadeList(filter)
+	if err != nil {
+		return 0, nil, err
+	}
+	return count, list, err
+}
+
+func (s *purchaseorderService) UpdatePaymentMade(paymentMadeID string, info PaymentMadeNew) (*string, error) {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return nil, errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewPurchaseorderRepository(tx)
+	isConflict, err := repo.CheckPaymentMadeNumberConfict(paymentMadeID, info.OrganizationID, info.PaymentMadeNumber)
+	if err != nil {
+		msg := "check conflict error: "
+		return nil, errors.New(msg)
+	}
+	if isConflict {
+		msg := "payment number exists"
+		return nil, errors.New(msg)
+	}
+	settingRepo := setting.NewSettingRepository(tx)
+	oldPayment, err := repo.GetPaymentMadeByID(info.OrganizationID, paymentMadeID)
+	if err != nil {
+		msg := "payment not exist"
+		return nil, errors.New(msg)
+	}
+	bill, err := repo.GetBillByID(info.OrganizationID, oldPayment.BillID)
+	if err != nil {
+		msg := "get bill error: "
+		return nil, errors.New(msg)
+	}
+	_, err = settingRepo.GetPaymentMethodByID(info.OrganizationID, info.PaymentMethodID)
+	if err != nil {
+		msg := "payment method not exists"
+		return nil, errors.New(msg)
+	}
+	var paymentMade PaymentMade
+	paymentMade.PaymentMadeNumber = info.PaymentMadeNumber
+	paymentMade.PaymentMadeDate = info.PaymentMadeDate
+	paymentMade.PaymentMethodID = info.PaymentMethodID
+	paymentMade.Amount = info.Amount
+	paymentMade.Notes = info.Notes
+	paymentMade.Status = 1
+	paymentMade.Updated = time.Now()
+	paymentMade.UpdatedBy = info.Email
+	err = repo.UpdatePaymentMade(paymentMadeID, paymentMade)
+	if err != nil {
+		msg := "create payment error: "
+		return nil, errors.New(msg)
+	}
+	billdPaid, err := repo.GetBillPaidCount(info.OrganizationID, oldPayment.BillID)
+	if err != nil {
+		msg := "get bill paid count error: "
+		return nil, errors.New(msg)
+	}
+	billStatus := 1
+	if bill.Total < billdPaid {
+		msg := "pay too much"
+		return nil, errors.New(msg)
+	} else if bill.Total == billdPaid {
+		billStatus = 3
+	} else {
+		billStatus = 2
+	}
+	err = repo.UpdateBillStatus(oldPayment.BillID, billStatus, info.Email)
+	if err != nil {
+		msg := "update bill status error: "
+		return nil, errors.New(msg)
+	}
+	tx.Commit()
+	var newEvent common.NewHistoryCreated
+	newEvent.HistoryType = "bill"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = info.User
+	newEvent.ReferenceID = oldPayment.BillID
+	newEvent.Description = "Payment Made Created"
+	newEvent.OrganizationID = info.OrganizationID
+	newEvent.Email = info.Email
+	rabbit, _ := queue.GetConn()
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return nil, errors.New(msg)
+	}
+	return &paymentMadeID, err
+}
+
+func (s *purchaseorderService) DeletePaymentMade(paymentMadeID, organizationID, user, email string) error {
+	db := database.WDB()
+	tx, err := db.Begin()
+	if err != nil {
+		msg := "begin transaction error"
+		return errors.New(msg)
+	}
+	defer tx.Rollback()
+	repo := NewPurchaseorderRepository(tx)
+	oldPaymentMade, err := repo.GetPaymentMadeByID(organizationID, paymentMadeID)
+	if err != nil {
+		msg := "get payment error"
+		return errors.New(msg)
+	}
+	err = repo.DeletePaymentMade(paymentMadeID, email)
+	if err != nil {
+		msg := "delete picking order error: "
+		return errors.New(msg)
+	}
+	billdPaid, err := repo.GetBillPaidCount(organizationID, oldPaymentMade.BillID)
+	if err != nil {
+		msg := "get bill error: "
+		return errors.New(msg)
+	}
+	billStatus := 1
+	if billdPaid == 0 {
+		billStatus = 1
+	} else {
+		billStatus = 2
+	}
+	err = repo.UpdateBillStatus(oldPaymentMade.BillID, billStatus, email)
+	if err != nil {
+		msg := "update bill status error: "
+		return errors.New(msg)
+	}
+	tx.Commit()
+	rabbit, _ := queue.GetConn()
+	var newEvent common.NewHistoryCreated
+	newEvent.HistoryType = "bill"
+	newEvent.HistoryTime = time.Now().Format("2006-01-02 15:04:05")
+	newEvent.HistoryBy = user
+	newEvent.ReferenceID = oldPaymentMade.BillID
+	newEvent.Description = "Payment Deleted"
+	newEvent.OrganizationID = organizationID
+	newEvent.Email = email
+	msg, _ := json.Marshal(newEvent)
+	err = rabbit.Publish("NewHistoryCreated", msg)
+	if err != nil {
+		msg := "create event NewHistoryCreated error"
+		return errors.New(msg)
 	}
 	return err
 }

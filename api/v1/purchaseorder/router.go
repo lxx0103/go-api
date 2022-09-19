@@ -17,4 +17,16 @@ func AuthRouter(g *gin.RouterGroup) {
 	g.GET("/purchasereceives/:id/details", GetPurchasereceiveDetailList)
 	g.DELETE("/purchasereceives/:id", DeletePurchasereceive)
 
+	g.POST("/purchaseorders/:id/bills", NewBill)
+	g.GET("/bills", GetBillList)
+	g.GET("/bills/:id/items", GetBillItemList)
+	g.PUT("/bills/:id", UpdateBill)
+	g.DELETE("/bills/:id", DeleteBill)
+
+	g.POST("/bills/:id/payments", NewPayment)
+	g.GET("/bills/:id/paid", GeBillPaymentMade)
+	g.GET("/paymentmades", GetPaymentList)
+	g.PUT("/paymentmades/:id", UpdatePayment)
+	g.DELETE("/paymentmades/:id", DeletePayment)
+
 }

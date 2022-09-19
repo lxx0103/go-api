@@ -94,3 +94,65 @@ type PurchasereceiveDetail struct {
 	Updated                 time.Time `db:"updated" json:"updated"`
 	UpdatedBy               string    `db:"updated_by" json:"updated_by"`
 }
+
+type Bill struct {
+	ID              int64     `db:"id" json:"id"`
+	OrganizationID  string    `db:"organization_id" json:"organization_id"`
+	BillID          string    `db:"bill_id" json:"bill_id"`
+	PurchaseorderID string    `db:"purchaseorder_id" json:"purchaseorder_id"`
+	BillNumber      string    `db:"bill_number" json:"bill_number"`
+	BillDate        string    `db:"bill_date" json:"bill_date"`
+	DueDate         string    `db:"due_date" json:"due_date"`
+	VendorID        string    `db:"vendor_id" json:"vendor_id"`
+	ItemCount       int       `db:"item_count" json:"item_count"`
+	Subtotal        float64   `db:"subtotal" json:"subtotal"`
+	DiscountType    int       `db:"discount_type" json:"discount_type"`
+	DiscountValue   float64   `db:"discount_value" json:"discount_value"`
+	TaxTotal        float64   `db:"tax_total" json:"tax_total"`
+	ShippingFee     float64   `db:"shipping_fee" json:"shipping_fee"`
+	Total           float64   `db:"total" json:"total"`
+	Notes           string    `db:"notes" json:"notes"`
+	Status          int       `db:"status" json:"status"`
+	Created         time.Time `db:"created" json:"created"`
+	CreatedBy       string    `db:"created_by" json:"created_by"`
+	Updated         time.Time `db:"updated" json:"updated"`
+	UpdatedBy       string    `db:"updated_by" json:"updated_by"`
+}
+
+type BillItem struct {
+	ID                  int64     `db:"id" json:"id"`
+	OrganizationID      string    `db:"organization_id" json:"organization_id"`
+	BillID              string    `db:"bill_id" json:"bill_id"`
+	BillItemID          string    `db:"bill_item_id" json:"bill_item_id"`
+	PurchaseorderItemID string    `db:"purchaseorder_item_id" json:"purchaseorder_item_id"`
+	ItemID              string    `db:"item_id" json:"item_id"`
+	Quantity            int       `db:"quantity" json:"quantity"`
+	Rate                float64   `db:"rate" json:"rate"`
+	TaxID               string    `db:"tax_id" json:"tax_id"`
+	TaxValue            float64   `db:"tax_value" json:"tax_value"`
+	TaxAmount           float64   `db:"tax_amount" json:"tax_amount"`
+	Amount              float64   `db:"amount" json:"amount"`
+	Status              int       `db:"status" json:"status"`
+	Created             time.Time `db:"created" json:"created"`
+	CreatedBy           string    `db:"created_by" json:"created_by"`
+	Updated             time.Time `db:"updated" json:"updated"`
+	UpdatedBy           string    `db:"updated_by" json:"updated_by"`
+}
+
+type PaymentMade struct {
+	ID                int64     `db:"id" json:"id"`
+	OrganizationID    string    `db:"organization_id" json:"organization_id"`
+	BillID            string    `db:"bill_id" json:"bill_id"`
+	VendorID          string    `db:"vendor_id" json:"vendor_id"`
+	PaymentMadeID     string    `db:"payment_made_id" json:"payment_made_id"`
+	PaymentMadeNumber string    `db:"payment_made_number" json:"payment_made_number"`
+	PaymentMadeDate   string    `db:"payment_made_date" json:"payment_made_date"`
+	PaymentMethodID   string    `db:"payment_method_id" json:"payment_method_id"`
+	Amount            float64   `db:"amount" json:"amount"`
+	Notes             string    `db:"notes" json:"notes"`
+	Status            int       `db:"status" json:"status"`
+	Created           time.Time `db:"created" json:"created"`
+	CreatedBy         string    `db:"created_by" json:"created_by"`
+	Updated           time.Time `db:"updated" json:"updated"`
+	UpdatedBy         string    `db:"updated_by" json:"updated_by"`
+}
