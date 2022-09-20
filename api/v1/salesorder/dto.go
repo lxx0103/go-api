@@ -309,7 +309,6 @@ type InvoiceNew struct {
 	InvoiceNumber  string           `json:"invoice_number" binding:"required,min=6,max=64"`
 	InvoiceDate    string           `json:"invoice_date" binding:"required,datetime=2006-01-02"`
 	DueDate        string           `json:"due_date" binding:"required,datetime=2006-01-02"`
-	CustomerID     string           `json:"customer_id" binding:"required"`
 	DiscountType   int              `json:"discount_type" binding:"omitempty,oneof=1 2"`
 	DiscountValue  float64          `json:"discount_value" binding:"omitempty"`
 	ShippingFee    float64          `json:"shipping_fee" binding:"omitempty"`

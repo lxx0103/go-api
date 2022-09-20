@@ -439,7 +439,10 @@ func (s *warehouseService) NewAdjustment(info AdjustmentNew) error {
 	adjustment.Quantity = info.Quantity
 	adjustment.Rate = info.Rate
 	adjustment.AdjustmentReasonID = info.AdjustmentReasonID
+	adjustment.OriginalQuantiy = oldLocation.Quantity
+	adjustment.NewQuantiy = location.Quantity
 	adjustment.Remark = info.Remark
+	adjustment.AdjustmentDate = info.AdjustmentDate
 	adjustment.Status = 1
 	adjustment.Created = time.Now()
 	adjustment.Updated = time.Now()

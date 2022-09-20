@@ -85,6 +85,7 @@ type AdjustmentNew struct {
 	Quantity           int     `json:"quantity" binding:"required"`
 	Rate               float64 `json:"rate" binding:"omitempty"`
 	Remark             string  `json:"remark" binding:"required"`
+	AdjustmentDate     string  `json:"adjustment_date" binding:"required,datetime=2006-01-02"`
 	OrganizationID     string  `json:"organiztion_id" swaggerignore:"true"`
 	User               string  `json:"user" swaggerignore:"true"`
 	Email              string  `json:"email" swaggerignore:"true"`
@@ -106,7 +107,10 @@ type AdjustmentResponse struct {
 	SKU                  string  `db:"sku" json:"sku"`
 	AdjustmentID         string  `db:"adjustment_id" json:"adjustment_id"`
 	Quantity             int     `db:"quantity" json:"quantity"`
+	OriginalQuantiy      int     `db:"original_quantity" json:"original_quantity"`
+	NewQuantiy           int     `db:"new_quantity" json:"new_quantity"`
 	Rate                 float64 `db:"rate" json:"rate"`
+	AdjustmentDate       string  `db:"adjustment_date" json:"adjustment_date"`
 	AdjustmentReasonID   string  `db:"adjustment_reason_id" json:"adjustment_reason_id"`
 	AdjustmentReasonName string  `db:"adjustment_reason_name" json:"adjustment_reason_name"`
 	Remark               string  `db:"remark" json:"remark"`

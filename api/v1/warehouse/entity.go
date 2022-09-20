@@ -43,7 +43,10 @@ type Adjustment struct {
 	ItemID             string    `db:"item_id" json:"item_id"`
 	AdjustmentID       string    `db:"adjustment_id" json:"adjustment_id"`
 	Quantity           int       `db:"quantity" json:"quantity"`
+	OriginalQuantiy    int       `db:"original_quantity" json:"original_quantity"`
+	NewQuantiy         int       `db:"new_quantity" json:"new_quantity"`
 	Rate               float64   `db:"rate" json:"rate"`
+	AdjustmentDate     string    `db:"adjustment_date" json:"adjustment_date"`
 	AdjustmentReasonID string    `db:"adjustment_reason_id" json:"adjustment_reason_id"`
 	Remark             string    `db:"remark" json:"remark"`
 	Status             int       `db:"status" json:"status"`

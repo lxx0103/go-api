@@ -267,7 +267,10 @@ func (r warehouseRepository) CreateAdjustment(info Adjustment) error {
 			item_id,
 			adjustment_id,
 			quantity,
+			original_quantity,
+			new_quantity,
 			rate,
+			adjustment_date,
 			adjustment_reason_id,
 			remark,
 			status,
@@ -277,7 +280,7 @@ func (r warehouseRepository) CreateAdjustment(info Adjustment) error {
 			updated_by
 		)
 		VALUES
-		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, info.OrganizationID, info.LocationID, info.ItemID, info.AdjustmentID, info.Quantity, info.Rate, info.AdjustmentReasonID, info.Remark, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, info.OrganizationID, info.LocationID, info.ItemID, info.AdjustmentID, info.Quantity, info.OriginalQuantiy, info.NewQuantiy, info.Rate, info.AdjustmentDate, info.AdjustmentReasonID, info.Remark, info.Status, info.Created, info.CreatedBy, info.Updated, info.UpdatedBy)
 	return err
 }

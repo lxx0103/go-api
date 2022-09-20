@@ -614,14 +614,11 @@ definitions:
         type: string
       shipping_fee:
         type: number
-      vendor_id:
-        type: string
     required:
     - bill_date
     - bill_number
     - due_date
     - items
-    - vendor_id
     type: object
   purchaseorder.BillResponse:
     properties:
@@ -980,6 +977,115 @@ definitions:
       status:
         type: integer
     type: object
+  report.AdjustmentReportResponse:
+    properties:
+      adjustment_date:
+        type: string
+      adjustment_reason_name:
+        type: string
+      item_name:
+        type: string
+      location_code:
+        type: string
+      new_quantity:
+        type: integer
+      original_quantity:
+        type: integer
+      quantity:
+        type: integer
+      sku:
+        type: string
+    type: object
+  report.BillReportResponse:
+    properties:
+      bill_date:
+        type: string
+      bill_number:
+        type: string
+      status:
+        type: integer
+      tax_total:
+        type: number
+      total:
+        type: number
+      vendor_id:
+        type: string
+    type: object
+  report.CustomerSalesReportResponse:
+    properties:
+      customer_id:
+        type: string
+      customer_name:
+        type: string
+      invoice_count:
+        type: integer
+      invoices:
+        items:
+          $ref: '#/definitions/report.InvoiceReportResponse'
+        type: array
+      tax_total:
+        type: number
+      total:
+        type: number
+    type: object
+  report.InvoiceReportResponse:
+    properties:
+      customer_id:
+        type: string
+      invoice_date:
+        type: string
+      invoice_number:
+        type: string
+      status:
+        type: integer
+      tax_total:
+        type: number
+      total:
+        type: number
+    type: object
+  report.PurchaseReportResponse:
+    properties:
+      count:
+        type: integer
+      tax_total:
+        type: number
+      total:
+        type: number
+      vendor_reports:
+        items:
+          $ref: '#/definitions/report.VendorPurchaseReportResponse'
+        type: array
+    type: object
+  report.SalesReportResponse:
+    properties:
+      count:
+        type: integer
+      customer_reports:
+        items:
+          $ref: '#/definitions/report.CustomerSalesReportResponse'
+        type: array
+      tax_total:
+        type: number
+      total:
+        type: number
+    type: object
+  report.VendorPurchaseReportResponse:
+    properties:
+      bill_count:
+        type: integer
+      bills:
+        items:
+          $ref: '#/definitions/report.BillReportResponse'
+        type: array
+      tax_total:
+        type: number
+      total:
+        type: number
+      vendor_id:
+        type: string
+      vendor_name:
+        type: string
+    type: object
   response.ErrorRes:
     properties:
       code:
@@ -1097,8 +1203,6 @@ definitions:
     type: object
   salesorder.InvoiceNew:
     properties:
-      customer_id:
-        type: string
       discount_type:
         enum:
         - 1
@@ -1123,7 +1227,6 @@ definitions:
       shipping_fee:
         type: number
     required:
-    - customer_id
     - due_date
     - invoice_date
     - invoice_number
@@ -2302,6 +2405,8 @@ definitions:
     type: object
   warehouse.AdjustmentNew:
     properties:
+      adjustment_date:
+        type: string
       adjustment_reason_id:
         type: string
       location_id:
@@ -2313,6 +2418,7 @@ definitions:
       remark:
         type: string
     required:
+    - adjustment_date
     - adjustment_reason_id
     - location_id
     - quantity
@@ -2320,6 +2426,8 @@ definitions:
     type: object
   warehouse.AdjustmentResponse:
     properties:
+      adjustment_date:
+        type: string
       adjustment_id:
         type: string
       adjustment_reason_id:
@@ -2334,8 +2442,12 @@ definitions:
         type: string
       location_id:
         type: string
+      new_quantity:
+        type: integer
       organization_id:
         type: string
+      original_quantity:
+        type: integer
       quantity:
         type: integer
       rate:
@@ -2651,6 +2763,37 @@ paths:
       summary: 根据ID更新库存调整原因
       tags:
       - 库存调整原因管理
+  /adjustmentreports:
+    get:
+      consumes:
+      - application/json
+      operationId: "904"
+      parameters:
+      - description: 商品ID
+        in: query
+        name: item_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/report.AdjustmentReportResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 商品报告
+      tags:
+      - 报告管理
   /adjustments:
     get:
       consumes:
@@ -6504,6 +6647,43 @@ paths:
       summary: 新建拣货单
       tags:
       - 销售单管理
+  /salesreports:
+    get:
+      consumes:
+      - application/json
+      operationId: "902"
+      parameters:
+      - description: 开始日期
+        in: query
+        name: date_from
+        type: string
+      - description: 结束日期
+        in: query
+        name: date_to
+        type: string
+      - description: 生产商ID
+        in: query
+        name: vendor_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/report.PurchaseReportResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 采购订单报告
+      tags:
+      - 报告管理
   /shippingorders:
     get:
       consumes:

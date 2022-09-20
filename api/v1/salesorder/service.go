@@ -2212,11 +2212,6 @@ func (s *salesorderService) NewInvoice(salesorderID string, info InvoiceNew) (*s
 	}
 	invoiceID := "inv-" + xid.New().String()
 	settingRepo := setting.NewSettingRepository(tx)
-	_, err = settingRepo.GetCustomerByID(info.CustomerID, info.OrganizationID)
-	if err != nil {
-		msg := "customer not exists"
-		return nil, errors.New(msg)
-	}
 	itemCount := 0
 	itemTotal := 0.0
 	taxTotal := 0.0
@@ -2290,6 +2285,11 @@ func (s *salesorderService) NewInvoice(salesorderID string, info InvoiceNew) (*s
 			return nil, errors.New(msg)
 		}
 	}
+	so, err := repo.GetSalesorderByID(info.OrganizationID, salesorderID)
+	if err != nil {
+		msg := "get sales order error: "
+		return nil, errors.New(msg)
+	}
 	var invoice Invoice
 	invoice.OrganizationID = info.OrganizationID
 	invoice.InvoiceID = invoiceID
@@ -2297,7 +2297,7 @@ func (s *salesorderService) NewInvoice(salesorderID string, info InvoiceNew) (*s
 	invoice.InvoiceNumber = info.InvoiceNumber
 	invoice.InvoiceDate = info.InvoiceDate
 	invoice.DueDate = info.DueDate
-	invoice.CustomerID = info.CustomerID
+	invoice.CustomerID = so.CustomerID
 	invoice.ItemCount = itemCount
 	invoice.Subtotal = itemTotal
 	invoice.DiscountType = info.DiscountType
@@ -2328,11 +2328,6 @@ func (s *salesorderService) NewInvoice(salesorderID string, info InvoiceNew) (*s
 	err = repo.CreateInvoice(invoice)
 	if err != nil {
 		msg := "create invoice error: "
-		return nil, errors.New(msg)
-	}
-	so, err := repo.GetSalesorderByID(info.OrganizationID, salesorderID)
-	if err != nil {
-		msg := "get sales order error: "
 		return nil, errors.New(msg)
 	}
 	invoicedCount, err := repo.GetSalesorderInvoicedCount(info.OrganizationID, salesorderID)
@@ -2426,11 +2421,6 @@ func (s *salesorderService) UpdateInvoice(invoiceID string, info InvoiceNew) (*s
 		return nil, errors.New(msg)
 	}
 	settingRepo := setting.NewSettingRepository(tx)
-	_, err = settingRepo.GetCustomerByID(info.CustomerID, info.OrganizationID)
-	if err != nil {
-		msg := "customer not exists"
-		return nil, errors.New(msg)
-	}
 	oldInvoice, err := repo.GetInvoiceByID(info.OrganizationID, invoiceID)
 	if err != nil {
 		msg := "get invoice error"
@@ -2543,7 +2533,7 @@ func (s *salesorderService) UpdateInvoice(invoiceID string, info InvoiceNew) (*s
 	invoice.InvoiceNumber = info.InvoiceNumber
 	invoice.InvoiceDate = info.InvoiceDate
 	invoice.DueDate = info.DueDate
-	invoice.CustomerID = info.CustomerID
+	invoice.CustomerID = oldInvoice.CustomerID
 	invoice.ItemCount = itemCount
 	invoice.Subtotal = itemTotal
 	invoice.DiscountType = info.DiscountType

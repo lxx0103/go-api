@@ -297,6 +297,58 @@ var doc = `{
                 }
             }
         },
+        "/adjustmentreports": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报告管理"
+                ],
+                "summary": "商品报告",
+                "operationId": "904",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "商品ID",
+                        "name": "item_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/report.AdjustmentReportResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/adjustments": {
             "get": {
                 "consumes": [
@@ -6630,6 +6682,67 @@ var doc = `{
                 }
             }
         },
+        "/salesreports": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报告管理"
+                ],
+                "summary": "采购订单报告",
+                "operationId": "902",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始日期",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期",
+                        "name": "date_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "生产商ID",
+                        "name": "vendor_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/report.PurchaseReportResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/shippingorders": {
             "get": {
                 "consumes": [
@@ -8657,8 +8770,7 @@ var doc = `{
                 "bill_date",
                 "bill_number",
                 "due_date",
-                "items",
-                "vendor_id"
+                "items"
             ],
             "properties": {
                 "bill_date": {
@@ -8693,9 +8805,6 @@ var doc = `{
                 },
                 "shipping_fee": {
                     "type": "number"
-                },
-                "vendor_id": {
-                    "type": "string"
                 }
             }
         },
@@ -9231,6 +9340,173 @@ var doc = `{
                 }
             }
         },
+        "report.AdjustmentReportResponse": {
+            "type": "object",
+            "properties": {
+                "adjustment_date": {
+                    "type": "string"
+                },
+                "adjustment_reason_name": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "location_code": {
+                    "type": "string"
+                },
+                "new_quantity": {
+                    "type": "integer"
+                },
+                "original_quantity": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "sku": {
+                    "type": "string"
+                }
+            }
+        },
+        "report.BillReportResponse": {
+            "type": "object",
+            "properties": {
+                "bill_date": {
+                    "type": "string"
+                },
+                "bill_number": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "tax_total": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                },
+                "vendor_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "report.CustomerSalesReportResponse": {
+            "type": "object",
+            "properties": {
+                "customer_id": {
+                    "type": "string"
+                },
+                "customer_name": {
+                    "type": "string"
+                },
+                "invoice_count": {
+                    "type": "integer"
+                },
+                "invoices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/report.InvoiceReportResponse"
+                    }
+                },
+                "tax_total": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                }
+            }
+        },
+        "report.InvoiceReportResponse": {
+            "type": "object",
+            "properties": {
+                "customer_id": {
+                    "type": "string"
+                },
+                "invoice_date": {
+                    "type": "string"
+                },
+                "invoice_number": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "tax_total": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                }
+            }
+        },
+        "report.PurchaseReportResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "tax_total": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                },
+                "vendor_reports": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/report.VendorPurchaseReportResponse"
+                    }
+                }
+            }
+        },
+        "report.SalesReportResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "customer_reports": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/report.CustomerSalesReportResponse"
+                    }
+                },
+                "tax_total": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                }
+            }
+        },
+        "report.VendorPurchaseReportResponse": {
+            "type": "object",
+            "properties": {
+                "bill_count": {
+                    "type": "integer"
+                },
+                "bills": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/report.BillReportResponse"
+                    }
+                },
+                "tax_total": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                },
+                "vendor_id": {
+                    "type": "string"
+                },
+                "vendor_name": {
+                    "type": "string"
+                }
+            }
+        },
         "response.ErrorRes": {
             "type": "object",
             "properties": {
@@ -9407,16 +9683,12 @@ var doc = `{
         "salesorder.InvoiceNew": {
             "type": "object",
             "required": [
-                "customer_id",
                 "due_date",
                 "invoice_date",
                 "invoice_number",
                 "items"
             ],
             "properties": {
-                "customer_id": {
-                    "type": "string"
-                },
                 "discount_type": {
                     "type": "integer",
                     "enum": [
@@ -11185,12 +11457,16 @@ var doc = `{
         "warehouse.AdjustmentNew": {
             "type": "object",
             "required": [
+                "adjustment_date",
                 "adjustment_reason_id",
                 "location_id",
                 "quantity",
                 "remark"
             ],
             "properties": {
+                "adjustment_date": {
+                    "type": "string"
+                },
                 "adjustment_reason_id": {
                     "type": "string"
                 },
@@ -11211,6 +11487,9 @@ var doc = `{
         "warehouse.AdjustmentResponse": {
             "type": "object",
             "properties": {
+                "adjustment_date": {
+                    "type": "string"
+                },
                 "adjustment_id": {
                     "type": "string"
                 },
@@ -11232,8 +11511,14 @@ var doc = `{
                 "location_id": {
                     "type": "string"
                 },
+                "new_quantity": {
+                    "type": "integer"
+                },
                 "organization_id": {
                     "type": "string"
+                },
+                "original_quantity": {
+                    "type": "integer"
                 },
                 "quantity": {
                     "type": "integer"

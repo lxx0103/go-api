@@ -963,11 +963,6 @@ func (s *purchaseorderService) NewBill(purchaseorderID string, info BillNew) (*s
 	}
 	billID := "bil-" + xid.New().String()
 	settingRepo := setting.NewSettingRepository(tx)
-	_, err = settingRepo.GetVendorByID(info.VendorID, info.OrganizationID)
-	if err != nil {
-		msg := "vendor not exists"
-		return nil, errors.New(msg)
-	}
 	itemCount := 0
 	itemTotal := 0.0
 	taxTotal := 0.0
@@ -1041,6 +1036,11 @@ func (s *purchaseorderService) NewBill(purchaseorderID string, info BillNew) (*s
 			return nil, errors.New(msg)
 		}
 	}
+	so, err := repo.GetPurchaseorderByID(info.OrganizationID, purchaseorderID)
+	if err != nil {
+		msg := "get purchase order error: "
+		return nil, errors.New(msg)
+	}
 	var bill Bill
 	bill.OrganizationID = info.OrganizationID
 	bill.BillID = billID
@@ -1048,7 +1048,7 @@ func (s *purchaseorderService) NewBill(purchaseorderID string, info BillNew) (*s
 	bill.BillNumber = info.BillNumber
 	bill.BillDate = info.BillDate
 	bill.DueDate = info.DueDate
-	bill.VendorID = info.VendorID
+	bill.VendorID = so.VendorID
 	bill.ItemCount = itemCount
 	bill.Subtotal = itemTotal
 	bill.DiscountType = info.DiscountType
@@ -1079,11 +1079,6 @@ func (s *purchaseorderService) NewBill(purchaseorderID string, info BillNew) (*s
 	err = repo.CreateBill(bill)
 	if err != nil {
 		msg := "create bill error: "
-		return nil, errors.New(msg)
-	}
-	so, err := repo.GetPurchaseorderByID(info.OrganizationID, purchaseorderID)
-	if err != nil {
-		msg := "get purchase order error: "
 		return nil, errors.New(msg)
 	}
 	billdCount, err := repo.GetPurchaseorderBilledCount(info.OrganizationID, purchaseorderID)
@@ -1177,11 +1172,6 @@ func (s *purchaseorderService) UpdateBill(billID string, info BillNew) (*string,
 		return nil, errors.New(msg)
 	}
 	settingRepo := setting.NewSettingRepository(tx)
-	_, err = settingRepo.GetVendorByID(info.VendorID, info.OrganizationID)
-	if err != nil {
-		msg := "vendor not exists"
-		return nil, errors.New(msg)
-	}
 	oldBill, err := repo.GetBillByID(info.OrganizationID, billID)
 	if err != nil {
 		msg := "get bill error"
@@ -1294,7 +1284,7 @@ func (s *purchaseorderService) UpdateBill(billID string, info BillNew) (*string,
 	bill.BillNumber = info.BillNumber
 	bill.BillDate = info.BillDate
 	bill.DueDate = info.DueDate
-	bill.VendorID = info.VendorID
+	bill.VendorID = oldBill.VendorID
 	bill.ItemCount = itemCount
 	bill.Subtotal = itemTotal
 	bill.DiscountType = info.DiscountType
