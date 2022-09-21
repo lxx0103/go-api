@@ -308,9 +308,21 @@ var doc = `{
                 "tags": [
                     "报告管理"
                 ],
-                "summary": "商品报告",
-                "operationId": "904",
+                "summary": "库存调整报告",
+                "operationId": "903",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始日期",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期",
+                        "name": "date_to",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
                         "description": "商品ID",
@@ -2609,6 +2621,58 @@ var doc = `{
                                     "properties": {
                                         "data": {
                                             "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/itemreports": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报告管理"
+                ],
+                "summary": "商品报告",
+                "operationId": "904",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "商品ID",
+                        "name": "item_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/report.ItemReportResponse"
+                                            }
                                         }
                                     }
                                 }
@@ -5817,6 +5881,67 @@ var doc = `{
                 }
             }
         },
+        "/purchasereports": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报告管理"
+                ],
+                "summary": "采购订单报告",
+                "operationId": "902",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始日期",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期",
+                        "name": "date_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "生产商ID",
+                        "name": "vendor_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.SuccessRes"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/report.PurchaseReportResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorRes"
+                        }
+                    }
+                }
+            }
+        },
         "/requisitions": {
             "get": {
                 "consumes": [
@@ -6693,8 +6818,8 @@ var doc = `{
                 "tags": [
                     "报告管理"
                 ],
-                "summary": "采购订单报告",
-                "operationId": "902",
+                "summary": "销售订单报告",
+                "operationId": "901",
                 "parameters": [
                     {
                         "type": "string",
@@ -6710,8 +6835,8 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "生产商ID",
-                        "name": "vendor_id",
+                        "description": "顾客ID",
+                        "name": "customer_id",
                         "in": "query"
                     }
                 ],
@@ -6727,7 +6852,7 @@ var doc = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/report.PurchaseReportResponse"
+                                            "$ref": "#/definitions/report.SalesReportResponse"
                                         }
                                     }
                                 }
@@ -9438,6 +9563,29 @@ var doc = `{
                 },
                 "total": {
                     "type": "number"
+                }
+            }
+        },
+        "report.ItemReportResponse": {
+            "type": "object",
+            "properties": {
+                "cost_price": {
+                    "type": "number"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "selling_price": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "stock_on_hand": {
+                    "type": "integer"
+                },
+                "unit": {
+                    "type": "string"
                 }
             }
         },

@@ -1043,6 +1043,21 @@ definitions:
       total:
         type: number
     type: object
+  report.ItemReportResponse:
+    properties:
+      cost_price:
+        type: number
+      item_name:
+        type: string
+      selling_price:
+        type: number
+      sku:
+        type: string
+      stock_on_hand:
+        type: integer
+      unit:
+        type: string
+    type: object
   report.PurchaseReportResponse:
     properties:
       count:
@@ -2767,8 +2782,16 @@ paths:
     get:
       consumes:
       - application/json
-      operationId: "904"
+      operationId: "903"
       parameters:
+      - description: 开始日期
+        in: query
+        name: date_from
+        type: string
+      - description: 结束日期
+        in: query
+        name: date_to
+        type: string
       - description: 商品ID
         in: query
         name: item_id
@@ -2791,7 +2814,7 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/response.ErrorRes'
-      summary: 商品报告
+      summary: 库存调整报告
       tags:
       - 报告管理
   /adjustments:
@@ -4181,6 +4204,37 @@ paths:
       summary: 新建Payment
       tags:
       - 销售单管理
+  /itemreports:
+    get:
+      consumes:
+      - application/json
+      operationId: "904"
+      parameters:
+      - description: 商品ID
+        in: query
+        name: item_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/report.ItemReportResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 商品报告
+      tags:
+      - 报告管理
   /items:
     get:
       consumes:
@@ -6123,6 +6177,43 @@ paths:
       summary: 收货单商品列表
       tags:
       - 采购单管理
+  /purchasereports:
+    get:
+      consumes:
+      - application/json
+      operationId: "902"
+      parameters:
+      - description: 开始日期
+        in: query
+        name: date_from
+        type: string
+      - description: 结束日期
+        in: query
+        name: date_to
+        type: string
+      - description: 生产商ID
+        in: query
+        name: vendor_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.SuccessRes'
+            - properties:
+                data:
+                  $ref: '#/definitions/report.PurchaseReportResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorRes'
+      summary: 采购订单报告
+      tags:
+      - 报告管理
   /requisitions:
     get:
       consumes:
@@ -6651,7 +6742,7 @@ paths:
     get:
       consumes:
       - application/json
-      operationId: "902"
+      operationId: "901"
       parameters:
       - description: 开始日期
         in: query
@@ -6661,9 +6752,9 @@ paths:
         in: query
         name: date_to
         type: string
-      - description: 生产商ID
+      - description: 顾客ID
         in: query
-        name: vendor_id
+        name: customer_id
         type: string
       produces:
       - application/json
@@ -6675,13 +6766,13 @@ paths:
             - $ref: '#/definitions/response.SuccessRes'
             - properties:
                 data:
-                  $ref: '#/definitions/report.PurchaseReportResponse'
+                  $ref: '#/definitions/report.SalesReportResponse'
               type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/response.ErrorRes'
-      summary: 采购订单报告
+      summary: 销售订单报告
       tags:
       - 报告管理
   /shippingorders:

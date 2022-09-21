@@ -48,7 +48,7 @@ func GetSalesReport(c *gin.Context) {
 // @Param vendor_id query string false "生产商ID"
 // @Success 200 object response.SuccessRes{data=PurchaseReportResponse} 成功
 // @Failure 400 object response.ErrorRes 内部错误
-// @Router /salesreports [GET]
+// @Router /purchasereports [GET]
 func GetPurchaseReport(c *gin.Context) {
 	var filter PurchaseReportFilter
 	err := c.ShouldBindQuery(&filter)
@@ -104,9 +104,9 @@ func GetAdjustmentReport(c *gin.Context) {
 // @Accept application/json
 // @Produce application/json
 // @Param item_id query string false "商品ID"
-// @Success 200 object response.SuccessRes{data=[]AdjustmentReportResponse} 成功
+// @Success 200 object response.SuccessRes{data=[]ItemReportResponse} 成功
 // @Failure 400 object response.ErrorRes 内部错误
-// @Router /adjustmentreports [GET]
+// @Router /itemreports [GET]
 func GetItemReport(c *gin.Context) {
 	var filter ItemReportFilter
 	err := c.ShouldBindQuery(&filter)
